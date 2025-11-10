@@ -1,0 +1,24 @@
+# Python LangChain dependencies for optimal implementation
+
+# Core LangChain packages
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+
+# Pydantic for schema validation (required by LangChain)
+pydantic>=2.6.0
+
+# Optional: Add other LLM providers as needed
+# langchain-anthropic>=0.2.0  # For Anthropic Claude
+# langchain-google-vertexai>=2.0.0  # For Google Gemini
+
+# Optional: LangSmith for production observability (highly recommended)
+# langsmith>=0.1.0
+
+# Optional: Add database clients when ready
+# supabase>=2.0.0  # For Supabase
+# boto3>=1.34.0  # For AWS DynamoDB
+# psycopg2-binary>=2.9.0  # For PostgreSQL
+
+# Optional: Slack SDK for posting results back to Slack
+# slack-sdk>=3.27.0
