@@ -21,6 +21,9 @@ langchain-openai>=0.2.0
 langchain-core>=0.3.0
 langsmith>=0.1.0
 
+# ULID for unique identifiers
+python-ulid>=2.7.0
+
 # Development dependencies
 python-dotenv>=1.0.0
 
