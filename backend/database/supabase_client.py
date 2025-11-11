@@ -1,57 +1,49 @@
 """
-Supabase Client Module
-
-Provides a singleton Supabase client instance for the application.
-Reads credentials from environment variables.
+Supabase client management with singleton pattern.
+Context7 Pattern: @lru_cache for singleton + FastAPI dependency injection
+Source: /supabase/supabase-py and /fastapi/fastapi docs
 """
-
-import os
 from supabase import create_client, Client
+from functools import lru_cache
+from backend.config import get_settings
 
-_supabase_client = None
 
-
+@lru_cache()
 def get_supabase() -> Client:
     """
-    Get or create Supabase client singleton
+    Singleton Supabase client instance.
+
+    Context7 Pattern:
+    - Use @lru_cache() to ensure only one client is created
+    - Initialize with service key for server-side operations
+
+    Source: /supabase/supabase-py docs
+    Example: create_client(url, key)
 
     Returns:
         Client: Supabase client instance
-
-    Raises:
-        ValueError: If SUPABASE_URL or SUPABASE_KEY environment variables are not set
     """
-    global _supabase_client
-
-    if _supabase_client is None:
-        url = os.getenv('SUPABASE_URL')
-        key = os.getenv('SUPABASE_KEY')
-
-        if not url or not key:
-            raise ValueError(
-                "Missing Supabase credentials. "
-                "Set SUPABASE_URL and SUPABASE_KEY environment variables."
-            )
-
-        _supabase_client = create_client(url, key)
-
-    return _supabase_client
+    settings = get_settings()
+    return create_client(
+        supabase_url=settings.SUPABASE_URL,
+        supabase_key=settings.SUPABASE_SERVICE_KEY
+    )
 
 
-def test_connection():
-    """Test Supabase connection"""
-    try:
-        supabase = get_supabase()
-        result = supabase.table('classifications').select('*', count='exact').limit(0).execute()
-        print(f"✅ Supabase connected! (Using service role key)")
-        return True
-    except Exception as e:
-        print(f"❌ Supabase connection failed: {e}")
-        return False
+async def get_db() -> Client:
+    """
+    FastAPI dependency for injecting Supabase client.
 
+    Context7 Pattern: Dependency injection with Depends()
+    Source: /fastapi/fastapi docs - "Dependencies"
 
-if __name__ == "__main__":
-    # Test connection
-    from dotenv import load_dotenv
-    load_dotenv()
-    test_connection()
+    Usage:
+        @router.get("/items")
+        async def get_items(db: Client = Depends(get_db)):
+            response = await db.table('items').select('*').execute()
+            return response.data
+
+    Returns:
+        Client: Supabase client instance
+    """
+    return get_supabase()

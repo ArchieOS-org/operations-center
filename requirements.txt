@@ -1,25 +1,31 @@
-# Python LangChain dependencies for optimal implementation
+# Python dependencies following Context7 best practices
 
-# Core LangChain packages
+# FastAPI web framework (Context7: /fastapi/fastapi)
+fastapi>=0.115.13
+uvicorn[standard]>=0.32.0
+
+# Pydantic for schema validation (Context7: /pydantic/pydantic)
+pydantic>=2.9.2
+pydantic-settings>=2.6.1
+
+# Supabase for database (Context7: /supabase/supabase-py)
+supabase>=2.10.0
+
+# Authentication (JWT)
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.9
+
+# LangChain packages (existing classifier)
 langchain>=0.3.0
 langchain-openai>=0.2.0
 langchain-core>=0.3.0
-
-# Pydantic for schema validation (required by LangChain)
-pydantic>=2.6.0
-
-# Supabase for database
-supabase>=2.0.0
-
-# LangSmith for production observability (recommended)
 langsmith>=0.1.0
 
-# Optional: Add other LLM providers as needed
-# langchain-anthropic>=0.2.0  # For Anthropic Claude
-# langchain-google-vertexai>=2.0.0  # For Google Gemini
+# ULID for unique identifiers
+python-ulid>=2.7.0
+
+# Development dependencies
+python-dotenv>=1.0.0
 
 # Optional: Slack SDK for posting results back to Slack
 # slack-sdk>=3.27.0
-
-# Development dependencies (local only)
-# python-dotenv>=1.0.0  # For loading .env files locally
