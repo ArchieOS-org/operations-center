@@ -1,0 +1,14 @@
+{
+  "$schema": "https://langgraph.io/schemas/langgraph.json",
+  "dependencies": ["."],
+  "graphs": {
+    "orchestrator": "./agents/orchestrator.py:orchestrator_graph",
+    "slack_processor": "./workflows/slack_intake.py:slack_workflow",
+    "sms_processor": "./workflows/sms_intake.py:sms_workflow",
+    "task_router": "./workflows/task_routing.py:task_workflow",
+    "listing_flow": "./workflows/listing_flow.py:listing_workflow"
+  },
+  "env": "../../../.env",
+  "python_version": "3.11",
+  "pip_config_file": "./requirements.txt"
+}

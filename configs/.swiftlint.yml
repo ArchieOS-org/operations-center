@@ -1,0 +1,102 @@
+# SwiftLint Configuration for Operations Center
+
+# Opt-in rules for higher code quality
+opt_in_rules:
+  - explicit_type_interface
+  - closure_spacing
+  - sorted_imports
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - empty_count
+  - empty_string
+  - explicit_init
+  - first_where
+  - operator_usage_whitespace
+  - redundant_nil_coalescing
+  - toggle_bool
+  - unused_import
+  - unused_optional_binding
+  - yoda_condition
+
+# Disable rules that conflict with modern Swift
+disabled_rules:
+  - trailing_comma
+  - todo
+
+# Rule Configuration
+line_length:
+  warning: 120
+  error: 150
+  ignores_urls: true
+  ignores_function_declarations: true
+  ignores_comments: true
+
+function_body_length:
+  warning: 50
+  error: 100
+
+type_body_length:
+  warning: 300
+  error: 500
+
+file_length:
+  warning: 500
+  error: 1000
+  ignore_comment_only_lines: true
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 40
+    error: 50
+  excluded:
+    - id
+    - URL
+    - db
+
+type_name:
+  min_length: 3
+  max_length: 40
+
+# Exclude certain paths
+excluded:
+  - Pods
+  - .build
+  - DerivedData
+  - build
+  - Package.swift
+  - "**/Generated"
+  - "**/*.generated.swift"
+
+# Included paths
+included:
+  - apps/ios
+
+# Custom Rules
+custom_rules:
+  no_print:
+    name: "No print statements"
+    regex: "\\bprint\\s*\\("
+    message: "Use logger instead of print"
+    severity: warning
+
+  no_force_try:
+    name: "No force try"
+    regex: "try!"
+    message: "Use proper error handling instead of try!"
+    severity: error
+
+  no_force_cast:
+    name: "No force cast"
+    regex: "as!"
+    message: "Use conditional cast (as?) instead of force cast (as!)"
+    severity: error
+
+# Reporter
+reporter: "xcode"

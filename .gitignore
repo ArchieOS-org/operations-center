@@ -95,6 +95,7 @@ logs/
 tmp/
 temp/
 *.tmp
+trash/
 
 # Generated code
 **/generated/
