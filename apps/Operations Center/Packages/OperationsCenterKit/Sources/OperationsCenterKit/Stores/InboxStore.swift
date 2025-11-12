@@ -16,7 +16,7 @@ public final class InboxStore {
 
     public var strayTasks: [(task: StrayTask, messages: [SlackMessage])] = []
     public var listingTasks: [(task: ListingTask, subtasks: [Subtask])] = []
-    public var expandedTaskIds: Set<String> = []
+    public var expandedTaskId: String? = nil
     public var isLoading = false
     public var errorMessage: String?
 
@@ -57,15 +57,15 @@ public final class InboxStore {
     // MARK: - Expansion State
 
     public func toggleExpansion(for taskId: String) {
-        if expandedTaskIds.contains(taskId) {
-            expandedTaskIds.remove(taskId)
+        if expandedTaskId == taskId {
+            expandedTaskId = nil
         } else {
-            expandedTaskIds.insert(taskId)
+            expandedTaskId = taskId
         }
     }
 
     public func isExpanded(_ taskId: String) -> Bool {
-        expandedTaskIds.contains(taskId)
+        expandedTaskId == taskId
     }
 
     // MARK: - Stray Task Actions
