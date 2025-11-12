@@ -2,47 +2,112 @@
 //  InboxView.swift
 //  Operations Center
 //
-//  Inbox view showing unclaimed tasks from all agents
+//  Inbox view showing both stray and listing tasks
+//  Uses explicit StrayTaskCard and ListingTaskCard components
 //
 
 import SwiftUI
 import OperationsCenterKit
 
 struct InboxView: View {
-    @Environment(AppState.self) private var appState
+    @State private var store: InboxStore
+
+    init(repository: TaskRepository = MockTaskRepository.create()) {
+        _store = State(initialValue: InboxStore(repository: repository))
+    }
 
     var body: some View {
         Group {
-            if appState.isLoading {
+            if store.isLoading {
                 ProgressView("Loading inbox...")
-            } else if let error = appState.errorMessage {
-                ErrorView(message: error) {
-                    Task { await appState.refresh() }
+            } else if let error = store.errorMessage {
+                InboxErrorView(message: error) {
+                    Task { await store.refresh() }
                 }
-            } else if appState.inboxTasks.isEmpty {
+            } else if store.strayTasks.isEmpty && store.listingTasks.isEmpty {
                 EmptyInboxView()
             } else {
-                List(appState.inboxTasks) { task in
-                    TaskRow(task: task)
-                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                            Button {
-                                Task { await appState.claimTask(task) }
-                            } label: {
-                                Label("Claim", systemImage: "hand.raised")
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        // Stray Tasks Section
+                        if !store.strayTasks.isEmpty {
+                            sectionHeader(title: "Stray Tasks", count: store.strayTasks.count)
+
+                            ForEach(store.strayTasks, id: \.task.id) { item in
+                                StrayTaskCard(
+                                    task: item.task,
+                                    messages: item.messages,
+                                    isExpanded: store.isExpanded(item.task.id),
+                                    onTap: {
+                                        store.toggleExpansion(for: item.task.id)
+                                    },
+                                    onClaim: {
+                                        Task { await store.claimStrayTask(item.task) }
+                                    },
+                                    onDelete: {
+                                        Task { await store.deleteStrayTask(item.task) }
+                                    }
+                                )
                             }
-                            .tint(.blue)
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                Task { await appState.deleteTask(task) }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+
+                        // Listing Tasks Section
+                        if !store.listingTasks.isEmpty {
+                            sectionHeader(title: "Listing Tasks", count: store.listingTasks.count)
+
+                            ForEach(store.listingTasks, id: \.task.id) { item in
+                                ListingTaskCard(
+                                    task: item.task,
+                                    subtasks: item.subtasks,
+                                    isExpanded: store.isExpanded(item.task.id),
+                                    onTap: {
+                                        store.toggleExpansion(for: item.task.id)
+                                    },
+                                    onSubtaskToggle: { subtask in
+                                        Task { await store.toggleSubtask(subtask) }
+                                    },
+                                    onClaim: {
+                                        Task { await store.claimListingTask(item.task) }
+                                    },
+                                    onDelete: {
+                                        Task { await store.deleteListingTask(item.task) }
+                                    }
+                                )
                             }
                         }
+                    }
+                    .padding()
                 }
             }
         }
         .navigationTitle("Inbox")
+        .refreshable {
+            await store.refresh()
+        }
+        .task {
+            await store.fetchTasks()
+        }
+    }
+
+    // MARK: - Subviews
+
+    private func sectionHeader(title: String, count: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Text("\(count)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .clipShape(Capsule())
+        }
+        .padding(.top, 8)
     }
 }
 
@@ -50,13 +115,38 @@ struct EmptyInboxView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "tray")
-                .font(.largeTitle)
+                .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("No unclaimed tasks")
-                .font(.headline)
+            Text("No Tasks")
+                .font(.title2)
+                .fontWeight(.semibold)
             Text("New tasks will appear here")
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+}
+
+struct InboxErrorView: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 60))
+                .foregroundStyle(.red)
+            Text("Error")
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button("Try Again", action: retry)
+                .buttonStyle(.borderedProminent)
         }
         .padding()
     }
