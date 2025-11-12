@@ -1,5 +1,0 @@
-# Python dependencies for migration
-openai>=1.12.0
-pydantic>=2.6.0
-supabase>=2.3.0
-twilio>=8.11.0

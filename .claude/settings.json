@@ -1,0 +1,39 @@
+{
+  "project": {
+    "name": "Operations Center",
+    "description": "Multi-platform SwiftUI app (iOS + iPadOS + macOS) with Python FastAPI backend",
+    "type": "monorepo"
+  },
+  "workspaces": {
+    "swift": "apps/operations-center",
+    "backend": "apps/backend/api",
+    "packages": "packages",
+    "libs": "libs"
+  },
+  "build": {
+    "swift": {
+      "scheme": "Operations Center",
+      "platforms": ["iOS", "macOS", "iPadOS"],
+      "flags": ["--quiet"]
+    },
+    "python": {
+      "virtualenv": "apps/backend/api/venv",
+      "requirements": "apps/backend/api/requirements.txt"
+    }
+  },
+  "quality": {
+    "swift": {
+      "linter": "swiftlint",
+      "config": "configs/.swiftlint.yml"
+    },
+    "python": {
+      "linter": "ruff",
+      "typeChecker": "mypy"
+    }
+  },
+  "documentation": {
+    "root": "CLAUDE.md",
+    "swift": "apps/operations-center/CLAUDE.md",
+    "backend": "apps/backend/CLAUDE.md"
+  }
+}

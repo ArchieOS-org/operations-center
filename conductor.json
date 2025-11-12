@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "setup": "./conductor-setup.sh",
-    "run": "",
-    "archive": ""
+    "setup": "$CONDUCTOR_ROOT_PATH/conductor-setup.sh",
+    "run": "$CONDUCTOR_ROOT_PATH/conductor-run.sh",
+    "archive": "$CONDUCTOR_ROOT_PATH/conductor-archive.sh"
   },
   "runScriptMode": "nonconcurrent"
 }
