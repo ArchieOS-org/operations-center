@@ -1,0 +1,99 @@
+//
+//  TaskListStore.swift
+//  OperationsCenterKit
+//
+//  Created by Claude Code
+//
+
+import Foundation
+import Dependencies
+import Supabase
+
+/// Store managing the list of tasks with Supabase integration
+@Observable
+public final class TaskListStore {
+    // MARK: - Observable State
+
+    public var tasks: [ListingTask] = []
+    public var isLoading = false
+    public var errorMessage: String?
+
+    // MARK: - Dependencies
+
+    @ObservationIgnored
+    @Dependency(\.supabaseClient) var supabaseClient
+
+    // MARK: - Initializer
+
+    public init() {}
+
+    // MARK: - Actions
+
+    /// Fetch all listing tasks from Supabase
+    public func fetchTasks() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response: [ListingTask] = try await supabaseClient
+                .from("listing_tasks")
+                .select()
+                .is("deleted_at", value: nil)
+                .order("created_at", ascending: false)
+                .limit(50)
+                .execute()
+                .value
+
+            tasks = response
+            print("✅ Successfully fetched \(tasks.count) tasks")
+        } catch {
+            errorMessage = "Failed to load tasks: \(error.localizedDescription)"
+            print("❌ Error fetching tasks: \(error)")
+        }
+
+        isLoading = false
+    }
+
+    /// Claim a task by assigning it to a staff member
+    public func claimTask(_ task: ListingTask, staffId: String) async {
+        do {
+            try await supabaseClient
+                .from("listing_tasks")
+                .update(["assigned_staff_id": staffId])
+                .eq("id", value: task.id)
+                .execute()
+
+            print("✅ Task claimed: \(task.name)")
+
+            // Refresh to get updated data
+            await fetchTasks()
+        } catch {
+            errorMessage = "Failed to claim task: \(error.localizedDescription)"
+            print("❌ Error claiming task: \(error)")
+        }
+    }
+
+    /// Mark a task as complete
+    public func completeTask(_ task: ListingTask) async {
+        do {
+            try await supabaseClient
+                .from("listing_tasks")
+                .update(["status": ListingTask.TaskStatus.done.rawValue])
+                .eq("id", value: task.id)
+                .execute()
+
+            print("✅ Task completed: \(task.name)")
+
+            // Refresh to get updated data
+            await fetchTasks()
+        } catch {
+            errorMessage = "Failed to complete task: \(error.localizedDescription)"
+            print("❌ Error completing task: \(error)")
+        }
+    }
+
+    /// Refresh tasks (for pull-to-refresh)
+    public func refresh() async {
+        await fetchTasks()
+    }
+}

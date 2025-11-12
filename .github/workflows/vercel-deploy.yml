@@ -1,0 +1,133 @@
+name: Vercel Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'vercel.json'
+      - '.github/workflows/vercel-deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'vercel.json'
+      - '.github/workflows/vercel-deploy.yml'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  validate-env:
+    name: Validate Environment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required environment variables
+        run: |
+          REQUIRED_VARS=(
+            "SUPABASE_URL"
+            "SUPABASE_SERVICE_KEY"
+            "OPENAI_API_KEY"
+            "SLACK_BOT_TOKEN"
+            "SLACK_SIGNING_SECRET"
+          )
+
+          echo "Checking required environment variables for Vercel..."
+          echo "Note: This is a reminder to ensure these are set in Vercel dashboard"
+          for var in "${REQUIRED_VARS[@]}"; do
+            echo "- $var"
+          done
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: validate-env
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Preview to Vercel
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.deploy.outputs.deployment_url }}';
+            const comment = `## Vercel Preview Deployment
+
+            Preview URL: ${deploymentUrl}
+
+            Intelligence endpoints available:
+            - \`POST ${deploymentUrl}/webhooks/slack\`
+            - \`POST ${deploymentUrl}/webhooks/sms\`
+            - \`POST ${deploymentUrl}/classify\`
+            - \`POST ${deploymentUrl}/chat\`
+            - \`GET ${deploymentUrl}/status\`
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate-env
+    environment:
+      name: production
+      url: https://operations-center.vercel.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Production to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify deployment health
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 10
+
+          # Check status endpoint
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://operations-center.vercel.app/status)
+
+          if [ "$STATUS_CODE" != "200" ]; then
+            echo "Deployment health check failed with status code: $STATUS_CODE"
+            exit 1
+          fi
+
+          echo "Deployment health check passed"

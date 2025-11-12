@@ -1,0 +1,144 @@
+name: Python Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'libs/shared-utils/**'
+      - '.github/workflows/python-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'libs/shared-utils/**'
+      - '.github/workflows/python-ci.yml'
+
+jobs:
+  lint-and-format:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ruff
+        run: pipx install ruff
+
+      - name: Lint code with Ruff
+        working-directory: apps/backend/api
+        run: ruff check --output-format=github
+
+      - name: Check code formatting with Ruff
+        working-directory: apps/backend/api
+        run: ruff format --check
+
+  type-check:
+    name: Type Checking
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: apps/backend/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install mypy
+
+      - name: Run mypy
+        working-directory: apps/backend/api
+        run: python -m mypy .
+
+  test:
+    name: Test - Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: apps/backend/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run tests with coverage
+        working-directory: apps/backend/api
+        run: |
+          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Check coverage threshold
+        working-directory: apps/backend/api
+        run: |
+          COVERAGE=$(python -m pytest --cov=. --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "Coverage $COVERAGE% is below 80% threshold"
+            exit 1
+          fi
+          echo "Coverage $COVERAGE% meets threshold"
+
+  agent-complexity:
+    name: Agent Architecture Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify agent count and structure
+        working-directory: apps/backend/api
+        run: |
+          # Ensure agents directory exists and follows structure
+          if [ ! -d "agents" ]; then
+            echo "Error: agents/ directory not found"
+            exit 1
+          fi
+
+          # Count agent files (excluding __init__.py)
+          AGENT_COUNT=$(find agents -name "*.py" ! -name "__init__.py" | wc -l)
+          echo "Found $AGENT_COUNT agent files"
+
+          # Verify tools directory exists
+          if [ ! -d "tools" ]; then
+            echo "Error: tools/ directory not found"
+            exit 1
+          fi
+
+          echo "Agent architecture validation passed"
+
+      - name: Check endpoint count
+        working-directory: apps/backend/api
+        run: |
+          # Verify we maintain minimal API surface (5 endpoints)
+          ENDPOINT_COUNT=$(grep -r "@app\." main.py | grep -E "(post|get|put|delete)" | wc -l)
+          echo "Found $ENDPOINT_COUNT endpoints"
+          if [ "$ENDPOINT_COUNT" -gt 5 ]; then
+            echo "Warning: Endpoint count exceeds recommended limit of 5"
+          fi
