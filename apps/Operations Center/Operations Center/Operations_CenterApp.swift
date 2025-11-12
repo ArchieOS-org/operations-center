@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import OperationsCenterKit
 
 @main
 struct Operations_CenterApp: App {
+    @State private var appState = AppState()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(appState)
         }
     }
 }
