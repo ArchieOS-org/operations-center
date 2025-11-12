@@ -1,0 +1,5 @@
+# Use union merge strategy for project files to prevent conflicts
+*.pbxproj merge=union
+
+# Treat pbxproj as generated file for diff purposes
+*.pbxproj linguist-generated=true
