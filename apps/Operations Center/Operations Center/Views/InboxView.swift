@@ -29,34 +29,9 @@ struct InboxView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16) {
-                        // Stray Tasks Section
-                        if !store.strayTasks.isEmpty {
-                            sectionHeader(title: "Stray Tasks", count: store.strayTasks.count)
-
-                            ForEach(store.strayTasks, id: \.task.id) { item in
-                                StrayTaskCard(
-                                    task: item.task,
-                                    messages: item.messages,
-                                    isExpanded: store.isExpanded(item.task.id),
-                                    onTap: {
-                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
-                                            store.toggleExpansion(for: item.task.id)
-                                        }
-                                    },
-                                    onClaim: {
-                                        Task { await store.claimStrayTask(item.task) }
-                                    },
-                                    onDelete: {
-                                        Task { await store.deleteStrayTask(item.task) }
-                                    }
-                                )
-                                .id(item.task.id)
-                            }
-                        }
-
                         // Listing Tasks Section
                         if !store.listingTasks.isEmpty {
-                            sectionHeader(title: "Listing Tasks", count: store.listingTasks.count)
+                            sectionHeader(title: "Listings", count: store.listingTasks.count)
 
                             ForEach(store.listingTasks, id: \.task.id) { item in
                                 ListingTaskCard(
@@ -76,6 +51,31 @@ struct InboxView: View {
                                     },
                                     onDelete: {
                                         Task { await store.deleteListingTask(item.task) }
+                                    }
+                                )
+                                .id(item.task.id)
+                            }
+                        }
+
+                        // Stray Tasks Section
+                        if !store.strayTasks.isEmpty {
+                            sectionHeader(title: "Stray Tasks", count: store.strayTasks.count)
+
+                            ForEach(store.strayTasks, id: \.task.id) { item in
+                                StrayTaskCard(
+                                    task: item.task,
+                                    messages: item.messages,
+                                    isExpanded: store.isExpanded(item.task.id),
+                                    onTap: {
+                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
+                                            store.toggleExpansion(for: item.task.id)
+                                        }
+                                    },
+                                    onClaim: {
+                                        Task { await store.claimStrayTask(item.task) }
+                                    },
+                                    onDelete: {
+                                        Task { await store.deleteStrayTask(item.task) }
                                     }
                                 )
                                 .id(item.task.id)
