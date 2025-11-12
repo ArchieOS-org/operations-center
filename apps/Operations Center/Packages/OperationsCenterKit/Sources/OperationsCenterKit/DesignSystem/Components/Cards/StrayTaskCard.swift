@@ -41,9 +41,7 @@ public struct StrayTaskCard: View {
 
     public var body: some View {
         CardBase(
-            accentColor: Colors.strayAccent,
-            backgroundColor: Colors.strayCardBackground,
-            hasBorder: false,
+            tintColor: Colors.strayCardTint,
             isExpanded: isExpanded,
             onTap: onTap
         ) {
@@ -52,18 +50,28 @@ public struct StrayTaskCard: View {
                 CardHeader(
                     title: task.name,
                     subtitle: nil,
-                    chips: buildChips()
+                    chips: buildChips(),
+                    dueDate: task.dueDate,
+                    isExpanded: isExpanded
                 )
 
                 // Slack messages (when expanded)
                 if isExpanded {
                     SlackMessagesSection(messages: messages)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .top)),
+                            removal: .opacity
+                        ))
 
                     // Toolbar
                     StrayTaskToolbar(
                         onClaim: onClaim,
                         onDelete: onDelete
                     )
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity
+                    ))
                 }
             }
         }
@@ -77,11 +85,6 @@ public struct StrayTaskCard: View {
         // Assigned agent chip
         if let staffId = task.assignedStaffId {
             chips.append(.agent(name: staffId, style: .stray))
-        }
-
-        // Due date chip
-        if let dueDate = task.dueDate {
-            chips.append(.dueDate(dueDate))
         }
 
         // Category chip

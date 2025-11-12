@@ -8,38 +8,59 @@
 
 import SwiftUI
 
-/// Card header displaying title, subtitle, and metadata chips
+/// Card header displaying title, subtitle, metadata chips, and due date
 struct CardHeader: View {
     // MARK: - Properties
 
     let title: String
     let subtitle: String?
     let chips: [ChipData]
+    let dueDate: Date?
+    let isExpanded: Bool
 
     // MARK: - Initialization
 
-    init(title: String, subtitle: String? = nil, chips: [ChipData]) {
+    init(
+        title: String,
+        subtitle: String? = nil,
+        chips: [ChipData],
+        dueDate: Date? = nil,
+        isExpanded: Bool = false
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.chips = chips
+        self.dueDate = dueDate
+        self.isExpanded = isExpanded
     }
 
     // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Title
-            Text(title)
-                .font(Typography.cardTitle)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
+            // Title and date
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(Typography.cardTitle)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
 
-            // Subtitle (if present)
-            if let subtitle {
-                Text(subtitle)
-                    .font(Typography.cardSubtitle)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    // Subtitle (if present)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(Typography.cardSubtitle)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                // Due date (right side, format changes with state)
+                if let dueDate {
+                    dueDateView(for: dueDate)
+                }
             }
 
             // Chips
@@ -55,6 +76,23 @@ struct CardHeader: View {
     }
 
     // MARK: - Helper Methods
+
+    @ViewBuilder
+    private func dueDateView(for date: Date) -> some View {
+        ZStack(alignment: .trailing) {
+            // Collapsed format: "MM-dd"
+            Text(date, format: .dateTime.month(.twoDigits).day(.twoDigits))
+                .font(Typography.chipLabel)
+                .foregroundStyle(.tertiary)
+                .opacity(isExpanded ? 0 : 1)
+
+            // Expanded format: "Month dd, yyyy"
+            Text(date, format: .dateTime.month(.wide).day().year())
+                .font(Typography.cardSubtitle)
+                .foregroundStyle(.secondary)
+                .opacity(isExpanded ? 1 : 0)
+        }
+    }
 
     @ViewBuilder
     private func chipView(for chip: ChipData) -> some View {

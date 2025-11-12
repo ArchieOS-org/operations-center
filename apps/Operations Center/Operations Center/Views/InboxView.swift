@@ -39,7 +39,9 @@ struct InboxView: View {
                                     messages: item.messages,
                                     isExpanded: store.isExpanded(item.task.id),
                                     onTap: {
-                                        store.toggleExpansion(for: item.task.id)
+                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
+                                            store.toggleExpansion(for: item.task.id)
+                                        }
                                     },
                                     onClaim: {
                                         Task { await store.claimStrayTask(item.task) }
@@ -48,6 +50,7 @@ struct InboxView: View {
                                         Task { await store.deleteStrayTask(item.task) }
                                     }
                                 )
+                                .id(item.task.id)
                             }
                         }
 
@@ -61,7 +64,9 @@ struct InboxView: View {
                                     subtasks: item.subtasks,
                                     isExpanded: store.isExpanded(item.task.id),
                                     onTap: {
-                                        store.toggleExpansion(for: item.task.id)
+                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
+                                            store.toggleExpansion(for: item.task.id)
+                                        }
                                     },
                                     onSubtaskToggle: { subtask in
                                         Task { await store.toggleSubtask(subtask) }
@@ -73,6 +78,7 @@ struct InboxView: View {
                                         Task { await store.deleteListingTask(item.task) }
                                     }
                                 )
+                                .id(item.task.id)
                             }
                         }
                     }
