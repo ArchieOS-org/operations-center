@@ -16,10 +16,22 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
-    SUPABASE_SERVICE_KEY: str
+    SUPABASE_SERVICE_KEY: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
 
     # Authentication
-    JWT_SECRET: str
+    JWT_SECRET: str | None = None
+    SUPABASE_JWT_SECRET: str | None = None
+
+    @property
+    def supabase_service_key(self) -> str:
+        """Return service key from either env var name"""
+        return self.SUPABASE_SERVICE_KEY or self.SUPABASE_SERVICE_ROLE_KEY
+
+    @property
+    def jwt_secret(self) -> str:
+        """Return JWT secret from either env var name"""
+        return self.JWT_SECRET or self.SUPABASE_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
     ENABLE_DEBUG_AUTH: bool = False
 

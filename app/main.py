@@ -161,6 +161,16 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
     return {"ok": False, "error": "unknown_event_type"}
 
 
+@app.post("/api/slack_webhook")
+async def slack_webhook_legacy(payload: SlackWebhookPayload, request: Request):
+    """
+    Legacy Slack webhook endpoint for backward compatibility.
+    Redirects to the canonical /webhooks/slack endpoint.
+    """
+    logger.info("📎 Legacy webhook URL called - redirecting to /webhooks/slack")
+    return await slack_webhook(payload, request)
+
+
 @app.post("/webhooks/sms")
 async def sms_webhook(request: Request):
     """
