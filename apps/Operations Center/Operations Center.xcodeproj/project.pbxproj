@@ -11,6 +11,8 @@
 		0A911CB42EC4333200E23DA7 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 0A911CB32EC4333200E23DA7 /* PostgREST */; };
 		0A911CB62EC4333200E23DA7 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 0A911CB52EC4333200E23DA7 /* Realtime */; };
 		0A911CC02EC4363100E23DA7 /* OperationsCenterKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0A911CBF2EC4363100E23DA7 /* OperationsCenterKit */; };
+		0A911CD22EC4444400E23DA7 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 0A911CD12EC4444400E23DA7 /* Dependencies */; };
+		0A911CD32EC4444500E23DA7 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 0A911CD42EC4444500E23DA7 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +65,8 @@
 				0A911CB62EC4333200E23DA7 /* Realtime in Frameworks */,
 				0A911CB42EC4333200E23DA7 /* PostgREST in Frameworks */,
 				0A911CB22EC4333200E23DA7 /* Auth in Frameworks */,
+				0A911CD22EC4444400E23DA7 /* Dependencies in Frameworks */,
+				0A911CD32EC4444500E23DA7 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,6 +217,7 @@
 			packageReferences = (
 				0A911CB02EC4333200E23DA7 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				0A911CBE2EC4363100E23DA7 /* XCLocalSwiftPackageReference "Packages/OperationsCenterKit" */,
+				0A911CD02EC4444400E23DA7 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0A911C872EC4311900E23DA7 /* Products */;
@@ -671,6 +676,14 @@
 				minimumVersion = 2.5.1;
 			};
 		};
+		0A911CD02EC4444400E23DA7 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -692,6 +705,16 @@
 		0A911CBF2EC4363100E23DA7 /* OperationsCenterKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OperationsCenterKit;
+		};
+		0A911CD12EC4444400E23DA7 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A911CD02EC4444400E23DA7 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+		0A911CD42EC4444500E23DA7 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A911CB02EC4333200E23DA7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

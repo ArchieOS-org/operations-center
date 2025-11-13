@@ -218,8 +218,10 @@ struct TaskMockData {
                 dueDate: now.addingTimeInterval(7 * 24 * 3600),
                 progress: 0.0,
                 type: "RESIDENTIAL",
+                notes: "New listing - needs initial walkthrough and assessment",
                 createdAt: now.addingTimeInterval(-2 * 24 * 3600),
                 updatedAt: now.addingTimeInterval(-2 * 24 * 3600),
+                completedAt: nil,
                 deletedAt: nil
             ),
             "listing-002": Listing(
@@ -231,8 +233,10 @@ struct TaskMockData {
                 dueDate: now.addingTimeInterval(2 * 24 * 3600),
                 progress: 35.0,
                 type: "COMMERCIAL",
+                notes: "Marketing campaign underway. Waiting on professional photos from last week's shoot.",
                 createdAt: now.addingTimeInterval(-1 * 24 * 3600),
                 updatedAt: now.addingTimeInterval(-1 * 24 * 3600),
+                completedAt: nil,
                 deletedAt: nil
             ),
             "listing-003": Listing(
@@ -244,8 +248,10 @@ struct TaskMockData {
                 dueDate: now.addingTimeInterval(-1 * 24 * 3600),
                 progress: 80.0,
                 type: "RESIDENTIAL",
+                notes: "Inspection items need addressing before closing. Window pane and HVAC repairs pending.",
                 createdAt: now.addingTimeInterval(-4 * 24 * 3600),
                 updatedAt: now.addingTimeInterval(-4 * 24 * 3600),
+                completedAt: nil,
                 deletedAt: nil
             ),
             "listing-004": Listing(
@@ -257,8 +263,10 @@ struct TaskMockData {
                 dueDate: now.addingTimeInterval(10 * 24 * 3600),
                 progress: 10.0,
                 type: "LUXURY",
+                notes: "High-end property. Photographer booked for next week. Need to coordinate with homeowner.",
                 createdAt: now.addingTimeInterval(-3 * 24 * 3600),
                 updatedAt: now.addingTimeInterval(-3 * 24 * 3600),
+                completedAt: nil,
                 deletedAt: nil
             )
         ]

@@ -164,8 +164,10 @@ public struct ListingTaskCard: View {
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 0.0,
         type: "RESIDENTIAL",
+        notes: "",
         createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        completedAt: nil,
         deletedAt: nil
     )
 
@@ -214,8 +216,10 @@ public struct ListingTaskCard: View {
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 50.0,
         type: "LUXURY",
+        notes: "",
         createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        completedAt: nil,
         deletedAt: nil
     )
 
