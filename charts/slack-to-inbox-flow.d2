@@ -1,0 +1,347 @@
+direction: right
+
+title: Slack Message to Inbox Flow - ACTUAL IMPLEMENTATION
+
+# External trigger
+slack_api: "Slack Events API\nPOST" {
+  shape: oval
+  style.fill: "#FF9900"
+  style.stroke: "#CC7700"
+}
+
+# Webhook Handler
+webhook_handler: "WEBHOOK HANDLER" {
+  style.fill: "#E3F2FD"
+  style.stroke: "#2196F3"
+
+  entry: "main.py::slack_webhook()\nLines 122-161" {
+    shape: rectangle
+  }
+
+  check: "payload.type?" {
+    shape: diamond
+  }
+
+  verify: "Return challenge" {
+    shape: rectangle
+  }
+
+  process: "Call\nprocess_slack_message()" {
+    shape: rectangle
+  }
+
+  response: "Return 200 OK\nimmediately" {
+    shape: rectangle
+  }
+}
+
+# Slack Intake Workflow
+slack_intake: "SLACK INTAKE WORKFLOW\nworkflows/slack_intake.py" {
+  style.fill: "#E8F5E9"
+  style.stroke: "#4CAF50"
+
+  validate: "validate_slack_event()\nFilter bots\nCheck required fields" {
+    shape: rectangle
+  }
+
+  valid_check: "Is valid?" {
+    shape: diamond
+  }
+
+  classify: "classify_message()\n→ agents/classifier.py\n→ MessageClassifier.classify()\nOpenAI GPT-4o-mini" {
+    shape: rectangle
+  }
+
+  store: "store_in_database()\nINSERT INTO slack_messages\nGenerate ULID\nStore classification JSONB" {
+    shape: rectangle
+  }
+
+  create: "create_entities_node()\n→ workflows/entity_creation.py" {
+    shape: rectangle
+  }
+
+  route: "route_to_agent()\nget_agent('orchestrator')" {
+    shape: rectangle
+  }
+
+  prepare: "prepare_response()\nGenerate response string" {
+    shape: rectangle
+  }
+
+  error: "Return error" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+}
+
+# Entity Creation
+entity_creation: "ENTITY CREATION\nworkflows/entity_creation.py::create_entities_from_classification()" {
+  style.fill: "#FFF9C4"
+  style.stroke: "#FBC02D"
+
+  decision: "classification.message_type?" {
+    shape: diamond
+  }
+
+  resolve: "resolve_assignee_from_hint()\nFuzzy match realtors" {
+    shape: rectangle
+  }
+
+  listing: "Create listing\nINSERT INTO listings\nstatus='new'" {
+    shape: rectangle
+    style.fill: "#FFFFCC"
+  }
+
+  info_bug: "⚠️ BUG\nCreate stray_task\nstatus='NEEDS_INFO'\nDATABASE REJECTS" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+    style.stroke: "#FF0000"
+    style.stroke-width: 3
+  }
+
+  stray_bug: "⚠️ BUG\nCreate stray_task\nnotes=[] field doesn't exist\nDATABASE REJECTS" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+    style.stroke: "#FF0000"
+    style.stroke-width: 3
+  }
+
+  skip: "Update slack_messages\nprocessing_status='skipped'" {
+    shape: rectangle
+  }
+
+  update_listing: "Update slack_messages\ncreated_listing_id" {
+    shape: rectangle
+  }
+
+  update_task1: "Update slack_messages\ncreated_task_id" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+
+  update_task2: "Update slack_messages\ncreated_task_id" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+}
+
+# Orchestrator
+orchestrator: "AGENT ORCHESTRATION\nagents/orchestrator.py" {
+  style.fill: "#FCE4EC"
+  style.stroke: "#E91E63"
+
+  broken: "⚠️ BROKEN\nOrchestratorAgent\nNOT REGISTERED\nin agents/__init__.py" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+    style.stroke: "#FF0000"
+    style.stroke-width: 3
+  }
+
+  get_none: "get_agent('orchestrator')\nReturns None" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+
+  placeholder: "Return placeholder:\n'Agent processing\nnot yet available'" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+}
+
+# Dead End
+dead_end: "⚠️ NO IMPLEMENTATION" {
+  style.fill: "#FFCCCC"
+  style.stroke: "#FF0000"
+
+  generated: "Response string generated\nNEVER SENT TO SLACK" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+    style.stroke: "#FF0000"
+    style.stroke-width: 3
+  }
+
+  commented: "Background task\ncommented out" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+  }
+}
+
+# Frontend
+frontend: "FRONTEND DISPLAY" {
+  style.fill: "#E1F5FE"
+  style.stroke: "#03A9F4"
+
+  open: "User opens inbox" {
+    shape: oval
+  }
+
+  store: "Stores/InboxStore.swift\n::fetchTasks()" {
+    shape: rectangle
+  }
+
+  fetch_stray: "repository.fetchStrayTasks()" {
+    shape: rectangle
+  }
+
+  fetch_listing: "repository.fetchListingTasks()" {
+    shape: rectangle
+  }
+
+  combine: "Combine results" {
+    shape: rectangle
+  }
+}
+
+# Repository
+repository: "REPOSITORY\nShared/Repositories/SupabaseTaskRepository.swift" {
+  style.fill: "#F3E5F5"
+  style.stroke: "#9C27B0"
+
+  stray_query: "fetchStrayTasks()\nSELECT * FROM stray_tasks\nORDER BY priority, created_at" {
+    shape: rectangle
+  }
+
+  listing_query: "fetchListingTasks()\nSELECT listing_tasks.*, listings.*\nFROM listing_tasks JOIN listings\nORDER BY priority, created_at" {
+    shape: rectangle
+  }
+
+  no_context: "⚠️ NO SLACK MESSAGE CONTEXT\nMessages array always empty" {
+    shape: rectangle
+    style.fill: "#FFCCCC"
+    style.stroke: "#FF0000"
+    style.stroke-width: 3
+  }
+}
+
+# Display
+display: "Display in InboxView" {
+  shape: rectangle
+  style.fill: "#E1F5FE"
+  style.stroke: "#03A9F4"
+}
+
+# Database
+database: "SUPABASE TABLES" {
+  style.fill: "#E8EAF6"
+  style.stroke: "#3F51B5"
+
+  slack_messages: "slack_messages" {
+    shape: cylinder
+  }
+
+  listings: "listings" {
+    shape: cylinder
+  }
+
+  stray_tasks: "stray_tasks" {
+    shape: cylinder
+  }
+
+  listing_tasks: "listing_tasks" {
+    shape: cylinder
+  }
+}
+
+# Main flow connections
+slack_api -> webhook_handler.entry
+webhook_handler.entry -> webhook_handler.check
+webhook_handler.check -> webhook_handler.verify: "url_verification"
+webhook_handler.check -> webhook_handler.process: "event_callback"
+webhook_handler.process -> webhook_handler.response
+webhook_handler.verify -> dead_end.generated: "Never sent"
+
+webhook_handler.process -> slack_intake.validate
+slack_intake.validate -> slack_intake.valid_check
+slack_intake.valid_check -> slack_intake.error: "Invalid" {
+  style.stroke: "#FF0000"
+  style.stroke-dash: 5
+}
+slack_intake.valid_check -> slack_intake.classify: "Valid"
+slack_intake.classify -> slack_intake.store
+slack_intake.store -> slack_intake.create
+
+# Entity creation flow
+slack_intake.create -> entity_creation.decision
+entity_creation.decision -> entity_creation.skip: "IGNORE"
+entity_creation.decision -> entity_creation.resolve: "GROUP"
+entity_creation.decision -> entity_creation.resolve: "STRAY"
+entity_creation.decision -> entity_creation.resolve: "INFO_REQUEST"
+
+entity_creation.resolve -> entity_creation.listing: "GROUP path"
+entity_creation.listing -> entity_creation.update_listing
+
+entity_creation.resolve -> entity_creation.info_bug: "INFO_REQUEST path"
+entity_creation.info_bug -> entity_creation.update_task1: "FAILS" {
+  style.stroke: "#FF0000"
+  style.stroke-dash: 5
+}
+
+entity_creation.resolve -> entity_creation.stray_bug: "STRAY path"
+entity_creation.stray_bug -> entity_creation.update_task2: "FAILS" {
+  style.stroke: "#FF0000"
+  style.stroke-dash: 5
+}
+
+entity_creation.skip -> slack_intake.route
+entity_creation.update_listing -> slack_intake.route
+entity_creation.update_task1 -> slack_intake.route
+entity_creation.update_task2 -> slack_intake.route
+
+# Orchestrator flow
+slack_intake.route -> orchestrator.broken
+orchestrator.broken -> orchestrator.get_none: "Never registered" {
+  style.stroke: "#FF0000"
+  style.stroke-dash: 5
+}
+orchestrator.get_none -> orchestrator.placeholder
+orchestrator.placeholder -> slack_intake.prepare
+
+# Dead end
+slack_intake.prepare -> dead_end.generated
+dead_end.generated -> dead_end.commented: "Never implemented" {
+  style.stroke: "#FF0000"
+  style.stroke-dash: 5
+}
+
+# Frontend flow
+frontend.open -> frontend.store
+frontend.store -> frontend.fetch_stray
+frontend.store -> frontend.fetch_listing
+frontend.fetch_stray -> frontend.combine
+frontend.fetch_listing -> frontend.combine
+
+# Repository flow
+frontend.fetch_stray -> repository.stray_query
+frontend.fetch_listing -> repository.listing_query
+repository.stray_query -> repository.no_context
+repository.listing_query -> repository.no_context
+repository.no_context -> frontend.combine
+frontend.combine -> display
+
+# Database connections
+slack_intake.store -> database.slack_messages: "WRITES" {
+  style.stroke: "#4CAF50"
+  style.stroke-width: 2
+}
+entity_creation.listing -> database.listings: "WRITES" {
+  style.stroke: "#FBC02D"
+  style.stroke-width: 2
+}
+entity_creation.info_bug -> database.stray_tasks: "FAILS TO WRITE" {
+  style.stroke: "#FF0000"
+  style.stroke-width: 3
+  style.stroke-dash: 5
+}
+entity_creation.stray_bug -> database.stray_tasks: "FAILS TO WRITE" {
+  style.stroke: "#FF0000"
+  style.stroke-width: 3
+  style.stroke-dash: 5
+}
+repository.stray_query -> database.stray_tasks: "READS" {
+  style.stroke: "#9C27B0"
+  style.stroke-width: 2
+}
+repository.listing_query -> database.listing_tasks: "READS" {
+  style.stroke: "#9C27B0"
+  style.stroke-width: 2
+}
