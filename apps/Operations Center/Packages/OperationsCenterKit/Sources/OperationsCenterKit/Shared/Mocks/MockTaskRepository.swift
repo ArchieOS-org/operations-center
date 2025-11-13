@@ -15,6 +15,7 @@ public final class MockTaskRepository: TaskRepository, @unchecked Sendable {
 
     private var strayTasks: [StrayTask]
     private var listingTasks: [ListingTask]
+    private var listings: [String: Listing] // listingId -> Listing
     private var slackMessages: [String: [SlackMessage]] // taskId -> messages
     private var subtasks: [String: [Subtask]] // taskId -> subtasks
 
@@ -30,6 +31,7 @@ public final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         let mockData = TaskMockData()
         self.strayTasks = mockData.strayTasks
         self.listingTasks = mockData.listingTasks
+        self.listings = mockData.listings
         self.slackMessages = mockData.slackMessages
         self.subtasks = mockData.subtasks
     }
@@ -54,12 +56,16 @@ public final class MockTaskRepository: TaskRepository, @unchecked Sendable {
             }
     }
 
-    public func fetchListingTasks() async throws -> [(task: ListingTask, subtasks: [Subtask])] {
+    public func fetchListingTasks() async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])] {
         return listingTasks
             .filter { $0.deletedAt == nil }
-            .map { task in
+            .compactMap { task in
+                guard let listing = listings[task.listingId] else {
+                    print("⚠️ Warning: No listing found for task \(task.id) with listingId \(task.listingId)")
+                    return nil
+                }
                 let taskSubtasks = subtasks[task.id] ?? []
-                return (task: task, subtasks: taskSubtasks)
+                return (task: task, listing: listing, subtasks: taskSubtasks)
             }
     }
 

@@ -12,6 +12,7 @@ import Foundation
 struct TaskMockData {
     let strayTasks: [StrayTask]
     let listingTasks: [ListingTask]
+    let listings: [String: Listing] // listingId -> Listing
     let slackMessages: [String: [SlackMessage]]
     let subtasks: [String: [Subtask]]
 
@@ -203,6 +204,63 @@ struct TaskMockData {
         )
 
         listingTasks = [listingTask1, listingTask2, listingTask3, listingTask4]
+
+        // MARK: - Listings (property data)
+
+        listings = [
+            "listing-001": Listing(
+                id: "listing-001",
+                addressString: "123 Maple Street",
+                status: "new",
+                assignee: nil,
+                agentId: "realtor-001",
+                dueDate: now.addingTimeInterval(7 * 24 * 3600),
+                progress: 0.0,
+                type: "RESIDENTIAL",
+                createdAt: now.addingTimeInterval(-2 * 24 * 3600),
+                updatedAt: now.addingTimeInterval(-2 * 24 * 3600),
+                deletedAt: nil
+            ),
+            "listing-002": Listing(
+                id: "listing-002",
+                addressString: "456 Oak Avenue",
+                status: "in_progress",
+                assignee: nil,
+                agentId: "realtor-002",
+                dueDate: now.addingTimeInterval(2 * 24 * 3600),
+                progress: 35.0,
+                type: "COMMERCIAL",
+                createdAt: now.addingTimeInterval(-1 * 24 * 3600),
+                updatedAt: now.addingTimeInterval(-1 * 24 * 3600),
+                deletedAt: nil
+            ),
+            "listing-003": Listing(
+                id: "listing-003",
+                addressString: "789 Pine Road",
+                status: "in_progress",
+                assignee: nil,
+                agentId: "realtor-001",
+                dueDate: now.addingTimeInterval(-1 * 24 * 3600),
+                progress: 80.0,
+                type: "RESIDENTIAL",
+                createdAt: now.addingTimeInterval(-4 * 24 * 3600),
+                updatedAt: now.addingTimeInterval(-4 * 24 * 3600),
+                deletedAt: nil
+            ),
+            "listing-004": Listing(
+                id: "listing-004",
+                addressString: "321 Elm Court",
+                status: "new",
+                assignee: nil,
+                agentId: "realtor-003",
+                dueDate: now.addingTimeInterval(10 * 24 * 3600),
+                progress: 10.0,
+                type: "LUXURY",
+                createdAt: now.addingTimeInterval(-3 * 24 * 3600),
+                updatedAt: now.addingTimeInterval(-3 * 24 * 3600),
+                deletedAt: nil
+            )
+        ]
 
         // MARK: - Slack Messages
 

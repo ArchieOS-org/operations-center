@@ -36,6 +36,7 @@ struct InboxView: View {
                             ForEach(store.listingTasks, id: \.task.id) { item in
                                 ListingTaskCard(
                                     task: item.task,
+                                    listing: item.listing,
                                     subtasks: item.subtasks,
                                     isExpanded: store.isExpanded(item.task.id),
                                     onTap: {

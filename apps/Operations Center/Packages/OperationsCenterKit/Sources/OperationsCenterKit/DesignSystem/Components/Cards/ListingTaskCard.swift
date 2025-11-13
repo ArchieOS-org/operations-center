@@ -13,6 +13,7 @@ public struct ListingTaskCard: View {
     // MARK: - Properties
 
     let task: ListingTask
+    let listing: Listing
     let subtasks: [Subtask]
     let isExpanded: Bool
     let onTap: () -> Void
@@ -24,6 +25,7 @@ public struct ListingTaskCard: View {
 
     public init(
         task: ListingTask,
+        listing: Listing,
         subtasks: [Subtask],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
@@ -32,6 +34,7 @@ public struct ListingTaskCard: View {
         onDelete: @escaping () -> Void
     ) {
         self.task = task
+        self.listing = listing
         self.subtasks = subtasks
         self.isExpanded = isExpanded
         self.onTap = onTap
@@ -51,8 +54,8 @@ public struct ListingTaskCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 // Header
                 CardHeader(
-                    title: task.name,
-                    subtitle: propertyAddress,
+                    title: listing.addressString,
+                    subtitle: task.assignedStaffId ?? "Unassigned",
                     chips: buildChips(),
                     dueDate: task.dueDate,
                     isExpanded: isExpanded
@@ -80,14 +83,6 @@ public struct ListingTaskCard: View {
         }
     }
 
-    // MARK: - Computed Properties
-
-    private var propertyAddress: String? {
-        // In production, this would fetch the actual property address from listingId
-        // For now, return a placeholder that makes sense in context
-        return "Property \(task.listingId)"
-    }
-
     // MARK: - Helper Methods
 
     private func buildChips() -> [ChipData] {
@@ -96,6 +91,14 @@ public struct ListingTaskCard: View {
         // Assigned agent chip
         if let staffId = task.assignedStaffId {
             chips.append(.agent(name: staffId, style: .listing))
+        }
+
+        // Listing type chip (if present)
+        if let listingType = listing.type {
+            chips.append(.custom(
+                text: listingType,
+                color: .blue
+            ))
         }
 
         // Category chip
@@ -152,8 +155,23 @@ public struct ListingTaskCard: View {
         outputs: nil
     )
 
+    let listing = Listing(
+        id: "listing-001",
+        addressString: "123 Maple Street",
+        status: "new",
+        assignee: nil,
+        agentId: "realtor-1",
+        dueDate: Date().addingTimeInterval(7 * 24 * 3600),
+        progress: 0.0,
+        type: "RESIDENTIAL",
+        createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        deletedAt: nil
+    )
+
     ListingTaskCard(
         task: task,
+        listing: listing,
         subtasks: [],
         isExpanded: false,
         onTap: {},
@@ -185,6 +203,20 @@ public struct ListingTaskCard: View {
         deletedBy: nil,
         inputs: nil,
         outputs: nil
+    )
+
+    let listing = Listing(
+        id: "listing-001",
+        addressString: "123 Maple Street",
+        status: "in_progress",
+        assignee: nil,
+        agentId: "realtor-1",
+        dueDate: Date().addingTimeInterval(7 * 24 * 3600),
+        progress: 50.0,
+        type: "LUXURY",
+        createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        deletedAt: nil
     )
 
     let subtasks = [
@@ -222,6 +254,7 @@ public struct ListingTaskCard: View {
 
     ListingTaskCard(
         task: task,
+        listing: listing,
         subtasks: subtasks,
         isExpanded: true,
         onTap: {},
