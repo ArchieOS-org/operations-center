@@ -5,7 +5,7 @@ Source: /supabase/supabase-py and /fastapi/fastapi docs
 """
 from supabase import create_client, Client
 from functools import lru_cache
-from ..config.settings import get_settings
+from config.settings import get_settings
 
 
 @lru_cache()

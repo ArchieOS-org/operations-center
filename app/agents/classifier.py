@@ -13,7 +13,7 @@ import os
 from typing import Optional
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
-from ..schemas.classification import ClassificationV1
+from schemas.classification import ClassificationV1
 
 
 # Classification instructions (same as TypeScript version)

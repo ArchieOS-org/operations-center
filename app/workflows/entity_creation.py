@@ -15,8 +15,8 @@ from datetime import datetime
 import logging
 from uuid import uuid4
 
-from ..database.supabase_client import get_supabase
-from ..schemas.classification import ClassificationV1, MessageType, TaskKey
+from database.supabase_client import get_supabase
+from schemas.classification import ClassificationV1, MessageType, TaskKey
 
 logger = logging.getLogger(__name__)
 
