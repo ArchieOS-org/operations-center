@@ -116,6 +116,14 @@ class MessageClassifier:
     - Middleware support for future enhancements
     """
 
+    @property
+    def name(self) -> str:
+        return "classifier"
+
+    @property
+    def description(self) -> str:
+        return "Classifies messages and extracts structured data"
+
     def __init__(self, model_name: str = None, temperature: float = 0):
         """
         Initialize the classifier
@@ -144,6 +152,25 @@ class MessageClassifier:
             response_format=ClassificationV1,  # Pydantic model for validation
             system_prompt=CLASSIFICATION_INSTRUCTIONS
         )
+
+    async def process(self, input_data: dict) -> dict:
+        """
+        Process input through classifier agent (BaseAgent interface)
+
+        Args:
+            input_data: Dict with 'message' and optional 'metadata'
+
+        Returns:
+            Classification result as dict
+        """
+        message = input_data.get("message", "")
+        metadata = input_data.get("metadata", {})
+        message_timestamp = metadata.get("ts")
+
+        classification = self.classify(message, message_timestamp)
+
+        # Return as dict for workflow compatibility
+        return classification.model_dump()
 
     def classify(
         self,
