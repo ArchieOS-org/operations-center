@@ -5,17 +5,15 @@ These tools allow agents to read from and write to the database.
 All CRUD operations go through these tools.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from langchain.tools import tool
-from ..database.supabase_client import get_supabase
-from .. import register_tool
+from database.supabase_client import get_supabase
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 @tool
-@register_tool("store_classification")
 async def store_classification(
     message_id: str,
     classification: Dict[str, Any],

@@ -40,16 +40,20 @@ public enum Colors {
 
     // MARK: - Card Backgrounds
 
-    /// Background for stray task cards
-    public static let strayCardBackground = Color.white
+    /// Background for all cards - uses system color for automatic dark mode
+    public static let cardSystemBackground: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .secondarySystemBackground)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
+    }()
 
-    /// Background for listing task cards (subtle gray tint)
-    public static let listingCardBackground = Color(white: 0.98)
+    /// Subtle tint overlay for stray task cards (imperceptible but effective)
+    public static let strayCardTint = Color.orange.opacity(0.03)
 
-    // MARK: - Borders
-
-    /// Card border color
-    public static let cardBorder = Color.gray.opacity(0.15)
+    /// Subtle tint overlay for listing task cards (imperceptible but effective)
+    public static let listingCardTint = Color.blue.opacity(0.02)
 
     // MARK: - Actions
 

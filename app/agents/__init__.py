@@ -7,6 +7,7 @@ Each agent is a specialist with a single, well-defined purpose.
 
 from typing import Dict, Type, Optional
 from abc import ABC, abstractmethod
+from .classifier import MessageClassifier
 
 
 class BaseAgent(ABC):
@@ -28,10 +29,6 @@ class BaseAgent(ABC):
     def description(self) -> str:
         """What this agent does"""
         pass
-
-
-# Import all agents (will be added as we create them)
-from .classifier import MessageClassifier
 
 # Agent Registry - Single source of truth for all agents
 AGENT_REGISTRY: Dict[str, Type[BaseAgent]] = {

@@ -17,8 +17,15 @@ private enum SupabaseClientKey: DependencyKey {
             supabaseURL: AppConfig.supabaseURL,
             supabaseKey: AppConfig.supabaseAnonKey,
             options: SupabaseClientOptions(
+                db: .init(
+                    schema: "public"
+                ),
                 auth: .init(
-                    flowType: .pkce
+                    flowType: .pkce,
+                    emitLocalSessionAsInitialSession: true
+                ),
+                global: .init(
+                    headers: ["x-client-info": "operations-center-ios/1.0.0"]
                 )
             )
         )

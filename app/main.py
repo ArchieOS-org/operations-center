@@ -24,7 +24,7 @@ import asyncio
 from datetime import datetime
 
 # Import our intelligence layer
-from webhooks import slack, sms
+# from webhooks import slack, sms  # TODO: Implement webhook modules
 from workflows.slack_intake import process_slack_message
 from agents import get_agent, list_agents
 
@@ -188,7 +188,7 @@ async def classify_stream(req: ClassifyRequest):
             # Get classifier agent
             classifier = get_agent("classifier")
             if not classifier:
-                yield f"data: {{'error': 'Classifier not available'}}\n\n"
+                yield "data: {'error': 'Classifier not available'}\n\n"
                 return
 
             # For now, do synchronous classification
@@ -231,7 +231,7 @@ async def chat_stream(req: ChatRequest):
             # Get orchestrator
             orchestrator = get_agent("orchestrator")
             if not orchestrator:
-                yield f"data: {{'error': 'Orchestrator not available'}}\n\n"
+                yield "data: {'error': 'Orchestrator not available'}\n\n"
                 return
 
             # Process through orchestrator

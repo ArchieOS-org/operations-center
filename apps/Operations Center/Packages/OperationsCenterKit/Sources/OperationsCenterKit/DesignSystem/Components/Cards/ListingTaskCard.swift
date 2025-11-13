@@ -13,6 +13,7 @@ public struct ListingTaskCard: View {
     // MARK: - Properties
 
     let task: ListingTask
+    let listing: Listing
     let subtasks: [Subtask]
     let isExpanded: Bool
     let onTap: () -> Void
@@ -24,6 +25,7 @@ public struct ListingTaskCard: View {
 
     public init(
         task: ListingTask,
+        listing: Listing,
         subtasks: [Subtask],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
@@ -32,6 +34,7 @@ public struct ListingTaskCard: View {
         onDelete: @escaping () -> Void
     ) {
         self.task = task
+        self.listing = listing
         self.subtasks = subtasks
         self.isExpanded = isExpanded
         self.onTap = onTap
@@ -44,40 +47,40 @@ public struct ListingTaskCard: View {
 
     public var body: some View {
         CardBase(
-            accentColor: Colors.listingAccent,
-            backgroundColor: Colors.listingCardBackground,
-            hasBorder: true,
+            tintColor: Colors.listingCardTint,
             isExpanded: isExpanded,
             onTap: onTap
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 // Header
                 CardHeader(
-                    title: task.name,
-                    subtitle: propertyAddress,
-                    chips: buildChips()
+                    title: listing.addressString,
+                    subtitle: task.assignedStaffId ?? "Unassigned",
+                    chips: buildChips(),
+                    dueDate: task.dueDate,
+                    isExpanded: isExpanded
                 )
 
                 // Subtasks (when expanded)
                 if isExpanded {
                     SubtasksSection(subtasks: subtasks, onToggle: onSubtaskToggle)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .top)),
+                            removal: .opacity
+                        ))
 
                     // Toolbar
                     ListingTaskToolbar(
                         onClaim: onClaim,
                         onDelete: onDelete
                     )
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity
+                    ))
                 }
             }
         }
-    }
-
-    // MARK: - Computed Properties
-
-    private var propertyAddress: String? {
-        // In production, this would fetch the actual property address from listingId
-        // For now, return a placeholder that makes sense in context
-        return "Property \(task.listingId)"
     }
 
     // MARK: - Helper Methods
@@ -90,9 +93,12 @@ public struct ListingTaskCard: View {
             chips.append(.agent(name: staffId, style: .listing))
         }
 
-        // Due date chip
-        if let dueDate = task.dueDate {
-            chips.append(.dueDate(dueDate))
+        // Listing type chip (if present)
+        if let listingType = listing.type {
+            chips.append(.custom(
+                text: listingType,
+                color: .blue
+            ))
         }
 
         // Category chip
@@ -149,8 +155,23 @@ public struct ListingTaskCard: View {
         outputs: nil
     )
 
+    let listing = Listing(
+        id: "listing-001",
+        addressString: "123 Maple Street",
+        status: "new",
+        assignee: nil,
+        agentId: "realtor-1",
+        dueDate: Date().addingTimeInterval(7 * 24 * 3600),
+        progress: 0.0,
+        type: "RESIDENTIAL",
+        createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        deletedAt: nil
+    )
+
     ListingTaskCard(
         task: task,
+        listing: listing,
         subtasks: [],
         isExpanded: false,
         onTap: {},
@@ -182,6 +203,20 @@ public struct ListingTaskCard: View {
         deletedBy: nil,
         inputs: nil,
         outputs: nil
+    )
+
+    let listing = Listing(
+        id: "listing-001",
+        addressString: "123 Maple Street",
+        status: "in_progress",
+        assignee: nil,
+        agentId: "realtor-1",
+        dueDate: Date().addingTimeInterval(7 * 24 * 3600),
+        progress: 50.0,
+        type: "LUXURY",
+        createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
+        deletedAt: nil
     )
 
     let subtasks = [
@@ -219,6 +254,7 @@ public struct ListingTaskCard: View {
 
     ListingTaskCard(
         task: task,
+        listing: listing,
         subtasks: subtasks,
         isExpanded: true,
         onTap: {},

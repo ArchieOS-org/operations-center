@@ -4,14 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/backend/**'
-      - 'libs/shared-utils/**'
+      - 'api/**'
+      - 'app/**'
+      - 'requirements.txt'
       - '.github/workflows/python-ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'apps/backend/**'
-      - 'libs/shared-utils/**'
+      - 'api/**'
+      - 'app/**'
+      - 'requirements.txt'
       - '.github/workflows/python-ci.yml'
 
 jobs:
@@ -32,12 +34,10 @@ jobs:
         run: pipx install ruff
 
       - name: Lint code with Ruff
-        working-directory: apps/backend/api
-        run: ruff check --output-format=github
+        run: ruff check api app --output-format=github
 
       - name: Check code formatting with Ruff
-        working-directory: apps/backend/api
-        run: ruff format --check
+        run: ruff format api app --check
 
   type-check:
     name: Type Checking
@@ -54,15 +54,13 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        working-directory: apps/backend/api
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install mypy
 
       - name: Run mypy
-        working-directory: apps/backend/api
-        run: python -m mypy .
+        run: python -m mypy app
 
   test:
     name: Test - Python ${{ matrix.python-version }}
@@ -83,21 +81,18 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        working-directory: apps/backend/api
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio
 
       - name: Run tests with coverage
-        working-directory: apps/backend/api
         run: |
-          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing
+          python -m pytest app --cov=app --cov-report=xml --cov-report=term-missing
 
       - name: Check coverage threshold
-        working-directory: apps/backend/api
         run: |
-          COVERAGE=$(python -m pytest --cov=. --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+          COVERAGE=$(python -m pytest app --cov=app --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
           if [ "$COVERAGE" -lt 80 ]; then
             echo "Coverage $COVERAGE% is below 80% threshold"
             exit 1
@@ -113,31 +108,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify agent count and structure
-        working-directory: apps/backend/api
         run: |
           # Ensure agents directory exists and follows structure
-          if [ ! -d "agents" ]; then
-            echo "Error: agents/ directory not found"
+          if [ ! -d "app/agents" ]; then
+            echo "Error: app/agents/ directory not found"
             exit 1
           fi
 
           # Count agent files (excluding __init__.py)
-          AGENT_COUNT=$(find agents -name "*.py" ! -name "__init__.py" | wc -l)
+          AGENT_COUNT=$(find app/agents -name "*.py" ! -name "__init__.py" | wc -l)
           echo "Found $AGENT_COUNT agent files"
 
           # Verify tools directory exists
-          if [ ! -d "tools" ]; then
-            echo "Error: tools/ directory not found"
+          if [ ! -d "app/tools" ]; then
+            echo "Error: app/tools/ directory not found"
             exit 1
           fi
 
           echo "Agent architecture validation passed"
 
       - name: Check endpoint count
-        working-directory: apps/backend/api
         run: |
           # Verify we maintain minimal API surface (5 endpoints)
-          ENDPOINT_COUNT=$(grep -r "@app\." main.py | grep -E "(post|get|put|delete)" | wc -l)
+          ENDPOINT_COUNT=$(grep -r "@app\." app/main.py | grep -E "(post|get|put|delete)" | wc -l)
           echo "Found $ENDPOINT_COUNT endpoints"
           if [ "$ENDPOINT_COUNT" -gt 5 ]; then
             echo "Warning: Endpoint count exceeds recommended limit of 5"

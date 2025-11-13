@@ -70,13 +70,8 @@ struct ListingTaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.listingCardBackground)
+        .background(Colors.cardSystemBackground)
         .cornerRadius(CornerRadius.card)
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.card)
-                .strokeBorder(Colors.cardBorder, lineWidth: 1)
-        )
-        .shadow(color: Shadows.cardShadow, radius: 8, x: 0, y: 2)
 
         Divider()
 
@@ -116,13 +111,8 @@ struct ListingTaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.listingCardBackground)
+        .background(Colors.cardSystemBackground)
         .cornerRadius(CornerRadius.card)
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.card)
-                .strokeBorder(Colors.cardBorder, lineWidth: 1)
-        )
-        .shadow(color: Shadows.cardShadow, radius: 8, x: 0, y: 2)
     }
     .padding()
 }

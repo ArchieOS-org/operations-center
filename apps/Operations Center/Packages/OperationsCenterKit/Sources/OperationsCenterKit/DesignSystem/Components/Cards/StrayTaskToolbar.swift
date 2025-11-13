@@ -66,9 +66,8 @@ struct StrayTaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.strayCardBackground)
+        .background(Colors.cardSystemBackground)
         .cornerRadius(CornerRadius.card)
-        .shadow(color: Shadows.cardShadow, radius: 8, x: 0, y: 2)
 
         Divider()
 
@@ -87,9 +86,8 @@ struct StrayTaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.strayCardBackground)
+        .background(Colors.cardSystemBackground)
         .cornerRadius(CornerRadius.card)
-        .shadow(color: Shadows.cardShadow, radius: 8, x: 0, y: 2)
     }
     .padding()
 }
