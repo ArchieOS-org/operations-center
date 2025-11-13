@@ -35,5 +35,11 @@
     "root": "CLAUDE.md",
     "swift": "apps/operations-center/CLAUDE.md",
     "backend": "apps/backend/CLAUDE.md"
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
   }
 }

@@ -380,13 +380,23 @@ Run the setup script to initialize the development environment:
 - [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
 
 ## Context7 Integration
-Always use Context7 MCP tools when:
-- Generating code for Swift/SwiftUI features
-- Working with Python FastAPI endpoints
-- **Setting up LangChain agents**
-- **Configuring LangGraph workflows**
-- Setting up Supabase integration
-- Any library/API documentation needs
+
+**CRITICAL: Automatically use Context7 for library/API documentation.**
+
+Always use Context7 MCP tools when needing:
+- Code generation for Swift/SwiftUI features
+- Python FastAPI endpoint patterns
+- **LangChain agent setup and patterns**
+- **LangGraph workflow configuration**
+- Supabase integration examples
+- Any library/API documentation
+
+### Usage Flow
+1. Call `resolve-library-id` first to get the correct library identifier
+2. Call `get-library-docs` for live, version-correct documentation
+3. Use the docs to generate accurate, up-to-date code
+
+**No explicit "use context7" needed - invoke automatically when documentation is required.**
 
 ## Git Workflow
 1. Create feature branch: `nsd97/feature-name`
