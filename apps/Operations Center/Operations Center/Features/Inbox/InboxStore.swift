@@ -1,6 +1,6 @@
 //
 //  InboxStore.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  Store for inbox view - using repository pattern with @Observable
 //  Manages both stray and listing tasks with expansion state
@@ -8,17 +8,18 @@
 
 import Foundation
 import Observation
+import OperationsCenterKit
 
 @Observable
 @MainActor
-public final class InboxStore {
+final class InboxStore {
     // MARK: - State
 
-    public var strayTasks: [(task: StrayTask, messages: [SlackMessage])] = []
-    public var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
-    public var expandedTaskId: String? = nil
-    public var isLoading = false
-    public var errorMessage: String?
+    var strayTasks: [(task: StrayTask, messages: [SlackMessage])] = []
+    var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+    var expandedTaskId: String? = nil
+    var isLoading = false
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
@@ -26,13 +27,13 @@ public final class InboxStore {
 
     // MARK: - Initialization
 
-    public init(repository: TaskRepository) {
+    init(repository: TaskRepository) {
         self.repository = repository
     }
 
     // MARK: - Public Methods
 
-    public func fetchTasks() async {
+    func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
@@ -50,13 +51,13 @@ public final class InboxStore {
         isLoading = false
     }
 
-    public func refresh() async {
+    func refresh() async {
         await fetchTasks()
     }
 
     // MARK: - Expansion State
 
-    public func toggleExpansion(for taskId: String) {
+    func toggleExpansion(for taskId: String) {
         if expandedTaskId == taskId {
             expandedTaskId = nil
         } else {
@@ -64,13 +65,13 @@ public final class InboxStore {
         }
     }
 
-    public func isExpanded(_ taskId: String) -> Bool {
+    func isExpanded(_ taskId: String) -> Bool {
         expandedTaskId == taskId
     }
 
     // MARK: - Stray Task Actions
 
-    public func claimStrayTask(_ task: StrayTask) async {
+    func claimStrayTask(_ task: StrayTask) async {
         errorMessage = nil
 
         do {
@@ -87,7 +88,7 @@ public final class InboxStore {
         }
     }
 
-    public func deleteStrayTask(_ task: StrayTask) async {
+    func deleteStrayTask(_ task: StrayTask) async {
         errorMessage = nil
 
         do {
@@ -105,7 +106,7 @@ public final class InboxStore {
 
     // MARK: - Listing Task Actions
 
-    public func claimListingTask(_ task: ListingTask) async {
+    func claimListingTask(_ task: ListingTask) async {
         errorMessage = nil
 
         do {
@@ -121,7 +122,7 @@ public final class InboxStore {
         }
     }
 
-    public func deleteListingTask(_ task: ListingTask) async {
+    func deleteListingTask(_ task: ListingTask) async {
         errorMessage = nil
 
         do {
@@ -137,7 +138,7 @@ public final class InboxStore {
         }
     }
 
-    public func toggleSubtask(_ subtask: Subtask) async {
+    func toggleSubtask(_ subtask: Subtask) async {
         errorMessage = nil
 
         do {

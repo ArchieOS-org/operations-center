@@ -1,6 +1,6 @@
 //
 //  AppState+Dependency.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  Register AppState as a swift-dependencies dependency
 //
@@ -14,7 +14,7 @@ private enum AppStateKey: DependencyKey {
 }
 
 extension DependencyValues {
-    public var appState: AppState {
+    var appState: AppState {
         get { self[AppStateKey.self] }
         set { self[AppStateKey.self] = newValue }
     }

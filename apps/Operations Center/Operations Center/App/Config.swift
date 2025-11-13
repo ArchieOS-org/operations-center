@@ -7,14 +7,14 @@
 
 import Foundation
 
-public enum AppConfig {
+enum AppConfig {
     // MARK: - Environment
 
-    public enum Environment {
+    enum Environment {
         case production
         case local
 
-        public static var current: Environment {
+        static var current: Environment {
             // Force production for now until local dev is set up
             return .production
 
@@ -29,7 +29,7 @@ public enum AppConfig {
 
     // MARK: - Supabase Configuration
 
-    public static var supabaseURL: URL {
+    static var supabaseURL: URL {
         switch Environment.current {
         case .production:
             return URL(string: "https://kukmshbkzlskyuacgzbo.supabase.co")!
@@ -38,7 +38,7 @@ public enum AppConfig {
         }
     }
 
-    public static var supabaseAnonKey: String {
+    static var supabaseAnonKey: String {
         switch Environment.current {
         case .production:
             return "sb_publishable_lMBva69x9lCLnWU2fNDB9g_ZY-McsO9"
@@ -51,7 +51,7 @@ public enum AppConfig {
 
     // MARK: - FastAPI Configuration
 
-    public static var fastAPIURL: URL {
+    static var fastAPIURL: URL {
         switch Environment.current {
         case .production:
             // TODO: Replace with actual Vercel deployment URL
