@@ -18,6 +18,8 @@ import logging
 from ..agents import get_agent
 from ..tools import database
 from ..database.supabase_client import get_supabase
+from ..schemas.classification import ClassificationV1
+from .entity_creation import create_entities_from_classification
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +29,11 @@ class SlackWorkflowState(TypedDict):
     messages: Annotated[list, add_messages]
     slack_event: Dict[str, Any]
     classification: Optional[Dict[str, Any]]
+    entity_result: Optional[Dict[str, Any]]
     agent_result: Optional[Dict[str, Any]]
     response: Optional[str]
     error: Optional[str]
+    slack_message_id: Optional[str]
 
 
 def build_slack_workflow() -> StateGraph:
@@ -41,6 +45,7 @@ def build_slack_workflow() -> StateGraph:
     workflow.add_node("validate", validate_slack_event)
     workflow.add_node("classify", classify_message)
     workflow.add_node("store", store_in_database)
+    workflow.add_node("create_entities", create_entities_node)
     workflow.add_node("route", route_to_agent)
     workflow.add_node("respond", prepare_response)
     workflow.add_node("error", handle_error)
@@ -59,7 +64,8 @@ def build_slack_workflow() -> StateGraph:
     )
 
     workflow.add_edge("classify", "store")
-    workflow.add_edge("store", "route")
+    workflow.add_edge("store", "create_entities")
+    workflow.add_edge("create_entities", "route")
     workflow.add_edge("route", "respond")
     workflow.add_edge("respond", END)
     workflow.add_edge("error", END)
@@ -191,6 +197,50 @@ async def store_in_database(state: SlackWorkflowState) -> SlackWorkflowState:
         # Continue processing even if storage fails
 
     return state
+
+
+async def create_entities_node(state: SlackWorkflowState) -> SlackWorkflowState:
+    """
+    Create database entities (listings/tasks) from classification.
+
+    Context7 Pattern: LangGraph node - async function that returns dict updates
+    Source: /websites/langchain-ai_github_io_langgraph node patterns
+    """
+    try:
+        classification_dict = state.get("classification", {})
+        message_id = state.get("slack_message_id")
+        message_text = state.get("messages", [{}])[0].get("content", "")
+
+        if not classification_dict or not message_id:
+            logger.warning("Missing classification or message_id - skipping entity creation")
+            return state
+
+        # Convert dict to ClassificationV1 Pydantic model
+        classification = ClassificationV1(**classification_dict)
+
+        # Call entity creation logic
+        entity_result = await create_entities_from_classification(
+            classification=classification,
+            message_id=message_id,
+            message_text=message_text
+        )
+
+        logger.info(f"Entity creation result: {entity_result.get('status')}")
+
+        return {
+            **state,
+            "entity_result": entity_result
+        }
+
+    except Exception as e:
+        logger.error(f"Entity creation node failed: {str(e)}")
+        return {
+            **state,
+            "entity_result": {
+                "status": "error",
+                "reason": str(e)
+            }
+        }
 
 
 async def route_to_agent(state: SlackWorkflowState) -> SlackWorkflowState:
