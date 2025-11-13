@@ -1,6 +1,6 @@
 //
 //  TaskListStore.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  Created by Claude Code
 //
@@ -8,15 +8,17 @@
 import Foundation
 import Dependencies
 import Supabase
+import OperationsCenterKit
 
 /// Store managing the list of tasks with Supabase integration
 @Observable
-public final class TaskListStore {
+@MainActor
+final class TaskListStore {
     // MARK: - Observable State
 
-    public var tasks: [ListingTask] = []
-    public var isLoading = false
-    public var errorMessage: String?
+    var tasks: [ListingTask] = []
+    var isLoading = false
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
@@ -25,12 +27,12 @@ public final class TaskListStore {
 
     // MARK: - Initializer
 
-    public init() {}
+    init() {}
 
     // MARK: - Actions
 
     /// Fetch all listing tasks from Supabase
-    public func fetchTasks() async {
+    func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
@@ -55,7 +57,7 @@ public final class TaskListStore {
     }
 
     /// Claim a task by assigning it to a staff member
-    public func claimTask(_ task: ListingTask, staffId: String) async {
+    func claimTask(_ task: ListingTask, staffId: String) async {
         do {
             try await supabaseClient
                 .from("listing_tasks")
@@ -74,7 +76,7 @@ public final class TaskListStore {
     }
 
     /// Mark a task as complete
-    public func completeTask(_ task: ListingTask) async {
+    func completeTask(_ task: ListingTask) async {
         do {
             try await supabaseClient
                 .from("listing_tasks")
@@ -93,7 +95,7 @@ public final class TaskListStore {
     }
 
     /// Refresh tasks (for pull-to-refresh)
-    public func refresh() async {
+    func refresh() async {
         await fetchTasks()
     }
 }

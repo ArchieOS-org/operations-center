@@ -1,6 +1,6 @@
 //
 //  SupabaseTaskRepository.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  Production repository implementation using Supabase
 //
@@ -8,22 +8,23 @@
 import Foundation
 import Dependencies
 import Supabase
+import OperationsCenterKit
 
 /// Production repository implementation using Supabase database
 @MainActor
-public final class SupabaseTaskRepository: TaskRepository {
+final class SupabaseTaskRepository: TaskRepository {
     // MARK: - Dependencies
 
     @Dependency(\.supabaseClient) var supabaseClient
 
     // MARK: - Initialization
 
-    public init() {}
+    init() {}
 
     // MARK: - Task Repository Protocol
 
     /// Fetch all stray tasks with their associated Slack messages
-    public func fetchStrayTasks() async throws -> [(task: StrayTask, messages: [SlackMessage])] {
+    func fetchStrayTasks() async throws -> [(task: StrayTask, messages: [SlackMessage])] {
         // Fetch stray tasks without nested messages for now
         // TODO: Implement proper nested query handling once Supabase Swift SDK supports it better
         let response: [StrayTask] = try await supabaseClient
@@ -40,7 +41,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Fetch all listing tasks with their listing data and subtasks
-    public func fetchListingTasks() async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])] {
+    func fetchListingTasks() async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])] {
         // Query listing_tasks with nested listings join
         // PostgREST syntax: select=*,listings(*)
         struct ListingTaskResponse: Decodable {
@@ -134,7 +135,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Claim a stray task
-    public func claimStrayTask(taskId: String, staffId: String) async throws -> StrayTask {
+    func claimStrayTask(taskId: String, staffId: String) async throws -> StrayTask {
         let now = Date()
 
         let response: StrayTask = try await supabaseClient
@@ -154,7 +155,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Claim a listing task
-    public func claimListingTask(taskId: String, staffId: String) async throws -> ListingTask {
+    func claimListingTask(taskId: String, staffId: String) async throws -> ListingTask {
         let now = Date()
 
         let response: ListingTask = try await supabaseClient
@@ -174,7 +175,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Delete a stray task (soft delete)
-    public func deleteStrayTask(taskId: String, deletedBy: String) async throws {
+    func deleteStrayTask(taskId: String, deletedBy: String) async throws {
         let now = Date()
 
         try await supabaseClient
@@ -188,7 +189,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Delete a listing task (soft delete)
-    public func deleteListingTask(taskId: String, deletedBy: String) async throws {
+    func deleteListingTask(taskId: String, deletedBy: String) async throws {
         let now = Date()
 
         try await supabaseClient
@@ -202,7 +203,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Complete a subtask within a listing task
-    public func completeSubtask(subtaskId: String) async throws -> Subtask {
+    func completeSubtask(subtaskId: String) async throws -> Subtask {
         // TODO: Implement once subtasks table exists
         throw NSError(domain: "SupabaseTaskRepository", code: 501, userInfo: [
             NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
@@ -210,7 +211,7 @@ public final class SupabaseTaskRepository: TaskRepository {
     }
 
     /// Uncomplete a subtask within a listing task
-    public func uncompleteSubtask(subtaskId: String) async throws -> Subtask {
+    func uncompleteSubtask(subtaskId: String) async throws -> Subtask {
         // TODO: Implement once subtasks table exists
         throw NSError(domain: "SupabaseTaskRepository", code: 501, userInfo: [
             NSLocalizedDescriptionKey: "Subtasks table not yet implemented"

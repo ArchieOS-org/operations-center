@@ -1,12 +1,13 @@
 //
 //  TaskMockData.swift
-//  OperationsCenterKit
+//  Operations Center Tests
 //
 //  Realistic mock data for development and testing
 //  Diverse scenarios: overdue tasks, recent tasks, various categories
 //
 
 import Foundation
+import OperationsCenterKit
 
 /// Collection of realistic mock task data
 struct TaskMockData {

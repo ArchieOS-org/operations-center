@@ -13,23 +13,11 @@ let package = Package(
             targets: ["OperationsCenterKit"]
         )
     ],
-    dependencies: [
-        .package(
-            url: "https://github.com/supabase/supabase-swift.git",
-            from: "2.0.0"
-        ),
-        .package(
-            url: "https://github.com/pointfreeco/swift-dependencies.git",
-            from: "1.0.0"
-        )
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "OperationsCenterKit",
-            dependencies: [
-                .product(name: "Supabase", package: "supabase-swift"),
-                .product(name: "Dependencies", package: "swift-dependencies")
-            ]
+            dependencies: []
         )
     ]
 )

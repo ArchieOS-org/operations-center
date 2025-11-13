@@ -1,6 +1,6 @@
 //
 //  AppState.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  App-level state management with permanent real-time sync
 //  Single source of truth for all task data
@@ -9,15 +9,17 @@
 import Foundation
 import Supabase
 import Dependencies
+import OperationsCenterKit
 
 @Observable
-public final class AppState {
+@MainActor
+final class AppState {
     // MARK: - State
 
-    public var allTasks: [ListingTask] = []
-    public var currentUser: User?
-    public var isLoading = false
-    public var errorMessage: String?
+    var allTasks: [ListingTask] = []
+    var currentUser: User?
+    var isLoading = false
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
@@ -33,19 +35,19 @@ public final class AppState {
     // MARK: - Computed Properties
 
     /// Tasks that are unclaimed (Inbox)
-    public var inboxTasks: [ListingTask] {
+    var inboxTasks: [ListingTask] {
         allTasks.filter { $0.assignedStaffId == nil }
     }
 
     /// Tasks assigned to the current user
-    public var myTasks: [ListingTask] {
+    var myTasks: [ListingTask] {
         guard let userId = currentUser?.id else { return [] }
         return allTasks.filter { $0.assignedStaffId == userId.uuidString }
     }
 
     // MARK: - Initialization
 
-    public init() {
+    init() {
         // Load cached data immediately for instant UI
         loadCachedData()
 
@@ -64,7 +66,6 @@ public final class AppState {
 
     // MARK: - Authentication
 
-    @MainActor
     private func setupAuthStateListener() async {
         // Listen for auth state changes
         authStateTask = Task {
@@ -83,8 +84,7 @@ public final class AppState {
 
     // MARK: - Data Loading
 
-    @MainActor
-    public func fetchTasks() async {
+    func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
@@ -108,7 +108,6 @@ public final class AppState {
 
     // MARK: - Real-time Sync
 
-    @MainActor
     private func setupPermanentRealtimeSync() async {
         // Cancel any existing subscription
         realtimeSubscription?.cancel()
@@ -125,7 +124,6 @@ public final class AppState {
         }
     }
 
-    @MainActor
     private func handleRealtimeChange(_ change: AnyAction) async {
         // Refresh entire list on any change
         // This ensures all views stay in sync
@@ -147,8 +145,7 @@ public final class AppState {
 
     // MARK: - Task Actions
 
-    @MainActor
-    public func claimTask(_ task: ListingTask) async {
+    func claimTask(_ task: ListingTask) async {
         errorMessage = nil
 
         guard let userId = currentUser?.id else {
@@ -175,8 +172,7 @@ public final class AppState {
         }
     }
 
-    @MainActor
-    public func deleteTask(_ task: ListingTask) async {
+    func deleteTask(_ task: ListingTask) async {
         errorMessage = nil
 
         do {
@@ -209,8 +205,7 @@ public final class AppState {
 
     // MARK: - Public Refresh
 
-    @MainActor
-    public func refresh() async {
+    func refresh() async {
         await fetchTasks()
     }
 }

@@ -1,6 +1,6 @@
 //
 //  SupabaseClient+Dependency.swift
-//  OperationsCenterKit
+//  Operations Center
 //
 //  Created by Claude Code
 //
