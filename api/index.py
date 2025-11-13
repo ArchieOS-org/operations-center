@@ -1,11 +1,16 @@
 """
 Vercel Serverless Function Entry Point
 
-Imports the FastAPI app from main.py and exposes it as a serverless handler.
-Context7 Pattern: Vercel Python functions need to export `app` or `handler`
-Source: /vercel/vercel Python serverless functions docs
+Single entrypoint for the entire FastAPI application.
+Vercel routes all traffic here, and FastAPI handles internal routing.
+
+CRITICAL: This creates ONE serverless function, not 12.
+The old pattern (api/**/*.py) created a function PER FILE.
+This pattern deploys the entire FastAPI app as a single function.
 """
 
-from .main import app
+from main import app
 
-# Vercel will automatically handle the app as a serverless function
+# Export the app for Vercel
+# Vercel will create ONE function at /api/index
+# FastAPI handles all routing internally (/webhooks/slack, /classify, etc.)
