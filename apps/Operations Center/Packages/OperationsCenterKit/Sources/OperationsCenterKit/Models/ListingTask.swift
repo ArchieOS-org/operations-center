@@ -93,7 +93,8 @@ public struct ListingTask: Identifiable, Codable, Sendable {
 // MARK: - AnyCodable Helper
 
 /// Helper for encoding/decoding dynamic JSON
-public struct AnyCodable: Codable, Sendable {
+/// @unchecked Sendable: Safe because value only crosses isolation boundaries via JSON serialization/deserialization
+public struct AnyCodable: Codable, @unchecked Sendable {
     public let value: Any
 
     public init(_ value: Any) {

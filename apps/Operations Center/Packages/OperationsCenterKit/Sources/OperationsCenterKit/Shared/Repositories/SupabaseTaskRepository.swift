@@ -24,47 +24,18 @@ public final class SupabaseTaskRepository: TaskRepository {
 
     /// Fetch all stray tasks with their associated Slack messages
     public func fetchStrayTasks() async throws -> [(task: StrayTask, messages: [SlackMessage])] {
-        // Define response structure for nested query
-        struct StrayTaskWithMessages: Decodable {
-            let task: StrayTask
-            let slackMessages: [SlackMessage]
-
-            enum CodingKeys: String, CodingKey {
-                case task = "stray_task"
-                case slackMessages = "slack_messages"
-            }
-
-            init(from decoder: Decoder) throws {
-                // Decode the parent stray_task
-                let container = try decoder.singleValueContainer()
-                let dict = try container.decode([String: AnyCodable].self)
-
-                // Extract slack_messages if present
-                if let messagesData = dict["slack_messages"]?.value as? [[String: Any]] {
-                    let messagesJSON = try JSONSerialization.data(withJSONObject: messagesData)
-                    self.slackMessages = try JSONDecoder().decode([SlackMessage].self, from: messagesJSON)
-                } else {
-                    self.slackMessages = []
-                }
-
-                // Remove slack_messages from dict and decode the rest as StrayTask
-                var taskDict = dict
-                taskDict.removeValue(forKey: "slack_messages")
-                let taskJSON = try JSONSerialization.data(withJSONObject: taskDict.mapValues { $0.value })
-                self.task = try JSONDecoder().decode(StrayTask.self, from: taskJSON)
-            }
-        }
-
+        // Fetch stray tasks without nested messages for now
+        // TODO: Implement proper nested query handling once Supabase Swift SDK supports it better
         let response: [StrayTask] = try await supabaseClient
             .from("stray_tasks")
-            .select("*, slack_messages(*)")
+            .select()
             .is("deleted_at", value: nil)
             .order("priority", ascending: false)
             .order("created_at", ascending: false)
             .execute()
             .value
 
-        // For now, return empty messages - need to handle nested response properly
+        // Return tasks with empty messages - nested queries need better handling
         return response.map { ($0, []) }
     }
 

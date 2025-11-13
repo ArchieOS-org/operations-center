@@ -50,7 +50,7 @@ public final class AppState {
         loadCachedData()
 
         // Set up permanent subscriptions
-        Task {
+        Task { @MainActor in
             await setupAuthStateListener()
             await fetchTasks()
             await setupPermanentRealtimeSync()
