@@ -18,7 +18,10 @@ app_dir = Path(__file__).parent.parent / "app"
 sys.path.insert(0, str(app_dir))
 
 # Import FastAPI app from app directory
-from main import app  # noqa: E402
+from main import app  # noqa: E402, F401
+
+# Explicitly export for Vercel
+__all__ = ["app"]
 
 # This is the ONLY export. Vercel creates ONE function.
 # FastAPI handles ALL routing internally.
