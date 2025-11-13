@@ -169,25 +169,28 @@ async def store_in_database(state: SlackWorkflowState) -> SlackWorkflowState:
     """Store the message and classification in the database"""
 
     try:
+        from ulid import ULID
+
         event = state.get("slack_event", {})
         event_data = event.get("event", {})
         classification = state.get("classification", {})
 
-        # Create message record
+        # Create message record with correct column names
         client = get_supabase()
+        message_id = str(ULID())
+
         message_data = {
+            "message_id": message_id,
             "message_text": event_data.get("text", ""),
-            "user_id": event_data.get("user", ""),
-            "channel_id": event_data.get("channel", ""),
-            "timestamp": event_data.get("ts", ""),
+            "slack_user_id": event_data.get("user", ""),
+            "slack_ts": event_data.get("ts", ""),
             "classification": classification,
-            "processing_status": "classified"
+            "processing_status": "pending"  # Valid values: pending, processed, failed, skipped
         }
 
         result = client.table("slack_messages").insert(message_data).execute()
 
         if result.data:
-            message_id = result.data[0].get("id")
             logger.info(f"Stored Slack message with ID: {message_id}")
             state["slack_message_id"] = message_id
 

@@ -1,0 +1,384 @@
+direction: right
+
+title: Modern LangChain Agent System - TARGET ARCHITECTURE
+
+# External trigger
+slack_api: "Slack Events API\nPOST" {
+  shape: oval
+  style.fill: "#FF9900"
+  style.stroke: "#CC7700"
+}
+
+# Webhook Handler with Queue
+webhook_handler: "WEBHOOK HANDLER + QUEUE" {
+  style.fill: "#E3F2FD"
+  style.stroke: "#2196F3"
+
+  entry: "main.py::slack_webhook()\nLines 122-161\nRETURNS IN <3s" {
+    shape: rectangle
+  }
+
+  verify: "URL verification" {
+    shape: diamond
+  }
+
+  queue: "workers/queue.py\nenqueue_slack_message()\nRedis/AsyncQueue" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+    style.stroke: "#4CAF50"
+  }
+
+  response: "Return 200 OK\nIMMEDIATELY" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  worker: "Background Worker\nprocess_queue()" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+}
+
+# Provider Abstraction
+provider: "PROVIDER ABSTRACTION" {
+  style.fill: "#FFF9C4"
+  style.stroke: "#FBC02D"
+
+  config: "config/llm.py\nget_llm()\ninit_chat_model()" {
+    shape: rectangle
+    style.fill: "#FFFFCC"
+  }
+
+  smart: "get_smart_llm()\nClaude Sonnet 4.5" {
+    shape: rectangle
+  }
+
+  fast: "get_fast_llm()\nClaude Haiku" {
+    shape: rectangle
+  }
+
+  auto: "Auto-detect provider\nAnthropic → OpenAI → Google" {
+    shape: rectangle
+  }
+}
+
+# Modern Classifier
+classifier: "MODERN CLASSIFIER\nagents/classifier.py" {
+  style.fill: "#E8F5E9"
+  style.stroke: "#4CAF50"
+
+  agent: "ClassifierAgent\nget_classifier()" {
+    shape: rectangle
+  }
+
+  streaming: "classify_stream()\nAsyncIterator[Dict]" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  structured: "with_structured_output()\nClassificationV1" {
+    shape: rectangle
+  }
+
+  messages: "LangChain Messages\nSystemMessage\nHumanMessage" {
+    shape: rectangle
+  }
+}
+
+# Modern Tools
+tools: "MODERN TOOLS" {
+  style.fill: "#F3E5F5"
+  style.stroke: "#9C27B0"
+
+  database: "tools/database.py\nget_database_tools()" {
+    shape: rectangle
+  }
+
+  create_listing: "@tool\ncreate_listing()\nPydantic: CreateListingArgs" {
+    shape: rectangle
+  }
+
+  create_task: "@tool\ncreate_task()\nPydantic: CreateTaskArgs" {
+    shape: rectangle
+  }
+
+  search: "@tool\nsearch_listings()\nAsync Supabase" {
+    shape: rectangle
+  }
+
+  slack_tools: "tools/slack.py\nget_slack_tools()" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+    style.stroke: "#4CAF50"
+  }
+
+  send_message: "@tool\nsend_slack_message()\nAsyncWebClient" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  post_reaction: "@tool\npost_slack_reaction()\n✅ Acknowledges" {
+    shape: rectangle
+  }
+}
+
+# ReAct Orchestrator
+orchestrator: "REACT ORCHESTRATOR\nagents/orchestrator.py" {
+  style.fill: "#FCE4EC"
+  style.stroke: "#E91E63"
+
+  agent: "OrchestratorAgent\nget_orchestrator()\nREGISTERED ✅" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+    style.stroke: "#4CAF50"
+  }
+
+  create_agent: "create_agent()\nReAct pattern\nTool calling" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  memory: "PostgresSaver\nInMemorySaver\nThread persistence" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  process: "process()\nprocess_stream()\nTool execution" {
+    shape: rectangle
+  }
+
+  tools_bound: "Tools bound:\n• Database tools\n• Slack tools\n• Specialist agents" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+}
+
+# Specialist Agents
+specialists: "SPECIALIST AGENTS" {
+  style.fill: "#E1F5FE"
+  style.stroke: "#03A9F4"
+
+  listing_agent: "agents/listing_agent.py\nget_listing_agent()\nListing expertise" {
+    shape: rectangle
+  }
+
+  listing_tools: "Tools:\n• create_listing\n• search_listings\n• analyze_market\n• generate_description" {
+    shape: rectangle
+  }
+
+  task_agent: "agents/task_agent.py\nget_task_agent()\nTask management" {
+    shape: rectangle
+  }
+
+  task_tools: "Tools:\n• create_task\n• update_task_status\n• prioritize_tasks\n• estimate_time" {
+    shape: rectangle
+  }
+}
+
+# Modern Workflow
+workflow: "MODERN WORKFLOW\nworkflows/slack_intake.py" {
+  style.fill: "#E8EAF6"
+  style.stroke: "#3F51B5"
+
+  state: "SlackWorkflowState\nTypedDict\nProper typing" {
+    shape: rectangle
+  }
+
+  graph: "StateGraph\nLangGraph pattern" {
+    shape: rectangle
+  }
+
+  nodes: "Workflow nodes:\n• classify_node\n• store_node\n• process_node\n• respond_node" {
+    shape: rectangle
+  }
+
+  checkpointer: "PostgresSaver\nWorkflow memory\nThread-based" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  respond: "send_response_node()\nUSES send_slack_message\nACTUALLY SENDS ✅" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+    style.stroke: "#4CAF50"
+    style.stroke-width: 3
+  }
+}
+
+# Streaming Endpoints
+endpoints: "STREAMING ENDPOINTS\nmain.py" {
+  style.fill: "#FFECB3"
+  style.stroke: "#FF9800"
+
+  classify_endpoint: "POST /classify\nStreamingResponse\nSSE format" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  chat_endpoint: "POST /chat\nStream tool calls\nReal-time updates" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  status: "GET /status\nHealth check\nAgent status" {
+    shape: rectangle
+  }
+
+  headers: "Headers:\n• Cache-Control: no-cache\n• X-Accel-Buffering: no" {
+    shape: rectangle
+  }
+}
+
+# Memory System
+memory: "MEMORY SYSTEM" {
+  style.fill: "#EDE7F6"
+  style.stroke: "#673AB7"
+
+  config_memory: "config/memory.py\nget_checkpointer()" {
+    shape: rectangle
+  }
+
+  postgres: "PostgresSaver\nProduction persistence\nDATABASE_URL" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  inmemory: "InMemorySaver\nDevelopment mode" {
+    shape: rectangle
+  }
+
+  thread_id: "get_thread_id()\nchannel_user_based\nConversation continuity" {
+    shape: rectangle
+  }
+}
+
+# Database
+database: "SUPABASE + ASYNC" {
+  style.fill: "#E8EAF6"
+  style.stroke: "#3F51B5"
+
+  client: "database/client.py\nget_supabase_client()\nAsync operations" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  tables: "Tables:\n• slack_messages\n• listings\n• tasks\n• realtors" {
+    shape: cylinder
+  }
+
+  memory_table: "agent_memory\nPostgreSQL\nCheckpoint storage" {
+    shape: cylinder
+    style.fill: "#C8E6C9"
+  }
+}
+
+# Slack Response
+slack_response: "SLACK RESPONSE ✅" {
+  style.fill: "#C8E6C9"
+  style.stroke: "#4CAF50"
+  style.stroke-width: 3
+
+  sent: "Message SENT\nto Slack channel\nIn thread if applicable" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+
+  rich: "Rich formatting\nBlocks support\nReactions" {
+    shape: rectangle
+  }
+
+  confirmation: "User sees:\n• Task created ✅\n• Listing added ✅\n• Questions answered ✅" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+  }
+}
+
+# Success indicators
+success: "SUCCESS METRICS" {
+  style.fill: "#C8E6C9"
+  style.stroke: "#4CAF50"
+
+  working: "✅ Classification works\n✅ Tools execute\n✅ Agents call tools\n✅ Responses sent\n✅ Memory persists\n✅ Streaming works" {
+    shape: rectangle
+    style.fill: "#C8E6C9"
+    style.stroke-width: 3
+  }
+}
+
+# Main flow connections
+slack_api -> webhook_handler.entry: "Event"
+
+# Webhook flow
+webhook_handler.entry -> webhook_handler.verify
+webhook_handler.verify -> webhook_handler.queue: "event_callback"
+webhook_handler.queue -> webhook_handler.response: "Job queued"
+webhook_handler.response -> slack_api: "<3s response"
+
+# Background processing
+webhook_handler.queue -> webhook_handler.worker: "Async"
+webhook_handler.worker -> workflow.state: "Process"
+
+# Workflow execution
+workflow.state -> workflow.graph
+workflow.graph -> workflow.nodes
+workflow.nodes -> classifier.agent: "Classify"
+classifier.agent -> classifier.streaming: "Stream"
+classifier.streaming -> classifier.structured: "Structured output"
+classifier.structured -> workflow.nodes: "Classification"
+
+# Provider abstraction
+classifier.agent -> provider.config: "get_fast_llm()"
+provider.config -> provider.fast: "Claude Haiku"
+provider.config -> provider.auto: "Auto-detect"
+
+# Orchestration
+workflow.nodes -> orchestrator.agent: "Process"
+orchestrator.agent -> orchestrator.create_agent: "ReAct"
+orchestrator.create_agent -> orchestrator.memory: "With memory"
+orchestrator.memory -> memory.postgres: "Production"
+orchestrator.memory -> memory.inmemory: "Development"
+
+# Tool binding
+orchestrator.create_agent -> orchestrator.tools_bound
+orchestrator.tools_bound -> tools.database: "Bind"
+orchestrator.tools_bound -> tools.slack_tools: "Bind"
+tools.database -> tools.create_listing
+tools.database -> tools.create_task
+tools.database -> tools.search
+tools.slack_tools -> tools.send_message: "✅"
+tools.slack_tools -> tools.post_reaction
+
+# Tool execution
+orchestrator.process -> tools.create_listing: "Execute"
+orchestrator.process -> tools.create_task: "Execute"
+orchestrator.process -> tools.send_message: "Execute"
+
+# Specialist routing
+orchestrator.process -> specialists.listing_agent: "Delegate"
+orchestrator.process -> specialists.task_agent: "Delegate"
+specialists.listing_agent -> specialists.listing_tools: "Use"
+specialists.task_agent -> specialists.task_tools: "Use"
+
+# Database operations
+tools.create_listing -> database.tables: "INSERT"
+tools.create_task -> database.tables: "INSERT"
+tools.search -> database.tables: "SELECT"
+workflow.checkpointer -> database.memory_table: "Store state"
+memory.postgres -> database.memory_table: "Persist"
+
+# Response flow
+workflow.nodes -> workflow.respond: "Final step"
+workflow.respond -> tools.send_message: "CALLS ✅"
+tools.send_message -> slack_response.sent: "SENDS ✅"
+slack_response.sent -> slack_response.rich: "Format"
+slack_response.rich -> slack_response.confirmation: "User sees"
+
+# Streaming endpoints
+endpoints.classify_endpoint -> classifier.streaming: "SSE"
+endpoints.chat_endpoint -> orchestrator.process: "Stream"
+
+# Success flow
+slack_response.confirmation -> success.working: "All working ✅" {
+  style.stroke: "#4CAF50"
+  style.stroke-width: 3
+}

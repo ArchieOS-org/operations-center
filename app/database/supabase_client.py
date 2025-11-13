@@ -26,7 +26,7 @@ def get_supabase() -> Client:
     settings = get_settings()
     return create_client(
         supabase_url=settings.SUPABASE_URL,
-        supabase_key=settings.SUPABASE_SERVICE_KEY
+        supabase_key=settings.supabase_service_key
     )
 
 

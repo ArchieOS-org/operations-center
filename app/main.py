@@ -127,14 +127,22 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
     Receives messages from Slack, classifies them with AI,
     routes to appropriate agents, and stores results.
     """
+    logger.info(f"📨 Slack webhook received: type={payload.type}")
+
     # Handle URL verification challenge
     if payload.type == "url_verification":
+        logger.info("✅ URL verification challenge - responding")
         return {"challenge": payload.challenge}
 
     # Handle event callback
     if payload.type == "event_callback":
+        event = payload.event
+        logger.info(f"📬 Event callback: event_type={event.get('type')}, user={event.get('user')}, channel={event.get('channel')}")
+        logger.info(f"💬 Message text: {event.get('text', '')[:100]}")
+
         try:
             result = await process_slack_message(payload.dict())
+            logger.info(f"✅ Processed successfully: {result.get('success')}")
 
             # Return 200 immediately to Slack (they timeout at 3s)
             if result.get("response"):
@@ -145,11 +153,22 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
             return {"ok": True}
 
         except Exception as e:
-            logger.error(f"Slack webhook error: {str(e)}")
+            logger.error(f"❌ Slack webhook error: {str(e)}", exc_info=True)
             # Still return 200 to Slack to avoid retries
             return {"ok": True, "error": "processing_failed"}
 
+    logger.warning(f"⚠️ Unknown event type: {payload.type}")
     return {"ok": False, "error": "unknown_event_type"}
+
+
+@app.post("/api/slack_webhook")
+async def slack_webhook_legacy(payload: SlackWebhookPayload, request: Request):
+    """
+    Legacy Slack webhook endpoint for backward compatibility.
+    Redirects to the canonical /webhooks/slack endpoint.
+    """
+    logger.info("📎 Legacy webhook URL called - redirecting to /webhooks/slack")
+    return await slack_webhook(payload, request)
 
 
 @app.post("/webhooks/sms")
