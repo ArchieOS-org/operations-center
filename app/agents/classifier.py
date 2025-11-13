@@ -12,7 +12,6 @@ This is the OPTIMAL Python implementation using LangChain's structured output fe
 import os
 from typing import Optional
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent
 from schemas.classification import ClassificationV1
 
 
@@ -134,24 +133,14 @@ class MessageClassifier:
         """
         self.model_name = model_name or os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 
-        # Initialize OpenAI chat model
+        # Initialize OpenAI chat model with structured output
         # LangChain automatically reads OPENAI_API_KEY from environment
         self.llm = ChatOpenAI(
             model=self.model_name,
             temperature=temperature,
             timeout=20.0,  # 20 second timeout (matches original)
-            max_retries=0   # No automatic retries (handled by LangChain if needed)
-        )
-
-        # Create agent with structured output
-        # LangChain automatically uses ProviderStrategy for OpenAI models
-        # which leverages OpenAI's native structured output capabilities
-        self.agent = create_agent(
-            model=self.llm,
-            tools=[],  # No tools needed for classification
-            response_format=ClassificationV1,  # Pydantic model for validation
-            system_prompt=CLASSIFICATION_INSTRUCTIONS
-        )
+            max_retries=0   # No automatic retries
+        ).with_structured_output(ClassificationV1)
 
     async def process(self, input_data: dict) -> dict:
         """
@@ -195,19 +184,14 @@ class MessageClassifier:
         if message_timestamp:
             user_message = f"Message timestamp: {message_timestamp}\n\nMessage: {message}"
 
-        # Invoke agent with message
-        # LangChain handles:
-        # 1. Calling the LLM
-        # 2. Parsing JSON response
-        # 3. Validating against Pydantic schema
-        # 4. Retrying on validation errors (if configured)
-        result = self.agent.invoke({
-            "messages": [{"role": "user", "content": user_message}]
-        })
+        # Invoke LLM with structured output
+        # with_structured_output() guarantees ClassificationV1 return type
+        messages = [
+            {"role": "system", "content": CLASSIFICATION_INSTRUCTIONS},
+            {"role": "user", "content": user_message}
+        ]
 
-        # Extract structured response
-        # LangChain guarantees this is a valid ClassificationV1 instance
-        classification: ClassificationV1 = result["structured_response"]
+        classification: ClassificationV1 = self.llm.invoke(messages)
 
         # Additional custom validation
         classification.validate_keys()

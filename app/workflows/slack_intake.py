@@ -185,7 +185,7 @@ async def store_in_database(state: SlackWorkflowState) -> SlackWorkflowState:
             "slack_user_id": event_data.get("user", ""),
             "slack_ts": event_data.get("ts", ""),
             "classification": classification,
-            "processing_status": "classified"
+            "processing_status": "pending"  # Valid values: pending, processed, failed, skipped
         }
 
         result = client.table("slack_messages").insert(message_data).execute()
