@@ -2,31 +2,40 @@
 
 ## The Problem We Solved
 
-Vercel was creating **12 serverless functions** because the old `vercel.json` pattern was:
+Vercel was creating **12 serverless functions** because:
 
-```json
-{
-  "functions": {
-    "api/**/*.py": { ... }
-  }
-}
-```
-
-This told Vercel: "Create a separate serverless function for EVERY Python file."
+1. **First Issue**: The old `vercel.json` pattern `api/**/*.py` explicitly created functions
+2. **Deeper Issue**: Even without that pattern, **Vercel auto-detects EVERY Python file in api/ as a separate function**
 
 Result:
-- `agents/classifier.py` → Function 1
-- `agents/orchestrator.py` → Function 2
-- `workflows/slack_intake.py` → Function 3
+- `api/agents/classifier.py` → Function 1
+- `api/agents/orchestrator.py` → Function 2
+- `api/workflows/slack_intake.py` → Function 3
 - ... and so on
 
 **Hobby plan limit: 12 functions. We hit it.**
 
 ## The Solution
 
-Deploy the **entire FastAPI application as ONE serverless function**.
+Deploy the **entire FastAPI application as ONE serverless function** by:
+1. **Moving all Python code OUT of api/ directory** (to prevent auto-detection)
+2. **Single api/index.py file** that imports the app
 
 ### New Architecture
+
+```
+project/
+├── api/
+│   └── index.py          # ONLY Python file in api/ (Vercel entrypoint)
+├── app/                  # ALL FastAPI code lives here
+│   ├── main.py          # FastAPI app definition
+│   ├── agents/          # Agent modules
+│   ├── tools/           # Tool modules
+│   ├── workflows/       # Workflow modules
+│   └── ...              # All other Python code
+├── vercel.json          # Routes all traffic to /api/index
+└── requirements.txt     # Python dependencies
+```
 
 ```
 vercel.json:
@@ -37,14 +46,17 @@ vercel.json:
 }
 ```
 
-This says: "Route ALL traffic to `/api/index`"
+```python
+# api/index.py
+import sys
+from pathlib import Path
 
-```
-api/index.py:
+# Add app directory to Python path
+app_dir = Path(__file__).parent.parent / "app"
+sys.path.insert(0, str(app_dir))
+
 from main import app  # Import the FastAPI app
 ```
-
-This exports the FastAPI application.
 
 **Result: ONE serverless function that handles ALL routes.**
 

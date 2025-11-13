@@ -1,16 +1,24 @@
 """
 Vercel Serverless Function Entry Point
 
-Single entrypoint for the entire FastAPI application.
-Vercel routes all traffic here, and FastAPI handles internal routing.
+THE ONLY Python file in api/ directory.
+All other code lives in app/ to prevent Vercel from creating multiple functions.
 
-CRITICAL: This creates ONE serverless function, not 12.
-The old pattern (api/**/*.py) created a function PER FILE.
-This pattern deploys the entire FastAPI app as a single function.
+Architecture:
+- api/index.py: Single serverless function entrypoint
+- app/: All FastAPI code, agents, workflows, etc.
+- Result: ONE function that handles ALL routes internally
 """
 
-from main import app
+import sys
+from pathlib import Path
 
-# Export the app for Vercel
-# Vercel will create ONE function at /api/index
-# FastAPI handles all routing internally (/webhooks/slack, /classify, etc.)
+# Add app directory to Python path
+app_dir = Path(__file__).parent.parent / "app"
+sys.path.insert(0, str(app_dir))
+
+# Import FastAPI app from app directory
+from main import app  # noqa: E402
+
+# This is the ONLY export. Vercel creates ONE function.
+# FastAPI handles ALL routing internally.

@@ -5,7 +5,7 @@ These tools allow agents to read from and write to the database.
 All CRUD operations go through these tools.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from langchain.tools import tool
 from ..database.supabase_client import get_supabase
 from .. import register_tool

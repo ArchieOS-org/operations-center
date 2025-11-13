@@ -16,7 +16,6 @@ from typing_extensions import TypedDict, Annotated
 import logging
 
 from ..agents import get_agent
-from ..tools import database
 from ..database.supabase_client import get_supabase
 from ..schemas.classification import ClassificationV1
 from .entity_creation import create_entities_from_classification
