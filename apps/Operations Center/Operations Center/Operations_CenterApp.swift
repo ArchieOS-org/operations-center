@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
-import Dependencies
 import OperationsCenterKit
 
+@MainActor
 @main
 struct Operations_CenterApp: App {
-    @Dependency(\.appState) private var appState
+    @State private var appState = AppState(
+        supabase: supabase,
+        taskRepository: .live
+    )
 
     var body: some Scene {
         WindowGroup {

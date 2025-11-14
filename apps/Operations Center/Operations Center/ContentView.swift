@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Dependencies
 import OperationsCenterKit
 
 struct ContentView: View {
@@ -168,10 +167,39 @@ struct EmptyStateView: View {
     }
 }
 
-#Preview {
-    let _ = prepareDependencies {
-        $0.supabaseClient = .previewValue
-        $0.context = .preview
-    }
-    ContentView()
+#Preview("With Mock Data") {
+    @Previewable @State var appState = AppState(
+        supabase: .preview,
+        taskRepository: .preview
+    )
+
+    // Preload with mock data
+    appState.allTasks = [.mock1, .mock2, .mock3]
+
+    return ContentView()
+        .environment(appState)
+}
+
+#Preview("Empty State") {
+    @Previewable @State var appState = AppState(
+        supabase: .preview,
+        taskRepository: .preview
+    )
+
+    appState.allTasks = []
+
+    return ContentView()
+        .environment(appState)
+}
+
+#Preview("Loading State") {
+    @Previewable @State var appState = AppState(
+        supabase: .preview,
+        taskRepository: .preview
+    )
+
+    appState.isLoading = true
+
+    return ContentView()
+        .environment(appState)
 }

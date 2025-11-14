@@ -2,12 +2,10 @@
 //  TaskListStore.swift
 //  Operations Center
 //
-//  Store managing the list of listing tasks using repository pattern
-//  Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
+//  Store managing the list of listing tasks
 //
 
 import Foundation
-import Dependencies
 import OperationsCenterKit
 
 /// Store managing the list of listing tasks using repository pattern
@@ -22,14 +20,15 @@ final class TaskListStore {
 
     // MARK: - Dependencies
 
-    /// Using @Dependency pattern for Observable stores
-    /// Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
-    @ObservationIgnored
-    @Dependency(\.taskRepository) var repository
+    private let repository: TaskRepositoryClient
 
     // MARK: - Initializer
 
-    init() {}
+    /// For production: TaskListStore(repository: .live)
+    /// For previews: TaskListStore(repository: .preview)
+    init(repository: TaskRepositoryClient) {
+        self.repository = repository
+    }
 
     // MARK: - Actions
 

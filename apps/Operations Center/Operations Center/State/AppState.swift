@@ -8,7 +8,6 @@
 
 import Foundation
 import Supabase
-import Dependencies
 import OperationsCenterKit
 
 @Observable
@@ -23,24 +22,14 @@ final class AppState {
 
     // MARK: - Dependencies
 
-    @ObservationIgnored
-    @Dependency(\.supabaseClient) var supabaseClient
-
-    @ObservationIgnored
-    @Dependency(\.taskRepository) var taskRepository
+    private let supabase: SupabaseClient
+    private let taskRepository: TaskRepositoryClient
 
     @ObservationIgnored
     private var realtimeSubscription: Task<Void, Never>?
 
     @ObservationIgnored
     private var authStateTask: Task<Void, Never>?
-
-    /// Skip network operations in preview/test mode
-    /// Reference: swift-dependencies/Testing.md - conditional execution pattern
-    @ObservationIgnored
-    private var shouldPerformNetworkOperations: Bool {
-        AppConfig.Environment.current != .preview
-    }
 
     // MARK: - Computed Properties
 
@@ -57,24 +46,27 @@ final class AppState {
 
     // MARK: - Initialization
 
-    init() {
-        // Load cached data immediately for instant UI
-        loadCachedData()
-        // Network work deferred to startup() - called after app launches
+    /// Initialize AppState with dependency injection
+    /// For production: AppState(supabase: supabase, taskRepository: .live)
+    /// For previews: AppState(supabase: .preview, taskRepository: .preview)
+    init(
+        supabase: SupabaseClient,
+        taskRepository: TaskRepositoryClient
+    ) {
+        self.supabase = supabase
+        self.taskRepository = taskRepository
+        // NO synchronous work here - prevents MainActor blocking
     }
 
     // MARK: - Startup
 
     /// Start async operations after app launch
     /// Call this from .task modifier in RootView
-    /// Reference: swift-dependencies/WhatAreDependencies.md - guarded async operations
     func startup() async {
-        guard shouldPerformNetworkOperations else {
-            print("⚠️ Preview mode: Skipping network operations")
-            loadPreviewData()
-            return
-        }
+        // Load cached data first for instant UI
+        loadCachedData()
 
+        // Setup async operations
         await setupAuthStateListener()
         await fetchTasks()
         await setupPermanentRealtimeSync()
@@ -85,27 +77,12 @@ final class AppState {
         authStateTask?.cancel()
     }
 
-    /// Load preview data synchronously - no async, no network
-    /// Reference: swift-dependencies/LivePreviewTest.md - preview data patterns
-    private func loadPreviewData() {
-        allTasks = [
-            ListingTask.mock1,
-            ListingTask.mock2,
-            ListingTask.mock3
-        ]
-        currentUser = nil  // No auth in preview
-        isLoading = false
-        errorMessage = nil
-    }
-
     // MARK: - Authentication
 
     private func setupAuthStateListener() async {
-        guard shouldPerformNetworkOperations else { return }
-
         // Listen for auth state changes
         authStateTask = Task {
-            for await state in supabaseClient.auth.authStateChanges {
+            for await state in supabase.auth.authStateChanges {
                 if [.initialSession, .signedIn, .signedOut].contains(state.event) {
                     currentUser = state.session?.user
 
@@ -121,13 +98,11 @@ final class AppState {
     // MARK: - Data Loading
 
     func fetchTasks() async {
-        guard shouldPerformNetworkOperations else { return }
-
         isLoading = true
         errorMessage = nil
 
         do {
-            // Use TaskRepositoryClient which respects preview/live context
+            // Use TaskRepositoryClient (production or preview based on init)
             let taskData = try await taskRepository.fetchListingTasks()
             allTasks = taskData.map { $0.0 }  // Extract just the tasks
 
@@ -143,12 +118,10 @@ final class AppState {
     // MARK: - Real-time Sync
 
     private func setupPermanentRealtimeSync() async {
-        guard shouldPerformNetworkOperations else { return }
-
         // Cancel any existing subscription
         realtimeSubscription?.cancel()
 
-        let channel = supabaseClient.realtimeV2.channel("all_tasks")
+        let channel = supabase.realtimeV2.channel("all_tasks")
 
         realtimeSubscription = Task {
             do {
@@ -176,7 +149,6 @@ final class AppState {
         // Refresh entire list on any change
         // This ensures all views stay in sync
         do {
-            // Use TaskRepositoryClient which respects preview/live context
             let taskData = try await taskRepository.fetchListingTasks()
             allTasks = taskData.map { $0.0 }  // Extract just the tasks
 
@@ -198,7 +170,7 @@ final class AppState {
         }
 
         do {
-            let _: ListingTask = try await supabaseClient
+            let _: ListingTask = try await supabase
                 .from("listing_tasks")
                 .update([
                     "assigned_staff_id": userId.uuidString,
@@ -220,7 +192,7 @@ final class AppState {
         errorMessage = nil
 
         do {
-            try await supabaseClient
+            try await supabase
                 .from("listing_tasks")
                 .delete()
                 .eq("task_id", value: task.id)

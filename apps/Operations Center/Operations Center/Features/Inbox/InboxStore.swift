@@ -2,14 +2,11 @@
 //  InboxStore.swift
 //  Operations Center
 //
-//  Store for inbox view - using dependency injection with @Dependency
-//  Manages both stray and listing tasks with expansion state
-//  Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
+//  Store for inbox view - manages both stray and listing tasks
 //
 
 import Foundation
 import Observation
-import Dependencies
 import OperationsCenterKit
 
 @Observable
@@ -25,15 +22,14 @@ final class InboxStore {
 
     // MARK: - Dependencies
 
-    /// Using @Dependency pattern for Observable stores
-    /// Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
-    @ObservationIgnored
-    @Dependency(\.taskRepository) var repository
+    private let repository: TaskRepositoryClient
 
     // MARK: - Initialization
 
-    init() {
-        // Dependencies are injected automatically via @Dependency
+    /// For production: InboxStore(repository: .live)
+    /// For previews: InboxStore(repository: .preview)
+    init(repository: TaskRepositoryClient) {
+        self.repository = repository
     }
 
     // MARK: - Public Methods

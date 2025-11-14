@@ -2,21 +2,16 @@
 //  TaskRepositoryClient.swift
 //  Operations Center
 //
-//  Task repository dependency client following swift-dependencies pattern
-//  Reference: swift-dependencies/Articles/DesigningDependencies.md
+//  Task repository client using native Swift patterns
 //
 
 import Foundation
-import Dependencies
-import IssueReporting
 import OperationsCenterKit
 import Supabase
 
-// MARK: - Dependency Client
+// MARK: - Task Repository Client
 
-/// Task repository client for dependency injection
-/// Using reportIssue for device-safe unimplemented behavior
-/// Reference: swift-dependencies/Articles/DesigningDependencies.md
+/// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
     /// Fetch all stray tasks with their associated Slack messages
     public var fetchStrayTasks: @Sendable () async throws -> [(task: StrayTask, messages: [SlackMessage])]
@@ -43,25 +38,13 @@ public struct TaskRepositoryClient {
     public var uncompleteSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
 }
 
-// MARK: - DependencyKey Conformance
+// MARK: - Live Implementation
 
-extension TaskRepositoryClient: DependencyKey {
-    /// Live implementation using Supabase
-    /// Reference: swift-dependencies/Articles/RegisteringDependencies.md
-    public static var liveValue: Self {
-        // Use compile-time environment detection
-        // Reference: External Research - Launch arguments don't persist on device
-        // Reference: Context7 - swift-dependencies conditional compilation
-        if AppConfig.Environment.current == .preview {
-            return previewValue
-        }
-
-        // Capture dependency OUTSIDE @Sendable closures to avoid Swift 6 key path isolation errors
-        @Dependency(\.supabaseClient) var supabaseClient
-
-        return Self(
+extension TaskRepositoryClient {
+    /// Production implementation using global Supabase client
+    public static let live = Self(
             fetchStrayTasks: {
-                let response: [StrayTask] = try await supabaseClient
+                let response: [StrayTask] = try await supabase
                     .from("stray_tasks")
                     .select()
                     .is("deleted_at", value: nil)
@@ -121,7 +104,7 @@ extension TaskRepositoryClient: DependencyKey {
                     }
                 }
 
-                let response: [ListingTaskResponse] = try await supabaseClient
+                let response: [ListingTaskResponse] = try await supabase
                     .from("listing_tasks")
                     .select("*, listings(*)")
                     .is("deleted_at", value: nil)
@@ -167,7 +150,7 @@ extension TaskRepositoryClient: DependencyKey {
             claimStrayTask: { taskId, staffId in
                 let now = Date()
 
-                let response: StrayTask = try await supabaseClient
+                let response: StrayTask = try await supabase
                     .from("stray_tasks")
                     .update([
                         "assigned_staff_id": staffId,
@@ -185,7 +168,7 @@ extension TaskRepositoryClient: DependencyKey {
             claimListingTask: { taskId, staffId in
                 let now = Date()
 
-                let response: ListingTask = try await supabaseClient
+                let response: ListingTask = try await supabase
                     .from("listing_tasks")
                     .update([
                         "assigned_staff_id": staffId,
@@ -203,7 +186,7 @@ extension TaskRepositoryClient: DependencyKey {
             deleteStrayTask: { taskId, deletedBy in
                 let now = Date()
 
-                try await supabaseClient
+                try await supabase
                     .from("stray_tasks")
                     .update([
                         "deleted_at": now.ISO8601Format(),
@@ -215,7 +198,7 @@ extension TaskRepositoryClient: DependencyKey {
             deleteListingTask: { taskId, deletedBy in
                 let now = Date()
 
-                try await supabaseClient
+                try await supabase
                     .from("listing_tasks")
                     .update([
                         "deleted_at": now.ISO8601Format(),
@@ -239,10 +222,11 @@ extension TaskRepositoryClient: DependencyKey {
         )
     }
 
-    /// Preview implementation with mock data
-    /// Mock data lives here per Context7 best practice
-    /// Reference: swift-dependencies/Articles/LivePreviewTest.md
-    public static let previewValue = Self(
+// MARK: - Preview Implementation
+
+extension TaskRepositoryClient {
+    /// Preview implementation with mock data for Xcode previews
+    public static let preview = Self(
         fetchStrayTasks: {
             [
                 (StrayTask.mock1, [SlackMessage.mock1]),
@@ -284,51 +268,4 @@ extension TaskRepositoryClient: DependencyKey {
             return subtask
         }
     )
-
-    /// Test implementation - uses reportIssue for device-safe unimplemented behavior
-    /// reportIssue triggers runtime warnings without crashing on device
-    /// Reference: xctest-dynamic-overlay/Articles/GettingStarted.md
-    public static let testValue = Self(
-        fetchStrayTasks: {
-            reportIssue("TaskRepositoryClient.fetchStrayTasks unimplemented in test")
-            return []
-        },
-        fetchListingTasks: {
-            reportIssue("TaskRepositoryClient.fetchListingTasks unimplemented in test")
-            return []
-        },
-        claimStrayTask: { taskId, staffId in
-            reportIssue("TaskRepositoryClient.claimStrayTask unimplemented in test")
-            return StrayTask.mock1
-        },
-        claimListingTask: { taskId, staffId in
-            reportIssue("TaskRepositoryClient.claimListingTask unimplemented in test")
-            return ListingTask.mock1
-        },
-        deleteStrayTask: { taskId, deletedBy in
-            reportIssue("TaskRepositoryClient.deleteStrayTask unimplemented in test")
-        },
-        deleteListingTask: { taskId, deletedBy in
-            reportIssue("TaskRepositoryClient.deleteListingTask unimplemented in test")
-        },
-        completeSubtask: { subtaskId in
-            reportIssue("TaskRepositoryClient.completeSubtask unimplemented in test")
-            return Subtask.mock1
-        },
-        uncompleteSubtask: { subtaskId in
-            reportIssue("TaskRepositoryClient.uncompleteSubtask unimplemented in test")
-            return Subtask.mock1
-        }
-    )
-}
-
-// MARK: - Dependency Values Extension
-
-extension DependencyValues {
-    /// Access task repository via dependency system
-    /// Reference: swift-dependencies/Articles/RegisteringDependencies.md
-    public var taskRepository: TaskRepositoryClient {
-        get { self[TaskRepositoryClient.self] }
-        set { self[TaskRepositoryClient.self] = newValue }
-    }
 }

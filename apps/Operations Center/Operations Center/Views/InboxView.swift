@@ -7,11 +7,14 @@
 //
 
 import SwiftUI
-import Dependencies
 import OperationsCenterKit
 
 struct InboxView: View {
-    @State private var store = InboxStore()
+    @State private var store: InboxStore
+
+    init(repository: TaskRepositoryClient = .live) {
+        _store = State(initialValue: InboxStore(repository: repository))
+    }
 
     var body: some View {
         Group {
@@ -156,12 +159,17 @@ struct InboxErrorView: View {
     }
 }
 
-#Preview {
-    let _ = prepareDependencies {
-        $0.taskRepository = .previewValue
-        $0.supabaseClient = .previewValue
-        $0.context = .preview
+#Preview("With Mock Data") {
+    @Previewable @State var store = InboxStore(repository: .preview)
+
+    NavigationStack {
+        InboxView()
     }
+}
+
+#Preview("Empty State") {
+    @Previewable @State var store = InboxStore(repository: .preview)
+
     NavigationStack {
         InboxView()
     }
