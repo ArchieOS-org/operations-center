@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Dependencies
 import OperationsCenterKit
 
 struct ContentView: View {
@@ -168,5 +169,9 @@ struct EmptyStateView: View {
 }
 
 #Preview {
+    let _ = prepareDependencies {
+        $0.supabaseClient = .previewValue
+        $0.context = .preview
+    }
     ContentView()
 }

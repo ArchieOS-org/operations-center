@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Dependencies
 import OperationsCenterKit
 
 struct InboxView: View {
@@ -156,6 +157,11 @@ struct InboxErrorView: View {
 }
 
 #Preview {
+    let _ = prepareDependencies {
+        $0.taskRepository = .previewValue
+        $0.supabaseClient = .previewValue
+        $0.context = .preview
+    }
     NavigationStack {
         InboxView()
     }

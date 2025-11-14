@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import Dependencies
 import OperationsCenterKit
 
 @main
 struct Operations_CenterApp: App {
-    @State private var appState = AppState()
+    @Dependency(\.appState) private var appState
 
     var body: some Scene {
         WindowGroup {

@@ -12,8 +12,15 @@ import Supabase
 // MARK: - Dependency Key
 
 private enum SupabaseClientKey: DependencyKey {
-    static let liveValue: SupabaseClient = {
-        SupabaseClient(
+    static var liveValue: SupabaseClient {
+        // Use compile-time environment detection
+        // Reference: External Research - Launch arguments don't persist on device
+        // Reference: Context7 - swift-dependencies conditional compilation
+        if AppConfig.Environment.current == .preview {
+            return previewValue
+        }
+
+        return SupabaseClient(
             supabaseURL: AppConfig.supabaseURL,
             supabaseKey: AppConfig.supabaseAnonKey,
             options: SupabaseClientOptions(
@@ -29,6 +36,14 @@ private enum SupabaseClientKey: DependencyKey {
                 )
             )
         )
+    }
+
+    static let previewValue: SupabaseClient = {
+        // Mock client for previews - won't connect to real Supabase
+        SupabaseClient(
+            supabaseURL: URL(string: "https://preview.supabase.co")!,
+            supabaseKey: "preview-anon-key"
+        )
     }()
 
     static let testValue: SupabaseClient = {
@@ -39,6 +54,15 @@ private enum SupabaseClientKey: DependencyKey {
             supabaseKey: "test-key"
         )
     }()
+}
+
+// MARK: - TestDependencyKey Conformance
+
+// Use @retroactive to silence Swift 6 warning about retroactive conformance
+// This is safe because we own the conformance in our module
+extension SupabaseClient: @retroactive TestDependencyKey {
+    public static let testValue: SupabaseClient = SupabaseClientKey.testValue
+    public static let previewValue: SupabaseClient = SupabaseClientKey.previewValue
 }
 
 // MARK: - Dependency Values Extension

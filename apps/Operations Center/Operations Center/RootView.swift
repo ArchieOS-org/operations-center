@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(AppState.self) private var appState
     @State private var path: [Route] = []
 
     var body: some View {
@@ -50,6 +51,10 @@ struct RootView: View {
             .navigationDestination(for: Route.self) { route in
                 destinationView(for: route)
             }
+        }
+        .task {
+            // Start async operations after app launches
+            await appState.startup()
         }
     }
 
