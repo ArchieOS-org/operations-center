@@ -11,10 +11,17 @@ import OperationsCenterKit
 @MainActor
 @main
 struct Operations_CenterApp: App {
-    @State private var appState = AppState(
-        supabase: supabase,
-        taskRepository: .live
-    )
+    @State private var appState: AppState
+
+    init() {
+        // Check for --use-preview-data flag from Xcode scheme
+        let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
+
+        _appState = State(initialValue: AppState(
+            supabase: usePreviewData ? .preview : supabase,
+            taskRepository: usePreviewData ? .preview : .live
+        ))
+    }
 
     var body: some Scene {
         WindowGroup {

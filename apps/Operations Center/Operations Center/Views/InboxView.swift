@@ -12,8 +12,16 @@ import OperationsCenterKit
 struct InboxView: View {
     @State private var store: InboxStore
 
-    init(repository: TaskRepositoryClient = .live) {
-        _store = State(initialValue: InboxStore(repository: repository))
+    /// Primary init - accepts pre-configured store (for previews/testing)
+    init(store: InboxStore) {
+        _store = State(initialValue: store)
+    }
+
+    /// Convenience init for production - creates store with live repository
+    /// Checks for --use-preview-data flag from Xcode scheme
+    init() {
+        let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
+        self.init(store: InboxStore(repository: usePreviewData ? .preview : .live))
     }
 
     var body: some View {
@@ -160,17 +168,46 @@ struct InboxErrorView: View {
 }
 
 #Preview("With Mock Data") {
-    @Previewable @State var store = InboxStore(repository: .preview)
+    let store = InboxStore(
+        repository: .preview,
+        initialStrayTasks: [
+            (StrayTask.mock1, [SlackMessage.mock1]),
+            (StrayTask.mock2, [])
+        ],
+        initialListingTasks: [
+            (ListingTask.mock1, Listing.mock1, [Subtask.mock1]),
+            (ListingTask.mock2, Listing.mock2, [])
+        ]
+    )
 
-    NavigationStack {
-        InboxView()
+    return NavigationStack {
+        InboxView(store: store)
     }
 }
 
 #Preview("Empty State") {
-    @Previewable @State var store = InboxStore(repository: .preview)
+    let store = InboxStore(repository: .preview)
+    // Empty arrays via default parameters
 
-    NavigationStack {
-        InboxView()
+    return NavigationStack {
+        InboxView(store: store)
+    }
+}
+
+#Preview("Loading State") {
+    let store = InboxStore(repository: .preview)
+    store.isLoading = true
+
+    return NavigationStack {
+        InboxView(store: store)
+    }
+}
+
+#Preview("Error State") {
+    let store = InboxStore(repository: .preview)
+    store.errorMessage = "Failed to connect to server"
+
+    return NavigationStack {
+        InboxView(store: store)
     }
 }

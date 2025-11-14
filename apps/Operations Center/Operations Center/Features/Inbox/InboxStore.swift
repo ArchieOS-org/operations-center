@@ -26,10 +26,15 @@ final class InboxStore {
 
     // MARK: - Initialization
 
-    /// For production: InboxStore(repository: .live)
-    /// For previews: InboxStore(repository: .preview)
-    init(repository: TaskRepositoryClient) {
+    /// Full initializer with optional initial data for previews
+    init(
+        repository: TaskRepositoryClient,
+        initialStrayTasks: [(task: StrayTask, messages: [SlackMessage])] = [],
+        initialListingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+    ) {
         self.repository = repository
+        self.strayTasks = initialStrayTasks
+        self.listingTasks = initialListingTasks
     }
 
     // MARK: - Public Methods

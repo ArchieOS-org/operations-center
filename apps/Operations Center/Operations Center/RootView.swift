@@ -107,4 +107,8 @@ struct PlaceholderView: View {
 
 #Preview {
     RootView()
+        .environment(AppState(
+            supabase: .preview,
+            taskRepository: .preview
+        ))
 }
