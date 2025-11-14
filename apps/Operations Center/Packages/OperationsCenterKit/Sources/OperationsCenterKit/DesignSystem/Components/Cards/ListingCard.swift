@@ -74,7 +74,7 @@ public struct ListingCard: View {
                             .foregroundStyle(.primary)
                             .frame(minHeight: 80)
                             .padding(Spacing.sm)
-                            .background(Color(.systemGray6))
+                            .background(Color.gray.opacity(0.1))
                             .cornerRadius(CornerRadius.sm)
                             .scrollContentBackground(.hidden)
                     }
@@ -187,7 +187,7 @@ public struct ListingCard: View {
             }
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal, Spacing.sm)
-            .background(Color(.systemGray6).opacity(0.5))
+            .background(Color.gray.opacity(0.05))
             .cornerRadius(CornerRadius.sm)
         }
         .buttonStyle(.plain)

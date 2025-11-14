@@ -2,12 +2,14 @@
 //  InboxStore.swift
 //  Operations Center
 //
-//  Store for inbox view - using repository pattern with @Observable
+//  Store for inbox view - using dependency injection with @Dependency
 //  Manages both stray and listing tasks with expansion state
+//  Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
 //
 
 import Foundation
 import Observation
+import Dependencies
 import OperationsCenterKit
 
 @Observable
@@ -23,12 +25,15 @@ final class InboxStore {
 
     // MARK: - Dependencies
 
-    private let repository: TaskRepository
+    /// Using @Dependency pattern for Observable stores
+    /// Reference: swift-dependencies/Articles/SingleEntryPointSystems.md
+    @ObservationIgnored
+    @Dependency(\.taskRepository) var repository
 
     // MARK: - Initialization
 
-    init(repository: TaskRepository) {
-        self.repository = repository
+    init() {
+        // Dependencies are injected automatically via @Dependency
     }
 
     // MARK: - Public Methods
@@ -79,7 +84,7 @@ final class InboxStore {
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimStrayTask(taskId: task.id, staffId: currentUserId)
+            _ = try await repository.claimStrayTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -95,7 +100,7 @@ final class InboxStore {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteStrayTask(taskId: task.id, deletedBy: currentUserId)
+            try await repository.deleteStrayTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -113,7 +118,7 @@ final class InboxStore {
             // Get current user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimListingTask(taskId: task.id, staffId: currentUserId)
+            _ = try await repository.claimListingTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -129,7 +134,7 @@ final class InboxStore {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteListingTask(taskId: task.id, deletedBy: currentUserId)
+            try await repository.deleteListingTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -143,9 +148,9 @@ final class InboxStore {
 
         do {
             if subtask.isCompleted {
-                _ = try await repository.uncompleteSubtask(subtaskId: subtask.id)
+                _ = try await repository.uncompleteSubtask(subtask.id)
             } else {
-                _ = try await repository.completeSubtask(subtaskId: subtask.id)
+                _ = try await repository.completeSubtask(subtask.id)
             }
 
             // Refresh to get updated subtasks

@@ -10,11 +10,7 @@ import SwiftUI
 import OperationsCenterKit
 
 struct InboxView: View {
-    @State private var store: InboxStore
-
-    init(repository: TaskRepository = MockTaskRepository.create()) {
-        _store = State(initialValue: InboxStore(repository: repository))
-    }
+    @State private var store = InboxStore()
 
     var body: some View {
         Group {
