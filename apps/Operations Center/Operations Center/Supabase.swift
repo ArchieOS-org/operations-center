@@ -27,14 +27,3 @@ let supabase = SupabaseClient(
         )
     )
 )
-
-// MARK: - Preview Support
-
-extension SupabaseClient {
-    /// Mock Supabase client for Xcode previews
-    /// Uses fake URL that will never be contacted
-    static let preview = SupabaseClient(
-        supabaseURL: URL(string: "https://preview.supabase.co")!,
-        supabaseKey: "preview-anon-key"
-    )
-}

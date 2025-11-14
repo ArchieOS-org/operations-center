@@ -53,16 +53,19 @@ struct RootView: View {
             }
         }
         .task {
-            // Start async operations after app launches
+            // Skip startup in preview mode - zero network calls
+            guard !CommandLine.arguments.contains("--use-preview-data") else { return }
             await appState.startup()
         }
     }
 
     @ViewBuilder
     private func destinationView(for route: Route) -> some View {
+        let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
+
         switch route {
         case .inbox:
-            InboxView()
+            InboxView(store: InboxStore(repository: usePreviewData ? .preview : .live))
         case .myTasks:
             PlaceholderView(title: "My Tasks", icon: "checkmark.circle.fill")
         case .myListings:
@@ -108,7 +111,7 @@ struct PlaceholderView: View {
 #Preview {
     RootView()
         .environment(AppState(
-            supabase: .preview,
+            supabase: supabase,
             taskRepository: .preview
         ))
 }

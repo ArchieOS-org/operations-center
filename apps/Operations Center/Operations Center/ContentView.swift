@@ -169,7 +169,7 @@ struct EmptyStateView: View {
 
 #Preview("With Mock Data") {
     @Previewable @State var appState = AppState(
-        supabase: .preview,
+        supabase: supabase,
         taskRepository: .preview
     )
 
@@ -182,7 +182,7 @@ struct EmptyStateView: View {
 
 #Preview("Empty State") {
     @Previewable @State var appState = AppState(
-        supabase: .preview,
+        supabase: supabase,
         taskRepository: .preview
     )
 
@@ -194,7 +194,7 @@ struct EmptyStateView: View {
 
 #Preview("Loading State") {
     @Previewable @State var appState = AppState(
-        supabase: .preview,
+        supabase: supabase,
         taskRepository: .preview
     )
 

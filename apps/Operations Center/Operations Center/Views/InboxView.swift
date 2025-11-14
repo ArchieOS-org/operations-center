@@ -12,16 +12,9 @@ import OperationsCenterKit
 struct InboxView: View {
     @State private var store: InboxStore
 
-    /// Primary init - accepts pre-configured store (for previews/testing)
+    /// Accepts pre-configured store
     init(store: InboxStore) {
         _store = State(initialValue: store)
-    }
-
-    /// Convenience init for production - creates store with live repository
-    /// Checks for --use-preview-data flag from Xcode scheme
-    init() {
-        let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
-        self.init(store: InboxStore(repository: usePreviewData ? .preview : .live))
     }
 
     var body: some View {
