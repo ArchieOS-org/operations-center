@@ -12,8 +12,9 @@ import OperationsCenterKit
 struct InboxView: View {
     @State private var store: InboxStore
 
-    init(repository: TaskRepository = MockTaskRepository.create()) {
-        _store = State(initialValue: InboxStore(repository: repository))
+    /// Accepts pre-configured store
+    init(store: InboxStore) {
+        _store = State(initialValue: store)
     }
 
     var body: some View {
@@ -159,8 +160,47 @@ struct InboxErrorView: View {
     }
 }
 
-#Preview {
-    NavigationStack {
-        InboxView()
+#Preview("With Mock Data") {
+    let store = InboxStore(
+        repository: .preview,
+        initialStrayTasks: [
+            (StrayTask.mock1, [SlackMessage.mock1]),
+            (StrayTask.mock2, [])
+        ],
+        initialListingTasks: [
+            (ListingTask.mock1, Listing.mock1, [Subtask.mock1]),
+            (ListingTask.mock2, Listing.mock2, [])
+        ]
+    )
+
+    return NavigationStack {
+        InboxView(store: store)
+    }
+}
+
+#Preview("Empty State") {
+    let store = InboxStore(repository: .preview)
+    // Empty arrays via default parameters
+
+    return NavigationStack {
+        InboxView(store: store)
+    }
+}
+
+#Preview("Loading State") {
+    let store = InboxStore(repository: .preview)
+    store.isLoading = true
+
+    return NavigationStack {
+        InboxView(store: store)
+    }
+}
+
+#Preview("Error State") {
+    let store = InboxStore(repository: .preview)
+    store.errorMessage = "Failed to connect to server"
+
+    return NavigationStack {
+        InboxView(store: store)
     }
 }

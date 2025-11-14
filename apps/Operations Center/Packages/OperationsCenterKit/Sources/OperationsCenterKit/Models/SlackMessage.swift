@@ -48,3 +48,30 @@ public struct SlackMessage: Identifiable, Codable, Sendable, Hashable {
         case timestamp
     }
 }
+
+// MARK: - Mock Data
+
+extension SlackMessage {
+    /// Mock data for testing and previews
+    public static let mock1 = SlackMessage(
+        id: "msg_001",
+        taskId: "stray_001",
+        channelId: "C123ABC456",
+        threadTs: "1234567890.123456",
+        messageTs: "1234567890.123456",
+        authorName: "Sarah Johnson",
+        text: "We need to update the CRM with the latest client information from yesterday's meetings",
+        timestamp: Date().addingTimeInterval(-86400 * 2) // 2 days ago
+    )
+
+    public static let mock2 = SlackMessage(
+        id: "msg_002",
+        taskId: "stray_003",
+        channelId: "C789DEF012",
+        threadTs: "1234567891.654321",
+        messageTs: "1234567891.654321",
+        authorName: "Mike Chen",
+        text: "The portfolio photos from last week's shoots are ready for website upload",
+        timestamp: Date().addingTimeInterval(-86400 * 4) // 4 days ago
+    )
+}

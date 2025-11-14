@@ -167,6 +167,39 @@ struct EmptyStateView: View {
     }
 }
 
-#Preview {
-    ContentView()
+#Preview("With Mock Data") {
+    @Previewable @State var appState = AppState(
+        supabase: supabase,
+        taskRepository: .preview
+    )
+
+    // Preload with mock data
+    appState.allTasks = [.mock1, .mock2, .mock3]
+
+    return ContentView()
+        .environment(appState)
+}
+
+#Preview("Empty State") {
+    @Previewable @State var appState = AppState(
+        supabase: supabase,
+        taskRepository: .preview
+    )
+
+    appState.allTasks = []
+
+    return ContentView()
+        .environment(appState)
+}
+
+#Preview("Loading State") {
+    @Previewable @State var appState = AppState(
+        supabase: supabase,
+        taskRepository: .preview
+    )
+
+    appState.isLoading = true
+
+    return ContentView()
+        .environment(appState)
 }

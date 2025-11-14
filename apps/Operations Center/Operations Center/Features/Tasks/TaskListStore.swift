@@ -2,52 +2,44 @@
 //  TaskListStore.swift
 //  Operations Center
 //
-//  Created by Claude Code
+//  Store managing the list of listing tasks
 //
 
 import Foundation
-import Dependencies
-import Supabase
 import OperationsCenterKit
 
-/// Store managing the list of tasks with Supabase integration
+/// Store managing the list of listing tasks using repository pattern
 @Observable
 @MainActor
 final class TaskListStore {
     // MARK: - Observable State
 
-    var tasks: [ListingTask] = []
+    var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
     var isLoading = false
     var errorMessage: String?
 
     // MARK: - Dependencies
 
-    @ObservationIgnored
-    @Dependency(\.supabaseClient) var supabaseClient
+    private let repository: TaskRepositoryClient
 
     // MARK: - Initializer
 
-    init() {}
+    /// For production: TaskListStore(repository: .live)
+    /// For previews: TaskListStore(repository: .preview)
+    init(repository: TaskRepositoryClient) {
+        self.repository = repository
+    }
 
     // MARK: - Actions
 
-    /// Fetch all listing tasks from Supabase
+    /// Fetch all listing tasks from repository
     func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
         do {
-            let response: [ListingTask] = try await supabaseClient
-                .from("listing_tasks")
-                .select()
-                .is("deleted_at", value: nil)
-                .order("created_at", ascending: false)
-                .limit(50)
-                .execute()
-                .value
-
-            tasks = response
-            print("✅ Successfully fetched \(tasks.count) tasks")
+            listingTasks = try await repository.fetchListingTasks()
+            print("✅ Successfully fetched \(listingTasks.count) tasks")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
             print("❌ Error fetching tasks: \(error)")
@@ -56,14 +48,14 @@ final class TaskListStore {
         isLoading = false
     }
 
-    /// Claim a task by assigning it to a staff member
-    func claimTask(_ task: ListingTask, staffId: String) async {
+    /// Claim a task by assigning it to current staff member
+    func claimTask(_ task: ListingTask) async {
         do {
-            try await supabaseClient
-                .from("listing_tasks")
-                .update(["assigned_staff_id": staffId])
-                .eq("id", value: task.id)
-                .execute()
+            // Get current user ID - for now use a placeholder
+            // TODO: Replace with actual authenticated user ID
+            let currentUserId = "current-staff-id"
+
+            _ = try await repository.claimListingTask(task.id, currentUserId)
 
             print("✅ Task claimed: \(task.name)")
 
@@ -75,22 +67,39 @@ final class TaskListStore {
         }
     }
 
-    /// Mark a task as complete
-    func completeTask(_ task: ListingTask) async {
+    /// Delete a listing task (soft delete)
+    func deleteTask(_ task: ListingTask) async {
         do {
-            try await supabaseClient
-                .from("listing_tasks")
-                .update(["status": ListingTask.TaskStatus.done.rawValue])
-                .eq("id", value: task.id)
-                .execute()
+            // Get current user ID for audit trail
+            let currentUserId = "current-staff-id"
 
-            print("✅ Task completed: \(task.name)")
+            try await repository.deleteListingTask(task.id, currentUserId)
+
+            print("✅ Task deleted: \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
-            errorMessage = "Failed to complete task: \(error.localizedDescription)"
-            print("❌ Error completing task: \(error)")
+            errorMessage = "Failed to delete task: \(error.localizedDescription)"
+            print("❌ Error deleting task: \(error)")
+        }
+    }
+
+    /// Toggle subtask completion
+    func toggleSubtask(_ subtask: Subtask) async {
+        errorMessage = nil
+
+        do {
+            if subtask.isCompleted {
+                _ = try await repository.uncompleteSubtask(subtask.id)
+            } else {
+                _ = try await repository.completeSubtask(subtask.id)
+            }
+
+            // Refresh to get updated subtasks
+            await fetchTasks()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

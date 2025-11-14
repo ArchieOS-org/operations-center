@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(AppState.self) private var appState
     @State private var path: [Route] = []
 
     var body: some View {
@@ -51,13 +52,20 @@ struct RootView: View {
                 destinationView(for: route)
             }
         }
+        .task {
+            // Skip startup in preview mode - zero network calls
+            guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+            await appState.startup()
+        }
     }
 
     @ViewBuilder
     private func destinationView(for route: Route) -> some View {
+        let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
+
         switch route {
         case .inbox:
-            InboxView()
+            InboxView(store: InboxStore(repository: usePreviewData ? .preview : .live))
         case .myTasks:
             PlaceholderView(title: "My Tasks", icon: "checkmark.circle.fill")
         case .myListings:
@@ -102,4 +110,8 @@ struct PlaceholderView: View {
 
 #Preview {
     RootView()
+        .environment(AppState(
+            supabase: supabase,
+            taskRepository: .preview
+        ))
 }

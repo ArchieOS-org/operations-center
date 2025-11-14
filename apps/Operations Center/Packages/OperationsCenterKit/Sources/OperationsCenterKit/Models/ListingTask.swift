@@ -14,12 +14,12 @@ public struct ListingTask: Identifiable, Codable, Sendable {
     public let name: String
     public let description: String?
     public let taskCategory: TaskCategory
-    public let status: TaskStatus
+    public var status: TaskStatus
     public let priority: Int
     public let visibilityGroup: VisibilityGroup
-    public let assignedStaffId: String?
+    public var assignedStaffId: String?
     public let dueDate: Date?
-    public let claimedAt: Date?
+    public var claimedAt: Date?
     public let completedAt: Date?
     public let createdAt: Date
     public let updatedAt: Date
@@ -52,6 +52,52 @@ public struct ListingTask: Identifiable, Codable, Sendable {
         case both = "BOTH"
         case agent = "AGENT"
         case marketing = "MARKETING"
+    }
+
+    // MARK: - Initialization
+
+    /// Memberwise initializer required for Codable types
+    /// Codable synthesis only provides init(from: Decoder), not memberwise init
+    public init(
+        id: String,
+        listingId: String,
+        realtorId: String? = nil,
+        name: String,
+        description: String? = nil,
+        taskCategory: TaskCategory,
+        status: TaskStatus,
+        priority: Int,
+        visibilityGroup: VisibilityGroup,
+        assignedStaffId: String? = nil,
+        dueDate: Date? = nil,
+        claimedAt: Date? = nil,
+        completedAt: Date? = nil,
+        createdAt: Date,
+        updatedAt: Date,
+        deletedAt: Date? = nil,
+        deletedBy: String? = nil,
+        inputs: [String: AnyCodable]? = nil,
+        outputs: [String: AnyCodable]? = nil
+    ) {
+        self.id = id
+        self.listingId = listingId
+        self.realtorId = realtorId
+        self.name = name
+        self.description = description
+        self.taskCategory = taskCategory
+        self.status = status
+        self.priority = priority
+        self.visibilityGroup = visibilityGroup
+        self.assignedStaffId = assignedStaffId
+        self.dueDate = dueDate
+        self.claimedAt = claimedAt
+        self.completedAt = completedAt
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.deletedAt = deletedAt
+        self.deletedBy = deletedBy
+        self.inputs = inputs
+        self.outputs = outputs
     }
 
     // MARK: - CodingKeys
@@ -88,6 +134,80 @@ public struct ListingTask: Identifiable, Codable, Sendable {
         guard let dueDate, status != .done else { return false }
         return dueDate < Date()
     }
+}
+
+// MARK: - Mock Data
+
+extension ListingTask {
+    /// Mock data for testing and previews
+    /// Context7 best practice: Keep mock data with the model
+    /// Reference: swift-dependencies/Articles/LivePreviewTest.md
+
+    public static let mock1 = ListingTask(
+        id: "task_001",
+        listingId: "listing_001",
+        realtorId: "realtor_001",
+        name: "Professional Photography",
+        description: "Schedule and complete professional photography for the listing",
+        taskCategory: .photo,
+        status: .open,
+        priority: 100,
+        visibilityGroup: .both,
+        assignedStaffId: nil,
+        dueDate: Date().addingTimeInterval(86400 * 2), // 2 days from now
+        claimedAt: nil,
+        completedAt: nil,
+        createdAt: Date().addingTimeInterval(-86400 * 5), // 5 days ago
+        updatedAt: Date().addingTimeInterval(-86400 * 5),
+        deletedAt: nil,
+        deletedBy: nil,
+        inputs: ["photographer": AnyCodable("John Smith Photography")],
+        outputs: nil
+    )
+
+    public static let mock2 = ListingTask(
+        id: "task_002",
+        listingId: "listing_002",
+        realtorId: "realtor_002",
+        name: "Social Media Campaign",
+        description: "Launch Instagram and Facebook ads for new listing",
+        taskCategory: .marketing,
+        status: .claimed,
+        priority: 80,
+        visibilityGroup: .marketing,
+        assignedStaffId: "staff_001",
+        dueDate: Date().addingTimeInterval(86400 * 3), // 3 days from now
+        claimedAt: Date().addingTimeInterval(-86400), // 1 day ago
+        completedAt: nil,
+        createdAt: Date().addingTimeInterval(-86400 * 3), // 3 days ago
+        updatedAt: Date().addingTimeInterval(-86400),
+        deletedAt: nil,
+        deletedBy: nil,
+        inputs: ["budget": AnyCodable(500), "platforms": AnyCodable(["instagram", "facebook"])],
+        outputs: nil
+    )
+
+    public static let mock3 = ListingTask(
+        id: "task_003",
+        listingId: "listing_003",
+        realtorId: "realtor_001",
+        name: "Home Inspection Coordination",
+        description: "Schedule and coordinate the home inspection",
+        taskCategory: .inspection,
+        status: .done,
+        priority: 90,
+        visibilityGroup: .agent,
+        assignedStaffId: "staff_002",
+        dueDate: Date().addingTimeInterval(-86400), // 1 day ago
+        claimedAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
+        completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+        createdAt: Date().addingTimeInterval(-86400 * 10), // 10 days ago
+        updatedAt: Date().addingTimeInterval(-86400 * 2),
+        deletedAt: nil,
+        deletedBy: nil,
+        inputs: ["inspector": AnyCodable("AAA Home Inspections")],
+        outputs: ["report_url": AnyCodable("https://example.com/report.pdf")]
+    )
 }
 
 // MARK: - AnyCodable Helper

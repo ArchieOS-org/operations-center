@@ -12,7 +12,7 @@ public struct Subtask: Identifiable, Codable, Sendable, Hashable {
     public let parentTaskId: String
     public let name: String
     public let isCompleted: Bool
-    public let completedAt: Date?
+    public var completedAt: Date?
     public let createdAt: Date
 
     public init(
@@ -39,4 +39,36 @@ public struct Subtask: Identifiable, Codable, Sendable, Hashable {
         case completedAt = "completed_at"
         case createdAt = "created_at"
     }
+}
+
+// MARK: - Mock Data
+
+extension Subtask {
+    /// Mock data for testing and previews
+    public static let mock1 = Subtask(
+        id: "subtask_001",
+        parentTaskId: "task_001",
+        name: "Schedule photographer",
+        isCompleted: true,
+        completedAt: Date().addingTimeInterval(-86400), // 1 day ago
+        createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
+    )
+
+    public static let mock2 = Subtask(
+        id: "subtask_002",
+        parentTaskId: "task_001",
+        name: "Prepare property for photos",
+        isCompleted: false,
+        completedAt: nil,
+        createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
+    )
+
+    public static let mock3 = Subtask(
+        id: "subtask_003",
+        parentTaskId: "task_003",
+        name: "Review inspection report",
+        isCompleted: true,
+        completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+        createdAt: Date().addingTimeInterval(-86400 * 7) // 7 days ago
+    )
 }

@@ -8,7 +8,6 @@
 
 import Foundation
 import Supabase
-import Dependencies
 import OperationsCenterKit
 
 @Observable
@@ -23,8 +22,8 @@ final class AppState {
 
     // MARK: - Dependencies
 
-    @ObservationIgnored
-    @Dependency(\.supabaseClient) var supabaseClient
+    private let supabase: SupabaseClient
+    private let taskRepository: TaskRepositoryClient
 
     @ObservationIgnored
     private var realtimeSubscription: Task<Void, Never>?
@@ -47,16 +46,30 @@ final class AppState {
 
     // MARK: - Initialization
 
-    init() {
-        // Load cached data immediately for instant UI
+    /// Initialize AppState with dependency injection
+    /// For production: AppState(supabase: supabase, taskRepository: .live)
+    /// For previews: AppState(supabase: .preview, taskRepository: .preview)
+    init(
+        supabase: SupabaseClient,
+        taskRepository: TaskRepositoryClient
+    ) {
+        self.supabase = supabase
+        self.taskRepository = taskRepository
+        // NO synchronous work here - prevents MainActor blocking
+    }
+
+    // MARK: - Startup
+
+    /// Start async operations after app launch
+    /// Call this from .task modifier in RootView
+    func startup() async {
+        // Load cached data first for instant UI
         loadCachedData()
 
-        // Set up permanent subscriptions
-        Task { @MainActor in
-            await setupAuthStateListener()
-            await fetchTasks()
-            await setupPermanentRealtimeSync()
-        }
+        // Setup async operations
+        await setupAuthStateListener()
+        await fetchTasks()
+        await setupPermanentRealtimeSync()
     }
 
     deinit {
@@ -69,7 +82,7 @@ final class AppState {
     private func setupAuthStateListener() async {
         // Listen for auth state changes
         authStateTask = Task {
-            for await state in await supabaseClient.auth.authStateChanges {
+            for await state in supabase.auth.authStateChanges {
                 if [.initialSession, .signedIn, .signedOut].contains(state.event) {
                     currentUser = state.session?.user
 
@@ -89,13 +102,9 @@ final class AppState {
         errorMessage = nil
 
         do {
-            allTasks = try await supabaseClient
-                .from("listing_tasks")
-                .select()
-                .order("priority", ascending: false)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
+            // Use TaskRepositoryClient (production or preview based on init)
+            let taskData = try await taskRepository.fetchListingTasks()
+            allTasks = taskData.map { $0.0 }  // Extract just the tasks
 
             // Save to cache
             saveCachedData()
@@ -112,14 +121,26 @@ final class AppState {
         // Cancel any existing subscription
         realtimeSubscription?.cancel()
 
-        let channel = await supabaseClient.realtimeV2.channel("all_tasks")
+        let channel = supabase.realtimeV2.channel("all_tasks")
 
         realtimeSubscription = Task {
-            await channel.subscribe()
+            do {
+                // Setup listener BEFORE subscribing
+                let listenerTask = Task {
+                    for await change in channel.postgresChange(AnyAction.self, table: "listing_tasks") {
+                        await handleRealtimeChange(change)
+                    }
+                }
 
-            // Listen forever - subscription never tears down
-            for await change in channel.postgresChange(AnyAction.self, table: "listing_tasks") {
-                await handleRealtimeChange(change)
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Keep listener running
+                await listenerTask.value
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Realtime subscription error: \(error.localizedDescription)"
+                }
             }
         }
     }
@@ -128,13 +149,8 @@ final class AppState {
         // Refresh entire list on any change
         // This ensures all views stay in sync
         do {
-            allTasks = try await supabaseClient
-                .from("listing_tasks")
-                .select()
-                .order("priority", ascending: false)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
+            let taskData = try await taskRepository.fetchListingTasks()
+            allTasks = taskData.map { $0.0 }  // Extract just the tasks
 
             // Save to cache
             saveCachedData()
@@ -154,7 +170,7 @@ final class AppState {
         }
 
         do {
-            let _: ListingTask = try await supabaseClient
+            let _: ListingTask = try await supabase
                 .from("listing_tasks")
                 .update([
                     "assigned_staff_id": userId.uuidString,
@@ -176,7 +192,7 @@ final class AppState {
         errorMessage = nil
 
         do {
-            try await supabaseClient
+            try await supabase
                 .from("listing_tasks")
                 .delete()
                 .eq("task_id", value: task.id)
