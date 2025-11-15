@@ -18,8 +18,8 @@ extension Logger {
     /// Database operations: queries, mutations, cache
     nonisolated(unsafe) static let database = Logger(subsystem: subsystem, category: "database")
 
-    /// UI events: navigation, user interactions, view lifecycle
     // swiftlint:disable:next identifier_name
+    /// UI events: navigation, user interactions, view lifecycle
     nonisolated(unsafe) static let ui = Logger(subsystem: subsystem, category: "ui")
 
     /// Network operations: requests, responses, errors
