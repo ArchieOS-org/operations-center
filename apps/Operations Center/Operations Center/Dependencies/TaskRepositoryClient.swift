@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 import OperationsCenterKit
 import Supabase
 
@@ -115,7 +116,9 @@ extension TaskRepositoryClient {
 
                 return response.compactMap { row -> (task: ListingTask, listing: Listing, subtasks: [Subtask])? in
                     guard let listing = row.listing else {
-                        print("⚠️ Warning: listing_task \(row.taskId) missing listing data")
+                        Logger.database.warning("Listing task missing listing data", metadata: [
+                            "task_id": "\(row.taskId)"
+                        ])
                         return nil
                     }
 

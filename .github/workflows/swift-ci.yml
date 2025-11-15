@@ -109,9 +109,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-deriveddata-${{ hashFiles('apps/Operations Center/**/*.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-deriveddata-
+
       - name: Build for ${{ matrix.platform }}
         working-directory: "apps/Operations Center"
         run: |
+          START=$(date +%s)
+
           if [ "${{ matrix.platform }}" == "macOS" ]; then
             xcodebuild -scheme "${{ matrix.scheme }}" \
               -destination '${{ matrix.destination }}' \
@@ -121,6 +131,14 @@ jobs:
             xcodebuild -scheme "${{ matrix.scheme }}" \
               -destination '${{ matrix.destination }}' \
               build -quiet
+          fi
+
+          END=$(date +%s)
+          DURATION=$((END - START))
+          echo "✅ Build completed in ${DURATION}s"
+
+          if [ $DURATION -gt 300 ]; then
+            echo "⚠️ Warning: Build time (${DURATION}s) exceeded 5min target"
           fi
 
       - name: Test for ${{ matrix.platform }}
