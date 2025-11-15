@@ -4,13 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/operations-center/**'
       - 'apps/Operations Center/**'
       - '.github/workflows/swift-ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'apps/operations-center/**'
       - 'apps/Operations Center/**'
       - '.github/workflows/swift-ci.yml'
 
@@ -77,7 +75,7 @@ jobs:
       - name: Run SwiftLint
         run: |
           brew install swiftlint
-          cd apps/operations-center
+          cd "apps/Operations Center"
           swiftlint --strict
 
   build-and-test:
@@ -112,14 +110,14 @@ jobs:
             ${{ runner.os }}-spm-
 
       - name: Build for ${{ matrix.platform }}
-        working-directory: apps/operations-center
+        working-directory: "apps/Operations Center"
         run: |
           xcodebuild -scheme "${{ matrix.scheme }}" \
             -destination '${{ matrix.destination }}' \
             build --quiet
 
       - name: Test for ${{ matrix.platform }}
-        working-directory: apps/operations-center
+        working-directory: "apps/Operations Center"
         run: |
           xcodebuild test \
             -scheme "${{ matrix.scheme }}" \
@@ -136,7 +134,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check for compiler warnings
-        working-directory: apps/operations-center
+        working-directory: "apps/Operations Center"
         run: |
           xcodebuild -scheme "Operations Center" \
             -destination 'platform=macOS' \
