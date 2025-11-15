@@ -14,7 +14,7 @@
     "swift": {
       "scheme": "Operations Center",
       "platforms": ["iOS", "macOS", "iPadOS"],
-      "flags": ["--quiet"]
+      "flags": ["-quiet"]
     },
     "python": {
       "virtualenv": "apps/backend/api/venv",
@@ -40,13 +40,6 @@
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_PAT}"
-      }
     }
   }
 }
