@@ -14,8 +14,8 @@ import OperationsCenterKit
 final class InboxStore {
     // MARK: - State
 
-    var strayTasks: [(task: StrayTask, messages: [SlackMessage])] = []
-    var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+    var strayTasks: [StrayTaskWithMessages] = []
+    var listingTasks: [ListingTaskWithDetails] = []
     var expandedTaskId: String?
     var isLoading = false
     var errorMessage: String?
@@ -29,8 +29,8 @@ final class InboxStore {
     /// Full initializer with optional initial data for previews
     init(
         repository: TaskRepositoryClient,
-        initialStrayTasks: [(task: StrayTask, messages: [SlackMessage])] = [],
-        initialListingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+        initialStrayTasks: [StrayTaskWithMessages] = [],
+        initialListingTasks: [ListingTaskWithDetails] = []
     ) {
         self.repository = repository
         self.strayTasks = initialStrayTasks

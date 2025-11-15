@@ -240,7 +240,8 @@ public struct ListingCard: View {
 }
 
 #Preview("Expanded with Tasks") {
-    @Previewable @State var notes = "Follow up with agent about staging timeline. Property needs deep cleaning before photos."
+    @Previewable @State var notes =
+        "Follow up with agent about staging timeline. Property needs deep cleaning before photos."
 
     let listing = Listing(
         id: "listing-001",

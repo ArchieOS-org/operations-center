@@ -6,8 +6,8 @@
 //  Uses explicit StrayTaskCard and ListingTaskCard components
 //
 
-import SwiftUI
 import OperationsCenterKit
+import SwiftUI
 
 struct InboxView: View {
     @State private var store: InboxStore
@@ -164,16 +164,16 @@ struct InboxErrorView: View {
     let store = InboxStore(
         repository: .preview,
         initialStrayTasks: [
-            (StrayTask.mock1, [SlackMessage.mock1]),
-            (StrayTask.mock2, [])
+            StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
+            StrayTaskWithMessages(task: StrayTask.mock2, messages: [])
         ],
         initialListingTasks: [
-            (ListingTask.mock1, Listing.mock1, [Subtask.mock1]),
-            (ListingTask.mock2, Listing.mock2, [])
+            ListingTaskWithDetails(task: ListingTask.mock1, listing: Listing.mock1, subtasks: [Subtask.mock1]),
+            ListingTaskWithDetails(task: ListingTask.mock2, listing: Listing.mock2, subtasks: [])
         ]
     )
 
-    return NavigationStack {
+    NavigationStack {
         InboxView(store: store)
     }
 }
@@ -182,7 +182,7 @@ struct InboxErrorView: View {
     let store = InboxStore(repository: .preview)
     // Empty arrays via default parameters
 
-    return NavigationStack {
+    NavigationStack {
         InboxView(store: store)
     }
 }

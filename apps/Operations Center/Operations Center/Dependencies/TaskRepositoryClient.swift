@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import OSLog
 import OperationsCenterKit
+import OSLog
 import Supabase
 
 // MARK: - Task Repository Client
@@ -15,11 +15,10 @@ import Supabase
 /// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
     /// Fetch all stray tasks with their associated Slack messages
-    public var fetchStrayTasks: @Sendable () async throws -> [(task: StrayTask, messages: [SlackMessage])]
+    public var fetchStrayTasks: @Sendable () async throws -> [StrayTaskWithMessages]
 
     /// Fetch all listing tasks with their listing data and subtasks
-    public var fetchListingTasks: @Sendable () async throws
-        -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])]
+    public var fetchListingTasks: @Sendable () async throws -> [ListingTaskWithDetails]
 
     /// Claim a stray task
     public var claimStrayTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> StrayTask
@@ -56,7 +55,7 @@ extension TaskRepositoryClient {
                     .value
 
                 // Return tasks with empty messages - nested queries need better handling
-                return response.map { ($0, []) }
+                return response.map { StrayTaskWithMessages(task: $0, messages: []) }
             },
             fetchListingTasks: {
                 // Query listing_tasks with nested listings join
@@ -115,7 +114,7 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap { row -> (task: ListingTask, listing: Listing, subtasks: [Subtask])? in
+                return response.compactMap { row -> ListingTaskWithDetails? in
                     guard let listing = row.listing else {
                         Logger.database.warning("Listing task missing listing data: \(row.taskId)")
                         return nil
@@ -146,7 +145,7 @@ extension TaskRepositoryClient {
                     // TODO: Add subtasks query once subtasks table exists
                     let subtasks: [Subtask] = []
 
-                    return (task, listing, subtasks)
+                    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
                 }
             },
             claimStrayTask: { taskId, staffId in
@@ -231,16 +230,28 @@ extension TaskRepositoryClient {
     public static let preview = Self(
         fetchStrayTasks: {
             [
-                (StrayTask.mock1, [SlackMessage.mock1]),
-                (StrayTask.mock2, []),
-                (StrayTask.mock3, [SlackMessage.mock2])
+                StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
+                StrayTaskWithMessages(task: StrayTask.mock2, messages: []),
+                StrayTaskWithMessages(task: StrayTask.mock3, messages: [SlackMessage.mock2])
             ]
         },
         fetchListingTasks: {
             [
-                (ListingTask.mock1, Listing.mock1, [Subtask.mock1, Subtask.mock2]),
-                (ListingTask.mock2, Listing.mock2, []),
-                (ListingTask.mock3, Listing.mock3, [Subtask.mock3])
+                ListingTaskWithDetails(
+                    task: ListingTask.mock1,
+                    listing: Listing.mock1,
+                    subtasks: [Subtask.mock1, Subtask.mock2]
+                ),
+                ListingTaskWithDetails(
+                    task: ListingTask.mock2,
+                    listing: Listing.mock2,
+                    subtasks: []
+                ),
+                ListingTaskWithDetails(
+                    task: ListingTask.mock3,
+                    listing: Listing.mock3,
+                    subtasks: [Subtask.mock3]
+                )
             ]
         },
         claimStrayTask: { _, staffId in

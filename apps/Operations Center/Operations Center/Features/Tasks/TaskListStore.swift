@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import OSLog
 import OperationsCenterKit
+import OSLog
 
 /// Store managing the list of listing tasks using repository pattern
 @Observable
@@ -15,7 +15,7 @@ import OperationsCenterKit
 final class TaskListStore {
     // MARK: - Observable State
 
-    var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+    var listingTasks: [ListingTaskWithDetails] = []
     var isLoading = false
     var errorMessage: String?
 

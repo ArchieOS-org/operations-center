@@ -7,8 +7,8 @@
 //
 
 import Foundation
-import Supabase
 import OperationsCenterKit
+import Supabase
 
 @Observable
 @MainActor
@@ -82,14 +82,13 @@ final class AppState {
     private func setupAuthStateListener() async {
         // Listen for auth state changes
         authStateTask = Task {
-            for await state in supabase.auth.authStateChanges {
-                if [.initialSession, .signedIn, .signedOut].contains(state.event) {
-                    currentUser = state.session?.user
+            for await state in supabase.auth.authStateChanges
+                where [.initialSession, .signedIn, .signedOut].contains(state.event) {
+                currentUser = state.session?.user
 
-                    // Refresh tasks when auth state changes
-                    if state.session != nil {
-                        await fetchTasks()
-                    }
+                // Refresh tasks when auth state changes
+                if state.session != nil {
+                    await fetchTasks()
                 }
             }
         }
@@ -104,7 +103,7 @@ final class AppState {
         do {
             // Use TaskRepositoryClient (production or preview based on init)
             let taskData = try await taskRepository.fetchListingTasks()
-            allTasks = taskData.map { $0.0 }  // Extract just the tasks
+            allTasks = taskData.map(\.task)  // Extract just the tasks
 
             // Save to cache
             saveCachedData()
@@ -150,7 +149,7 @@ final class AppState {
         // This ensures all views stay in sync
         do {
             let taskData = try await taskRepository.fetchListingTasks()
-            allTasks = taskData.map { $0.0 }  // Extract just the tasks
+            allTasks = taskData.map(\.task)  // Extract just the tasks
 
             // Save to cache
             saveCachedData()

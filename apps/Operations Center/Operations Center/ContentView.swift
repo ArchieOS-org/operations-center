@@ -5,8 +5,8 @@
 //  Main view - displays listing tasks from Supabase
 //
 
-import SwiftUI
 import OperationsCenterKit
+import SwiftUI
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState

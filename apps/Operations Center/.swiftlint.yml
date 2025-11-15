@@ -25,7 +25,6 @@ disabled_rules:
   - trailing_comma
   - todo
   - multiple_closures_with_trailing_closure  # SwiftUI DSL pattern
-  - large_tuple  # Allow tuples for data models
 
 # Rule Configuration
 line_length:
@@ -52,6 +51,10 @@ cyclomatic_complexity:
   warning: 10
   error: 20
 
+nesting:
+  type_level: 2  # Allows CodingKeys enum inside Decodable structs
+  function_level: 2
+
 identifier_name:
   min_length:
     warning: 2
@@ -63,6 +66,7 @@ identifier_name:
     - id
     - URL
     - db
+    - ui  # Logger category
     - xs  # Design system spacing tokens
     - sm
     - md
