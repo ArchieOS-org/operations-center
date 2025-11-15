@@ -85,7 +85,7 @@ excluded:
 
 # Included paths
 included:
-  - apps/Operations Center
+  - .
 
 # Custom Rules
 custom_rules:

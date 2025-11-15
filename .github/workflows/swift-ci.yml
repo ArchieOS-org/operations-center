@@ -85,7 +85,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - destination: 'platform=iOS Simulator,name=Any iOS Simulator Device'
+          - destination: 'platform=iOS Simulator,name=iPhone 16 Pro'
             scheme: 'Operations Center'
             platform: 'iOS'
           - destination: 'platform=macOS'
@@ -115,8 +115,7 @@ jobs:
           if [ "${{ matrix.platform }}" == "macOS" ]; then
             xcodebuild -scheme "${{ matrix.scheme }}" \
               -destination '${{ matrix.destination }}' \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
               build -quiet
           else
             xcodebuild -scheme "${{ matrix.scheme }}" \
@@ -131,8 +130,7 @@ jobs:
             xcodebuild test \
               -scheme "${{ matrix.scheme }}" \
               -destination '${{ matrix.destination }}' \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
               -quiet
           else
             xcodebuild test \
