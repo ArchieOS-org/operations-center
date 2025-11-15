@@ -1,5 +1,5 @@
 //
-//  Operations_CenterApp.swift
+//  OperationsCenterApp.swift
 //  Operations Center
 //
 //  Created by Noah Deskin on 2025-11-11.
@@ -10,7 +10,7 @@ import OperationsCenterKit
 
 @MainActor
 @main
-struct Operations_CenterApp: App {
+struct OperationsCenterApp: App {
     @State private var appState: AppState
 
     init() {
