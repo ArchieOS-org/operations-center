@@ -513,8 +513,10 @@ git ls-files | grep xcscheme
 ### Pre-commit Hook
 Install the pre-commit hook to automatically verify schemes:
 ```bash
-cp tools/scripts/pre-commit-verify-schemes.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+# Works for both regular repos and worktrees
+GIT_DIR=$(git rev-parse --git-common-dir)
+cp tools/scripts/pre-commit-verify-schemes.sh "$GIT_DIR/hooks/pre-commit"
+chmod +x "$GIT_DIR/hooks/pre-commit"
 ```
 
 ### CI Enforcement
