@@ -12,10 +12,10 @@ import Foundation
 /// Enables seamless swap from mock to production data sources
 public protocol TaskRepository: Sendable {
     /// Fetch all stray tasks with their associated Slack messages
-    func fetchStrayTasks() async throws -> [(task: StrayTask, messages: [SlackMessage])]
+    func fetchStrayTasks() async throws -> [StrayTaskWithMessages]
 
     /// Fetch all listing tasks with their listing data and subtasks
-    func fetchListingTasks() async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])]
+    func fetchListingTasks() async throws -> [ListingTaskWithDetails]
 
     /// Claim a stray task
     func claimStrayTask(taskId: String, staffId: String) async throws -> StrayTask

@@ -76,12 +76,8 @@ public struct DSContextMenu: View {
     VStack {
         Spacer()
         DSContextMenu(actions: [
-            DSContextAction(title: "Move", systemImage: "arrow.right.circle") {
-                print("Move tapped")
-            },
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {
-                print("Delete tapped")
-            }
+            DSContextAction(title: "Move", systemImage: "arrow.right.circle") {},
+            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
         ])
         .padding()
     }
@@ -93,12 +89,8 @@ public struct DSContextMenu: View {
     VStack {
         Spacer()
         DSContextMenu(actions: [
-            DSContextAction(title: "Claim", systemImage: "hand.raised") {
-                print("Claim tapped")
-            },
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {
-                print("Delete tapped")
-            }
+            DSContextAction(title: "Claim", systemImage: "hand.raised") {},
+            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
         ])
         .padding()
     }
@@ -110,18 +102,10 @@ public struct DSContextMenu: View {
     VStack {
         Spacer()
         DSContextMenu(actions: [
-            DSContextAction(title: "Edit", systemImage: "pencil") {
-                print("Edit tapped")
-            },
-            DSContextAction(title: "Share", systemImage: "square.and.arrow.up") {
-                print("Share tapped")
-            },
-            DSContextAction(title: "Archive", systemImage: "archivebox") {
-                print("Archive tapped")
-            },
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {
-                print("Delete tapped")
-            }
+            DSContextAction(title: "Edit", systemImage: "pencil") {},
+            DSContextAction(title: "Share", systemImage: "square.and.arrow.up") {},
+            DSContextAction(title: "Archive", systemImage: "archivebox") {},
+            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
         ])
         .padding()
     }

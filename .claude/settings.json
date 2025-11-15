@@ -14,7 +14,7 @@
     "swift": {
       "scheme": "Operations Center",
       "platforms": ["iOS", "macOS", "iPadOS"],
-      "flags": ["--quiet"]
+      "flags": ["-quiet"]
     },
     "python": {
       "virtualenv": "apps/backend/api/venv",

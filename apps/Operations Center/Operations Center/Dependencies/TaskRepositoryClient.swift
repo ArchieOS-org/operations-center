@@ -7,6 +7,7 @@
 
 import Foundation
 import OperationsCenterKit
+import OSLog
 import Supabase
 
 // MARK: - Task Repository Client
@@ -14,10 +15,10 @@ import Supabase
 /// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
     /// Fetch all stray tasks with their associated Slack messages
-    public var fetchStrayTasks: @Sendable () async throws -> [(task: StrayTask, messages: [SlackMessage])]
+    public var fetchStrayTasks: @Sendable () async throws -> [StrayTaskWithMessages]
 
     /// Fetch all listing tasks with their listing data and subtasks
-    public var fetchListingTasks: @Sendable () async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])]
+    public var fetchListingTasks: @Sendable () async throws -> [ListingTaskWithDetails]
 
     /// Claim a stray task
     public var claimStrayTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> StrayTask
@@ -54,7 +55,7 @@ extension TaskRepositoryClient {
                     .value
 
                 // Return tasks with empty messages - nested queries need better handling
-                return response.map { ($0, []) }
+                return response.map { StrayTaskWithMessages(task: $0, messages: []) }
             },
             fetchListingTasks: {
                 // Query listing_tasks with nested listings join
@@ -80,6 +81,7 @@ extension TaskRepositoryClient {
                     let outputs: [String: AnyCodable]?
                     let listing: Listing?
 
+                    // swiftlint:disable nesting
                     enum CodingKeys: String, CodingKey {
                         case taskId = "task_id"
                         case listingId = "listing_id"
@@ -102,6 +104,7 @@ extension TaskRepositoryClient {
                         case outputs
                         case listing = "listings"
                     }
+                    // swiftlint:enable nesting
                 }
 
                 let response: [ListingTaskResponse] = try await supabase
@@ -113,9 +116,9 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap { row -> (task: ListingTask, listing: Listing, subtasks: [Subtask])? in
+                return response.compactMap { row -> ListingTaskWithDetails? in
                     guard let listing = row.listing else {
-                        print("⚠️ Warning: listing_task \(row.taskId) missing listing data")
+                        Logger.database.warning("Listing task missing listing data: \(row.taskId)")
                         return nil
                     }
 
@@ -141,10 +144,11 @@ extension TaskRepositoryClient {
                         outputs: row.outputs
                     )
 
+                    // swiftlint:disable:next todo
                     // TODO: Add subtasks query once subtasks table exists
                     let subtasks: [Subtask] = []
 
-                    return (task, listing, subtasks)
+                    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
                 }
             },
             claimStrayTask: { taskId, staffId in
@@ -207,13 +211,15 @@ extension TaskRepositoryClient {
                     .eq("task_id", value: taskId)
                     .execute()
             },
-            completeSubtask: { subtaskId in
+            completeSubtask: { _ in
+                // swiftlint:disable:next todo
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
                 ])
             },
-            uncompleteSubtask: { subtaskId in
+            uncompleteSubtask: { _ in
+                // swiftlint:disable:next todo
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
@@ -229,26 +235,38 @@ extension TaskRepositoryClient {
     public static let preview = Self(
         fetchStrayTasks: {
             [
-                (StrayTask.mock1, [SlackMessage.mock1]),
-                (StrayTask.mock2, []),
-                (StrayTask.mock3, [SlackMessage.mock2])
+                StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
+                StrayTaskWithMessages(task: StrayTask.mock2, messages: []),
+                StrayTaskWithMessages(task: StrayTask.mock3, messages: [SlackMessage.mock2])
             ]
         },
         fetchListingTasks: {
             [
-                (ListingTask.mock1, Listing.mock1, [Subtask.mock1, Subtask.mock2]),
-                (ListingTask.mock2, Listing.mock2, []),
-                (ListingTask.mock3, Listing.mock3, [Subtask.mock3])
+                ListingTaskWithDetails(
+                    task: ListingTask.mock1,
+                    listing: Listing.mock1,
+                    subtasks: [Subtask.mock1, Subtask.mock2]
+                ),
+                ListingTaskWithDetails(
+                    task: ListingTask.mock2,
+                    listing: Listing.mock2,
+                    subtasks: []
+                ),
+                ListingTaskWithDetails(
+                    task: ListingTask.mock3,
+                    listing: Listing.mock3,
+                    subtasks: [Subtask.mock3]
+                )
             ]
         },
-        claimStrayTask: { taskId, staffId in
+        claimStrayTask: { _, staffId in
             var task = StrayTask.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
             task.status = .claimed
             return task
         },
-        claimListingTask: { taskId, staffId in
+        claimListingTask: { _, staffId in
             var task = ListingTask.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
@@ -257,12 +275,12 @@ extension TaskRepositoryClient {
         },
         deleteStrayTask: { _, _ in },
         deleteListingTask: { _, _ in },
-        completeSubtask: { subtaskId in
+        completeSubtask: { _ in
             var subtask = Subtask.mock1
             subtask.completedAt = Date()
             return subtask
         },
-        uncompleteSubtask: { subtaskId in
+        uncompleteSubtask: { _ in
             var subtask = Subtask.mock1
             subtask.completedAt = nil
             return subtask

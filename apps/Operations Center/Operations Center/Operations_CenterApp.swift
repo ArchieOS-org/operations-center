@@ -1,16 +1,16 @@
 //
-//  Operations_CenterApp.swift
+//  OperationsCenterApp.swift
 //  Operations Center
 //
 //  Created by Noah Deskin on 2025-11-11.
 //
 
-import SwiftUI
 import OperationsCenterKit
+import SwiftUI
 
 @MainActor
 @main
-struct Operations_CenterApp: App {
+struct OperationsCenterApp: App {
     @State private var appState: AppState
 
     init() {

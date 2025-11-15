@@ -2,7 +2,6 @@
 
 # Opt-in rules for higher code quality
 opt_in_rules:
-  - explicit_type_interface
   - closure_spacing
   - sorted_imports
   - vertical_whitespace_closing_braces
@@ -14,16 +13,18 @@ opt_in_rules:
   - operator_usage_whitespace
   - redundant_nil_coalescing
   - toggle_bool
-  - unused_import
   - unused_optional_binding
   - yoda_condition
+
+# Analyzer rules (require full compilation context)
+analyzer_rules:
+  - unused_import
 
 # Disable rules that conflict with modern Swift or SwiftUI patterns
 disabled_rules:
   - trailing_comma
   - todo
   - multiple_closures_with_trailing_closure  # SwiftUI DSL pattern
-  - large_tuple  # Allow tuples for data models
 
 # Rule Configuration
 line_length:
@@ -50,6 +51,10 @@ cyclomatic_complexity:
   warning: 10
   error: 20
 
+nesting:
+  type_level: 2  # Allows CodingKeys enum inside Decodable structs
+  function_level: 2
+
 identifier_name:
   min_length:
     warning: 2
@@ -61,6 +66,7 @@ identifier_name:
     - id
     - URL
     - db
+    - ui  # Logger category
     - xs  # Design system spacing tokens
     - sm
     - md
@@ -82,10 +88,12 @@ excluded:
   - "**/*.generated.swift"
   - "**/*Tests.swift"  # Test files have different standards
   - "**/*UITests.swift"
+  - "Operations CenterTests"  # Exclude test target
+  - "Operations CenterUITests"
 
 # Included paths
 included:
-  - apps/Operations Center
+  - .
 
 # Custom Rules
 custom_rules:
@@ -93,7 +101,7 @@ custom_rules:
     name: "No print statements"
     regex: "\\bprint\\s*\\("
     message: "Use logger instead of print"
-    severity: warning
+    severity: error
 
   no_force_try:
     name: "No force try"

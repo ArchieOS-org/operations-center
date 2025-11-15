@@ -1,5 +1,5 @@
 //
-//  Operations_CenterUITestsLaunchTests.swift
+//  OperationsCenterUITestsLaunchTests.swift
 //  Operations CenterUITests
 //
 //  Created by Noah Deskin on 2025-11-11.
@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class Operations_CenterUITestsLaunchTests: XCTestCase {
+final class OperationsCenterUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

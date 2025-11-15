@@ -65,8 +65,8 @@ struct ListingTaskToolbar: View {
                 .foregroundStyle(.secondary)
 
             ListingTaskToolbar(
-                onClaim: { print("Claim tapped") },
-                onDelete: { print("Delete tapped") }
+                onClaim: {},
+                onDelete: {}
             )
         }
         .padding()
@@ -106,8 +106,8 @@ struct ListingTaskToolbar: View {
             }
 
             ListingTaskToolbar(
-                onClaim: { print("Claim tapped") },
-                onDelete: { print("Delete tapped") }
+                onClaim: {},
+                onDelete: {}
             )
         }
         .padding()

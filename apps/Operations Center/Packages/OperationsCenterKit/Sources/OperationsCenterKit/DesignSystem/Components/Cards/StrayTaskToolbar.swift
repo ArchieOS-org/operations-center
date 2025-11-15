@@ -61,8 +61,8 @@ struct StrayTaskToolbar: View {
                 .font(Typography.cardTitle)
 
             StrayTaskToolbar(
-                onClaim: { print("Claim tapped") },
-                onDelete: { print("Delete tapped") }
+                onClaim: {},
+                onDelete: {}
             )
         }
         .padding()
@@ -81,8 +81,8 @@ struct StrayTaskToolbar: View {
                 .foregroundStyle(.secondary)
 
             StrayTaskToolbar(
-                onClaim: { print("Claim tapped") },
-                onDelete: { print("Delete tapped") }
+                onClaim: {},
+                onDelete: {}
             )
         }
         .padding()

@@ -187,8 +187,8 @@ public struct StrayTaskCard: View {
         messages: messages,
         isExpanded: true,
         onTap: {},
-        onClaim: { print("Claim") },
-        onDelete: { print("Delete") }
+        onClaim: {},
+        onDelete: {}
     )
     .padding()
 }

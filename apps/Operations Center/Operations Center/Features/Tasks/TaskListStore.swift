@@ -7,6 +7,7 @@
 
 import Foundation
 import OperationsCenterKit
+import OSLog
 
 /// Store managing the list of listing tasks using repository pattern
 @Observable
@@ -14,7 +15,7 @@ import OperationsCenterKit
 final class TaskListStore {
     // MARK: - Observable State
 
-    var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
+    var listingTasks: [ListingTaskWithDetails] = []
     var isLoading = false
     var errorMessage: String?
 
@@ -39,10 +40,10 @@ final class TaskListStore {
 
         do {
             listingTasks = try await repository.fetchListingTasks()
-            print("✅ Successfully fetched \(listingTasks.count) tasks")
+            Logger.tasks.info("Fetched listing tasks: \(self.listingTasks.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-            print("❌ Error fetching tasks: \(error)")
+            Logger.tasks.error("Failed to fetch listing tasks: \(error.localizedDescription)")
         }
 
         isLoading = false
@@ -52,18 +53,19 @@ final class TaskListStore {
     func claimTask(_ task: ListingTask) async {
         do {
             // Get current user ID - for now use a placeholder
+            // swiftlint:disable:next todo
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
             _ = try await repository.claimListingTask(task.id, currentUserId)
 
-            print("✅ Task claimed: \(task.name)")
+            Logger.tasks.info("Claimed listing task: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
-            print("❌ Error claiming task: \(error)")
+            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
         }
     }
 
@@ -75,13 +77,13 @@ final class TaskListStore {
 
             try await repository.deleteListingTask(task.id, currentUserId)
 
-            print("✅ Task deleted: \(task.name)")
+            Logger.tasks.info("Deleted listing task: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
-            print("❌ Error deleting task: \(error)")
+            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
         }
     }
 

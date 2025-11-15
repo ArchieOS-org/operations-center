@@ -114,8 +114,6 @@ struct SubtasksSection: View {
         )
     ]
 
-    SubtasksSection(subtasks: mockSubtasks) { subtask in
-        print("Toggled: \(subtask.name)")
-    }
+    SubtasksSection(subtasks: mockSubtasks) { _ in }
     .padding()
 }
