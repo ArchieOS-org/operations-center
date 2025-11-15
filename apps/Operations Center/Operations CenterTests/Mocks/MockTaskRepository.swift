@@ -48,16 +48,16 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
 
     // MARK: - TaskRepository Implementation
 
-    func fetchStrayTasks() async throws -> [(task: StrayTask, messages: [SlackMessage])] {
+    func fetchStrayTasks() async throws -> [StrayTaskWithMessages] {
         return strayTasks
             .filter { $0.deletedAt == nil }
             .map { task in
                 let messages = slackMessages[task.id] ?? []
-                return (task: task, messages: messages)
+                return StrayTaskWithMessages(task: task, messages: messages)
             }
     }
 
-    func fetchListingTasks() async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])] {
+    func fetchListingTasks() async throws -> [ListingTaskWithDetails] {
         return listingTasks
             .filter { $0.deletedAt == nil }
             .compactMap { task in
@@ -65,7 +65,7 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
                     return nil
                 }
                 let taskSubtasks = subtasks[task.id] ?? []
-                return (task: task, listing: listing, subtasks: taskSubtasks)
+                return ListingTaskWithDetails(task: task, listing: listing, subtasks: taskSubtasks)
             }
     }
 
