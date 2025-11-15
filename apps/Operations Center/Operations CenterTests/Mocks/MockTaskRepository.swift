@@ -62,7 +62,6 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
             .filter { $0.deletedAt == nil }
             .compactMap { task in
                 guard let listing = listings[task.listingId] else {
-                    print("⚠️ Warning: No listing found for task \(task.id) with listingId \(task.listingId)")
                     return nil
                 }
                 let taskSubtasks = subtasks[task.id] ?? []

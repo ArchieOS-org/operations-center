@@ -330,15 +330,9 @@ public struct ListingCard: View {
         editableNotes: $notes,
         isExpanded: true,
         onTap: {},
-        onTaskTap: { task in
-            print("Tapped task: \(task.name)")
-        },
-        onMove: {
-            print("Move listing")
-        },
-        onDelete: {
-            print("Delete listing")
-        }
+        onTaskTap: { _ in },
+        onMove: {},
+        onDelete: {}
     )
     .padding()
 }

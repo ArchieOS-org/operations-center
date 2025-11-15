@@ -262,11 +262,9 @@ public struct ListingTaskCard: View {
         subtasks: subtasks,
         isExpanded: true,
         onTap: {},
-        onSubtaskToggle: { subtask in
-            print("Toggled: \(subtask.name)")
-        },
-        onClaim: { print("Claim") },
-        onDelete: { print("Delete") }
+        onSubtaskToggle: { _ in },
+        onClaim: {},
+        onDelete: {}
     )
     .padding()
 }

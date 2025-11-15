@@ -18,7 +18,8 @@ public struct TaskRepositoryClient {
     public var fetchStrayTasks: @Sendable () async throws -> [(task: StrayTask, messages: [SlackMessage])]
 
     /// Fetch all listing tasks with their listing data and subtasks
-    public var fetchListingTasks: @Sendable () async throws -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])]
+    public var fetchListingTasks: @Sendable () async throws
+        -> [(task: ListingTask, listing: Listing, subtasks: [Subtask])]
 
     /// Claim a stray task
     public var claimStrayTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> StrayTask
@@ -116,9 +117,7 @@ extension TaskRepositoryClient {
 
                 return response.compactMap { row -> (task: ListingTask, listing: Listing, subtasks: [Subtask])? in
                     guard let listing = row.listing else {
-                        Logger.database.warning("Listing task missing listing data", metadata: [
-                            "task_id": "\(row.taskId)"
-                        ])
+                        Logger.database.warning("Listing task missing listing data: \(row.taskId)")
                         return nil
                     }
 

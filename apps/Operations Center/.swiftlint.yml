@@ -84,6 +84,8 @@ excluded:
   - "**/*.generated.swift"
   - "**/*Tests.swift"  # Test files have different standards
   - "**/*UITests.swift"
+  - "Operations CenterTests"  # Exclude test target
+  - "Operations CenterUITests"
 
 # Included paths
 included:

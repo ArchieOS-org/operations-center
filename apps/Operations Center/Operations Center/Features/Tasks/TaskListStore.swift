@@ -40,14 +40,10 @@ final class TaskListStore {
 
         do {
             listingTasks = try await repository.fetchListingTasks()
-            Logger.tasks.info("Fetched listing tasks", metadata: [
-                "count": "\(listingTasks.count)"
-            ])
+            Logger.tasks.info("Fetched listing tasks: \(self.listingTasks.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to fetch listing tasks", metadata: [
-                "error": "\(error.localizedDescription)"
-            ])
+            Logger.tasks.error("Failed to fetch listing tasks: \(error.localizedDescription)")
         }
 
         isLoading = false
@@ -62,18 +58,13 @@ final class TaskListStore {
 
             _ = try await repository.claimListingTask(task.id, currentUserId)
 
-            Logger.tasks.info("Claimed listing task", metadata: [
-                "task_id": "\(task.id)",
-                "task_name": "\(task.name)"
-            ])
+            Logger.tasks.info("Claimed listing task: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to claim listing task", metadata: [
-                "error": "\(error.localizedDescription)"
-            ])
+            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
         }
     }
 
@@ -85,18 +76,13 @@ final class TaskListStore {
 
             try await repository.deleteListingTask(task.id, currentUserId)
 
-            Logger.tasks.info("Deleted listing task", metadata: [
-                "task_id": "\(task.id)",
-                "task_name": "\(task.name)"
-            ])
+            Logger.tasks.info("Deleted listing task: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to delete listing task", metadata: [
-                "error": "\(error.localizedDescription)"
-            ])
+            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
         }
     }
 
