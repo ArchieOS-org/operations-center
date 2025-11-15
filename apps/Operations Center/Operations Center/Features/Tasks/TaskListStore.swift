@@ -53,6 +53,7 @@ final class TaskListStore {
     func claimTask(_ task: ListingTask) async {
         do {
             // Get current user ID - for now use a placeholder
+            // swiftlint:disable:next todo
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 

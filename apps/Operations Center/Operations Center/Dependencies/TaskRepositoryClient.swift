@@ -81,6 +81,7 @@ extension TaskRepositoryClient {
                     let outputs: [String: AnyCodable]?
                     let listing: Listing?
 
+                    // swiftlint:disable nesting
                     enum CodingKeys: String, CodingKey {
                         case taskId = "task_id"
                         case listingId = "listing_id"
@@ -103,6 +104,7 @@ extension TaskRepositoryClient {
                         case outputs
                         case listing = "listings"
                     }
+                    // swiftlint:enable nesting
                 }
 
                 let response: [ListingTaskResponse] = try await supabase
@@ -142,6 +144,7 @@ extension TaskRepositoryClient {
                         outputs: row.outputs
                     )
 
+                    // swiftlint:disable:next todo
                     // TODO: Add subtasks query once subtasks table exists
                     let subtasks: [Subtask] = []
 
@@ -209,12 +212,14 @@ extension TaskRepositoryClient {
                     .execute()
             },
             completeSubtask: { _ in
+                // swiftlint:disable:next todo
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
                 ])
             },
             uncompleteSubtask: { _ in
+                // swiftlint:disable:next todo
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"

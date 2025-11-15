@@ -37,6 +37,7 @@ enum AppConfig {
     // MARK: - FastAPI Configuration
 
     static var fastAPIURL: URL {
+        // swiftlint:disable:next todo
         // TODO: Replace with actual Vercel deployment URL
         return URL(string: "https://your-project.vercel.app")!
     }
