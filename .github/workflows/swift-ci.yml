@@ -75,7 +75,7 @@ jobs:
       - name: Run SwiftLint
         run: |
           brew install swiftlint
-          cd "apps/Operations Center"
+          cd "apps/Operations Center/Operations Center"
           swiftlint --strict
 
   build-and-test:
@@ -104,8 +104,8 @@ jobs:
         with:
           path: |
             apps/Operations Center/Packages/OperationsCenterKit/.build
-            ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts
+          key: ${{ runner.os }}-spm-${{ hashFiles('apps/Operations Center/**/Package.resolved', 'apps/Operations Center/**/Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 

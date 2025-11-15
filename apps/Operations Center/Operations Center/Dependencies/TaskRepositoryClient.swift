@@ -207,13 +207,13 @@ extension TaskRepositoryClient {
                     .eq("task_id", value: taskId)
                     .execute()
             },
-            completeSubtask: { subtaskId in
+            completeSubtask: { _ in
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
                 ])
             },
-            uncompleteSubtask: { subtaskId in
+            uncompleteSubtask: { _ in
                 // TODO: Implement once subtasks table exists
                 throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
@@ -241,14 +241,14 @@ extension TaskRepositoryClient {
                 (ListingTask.mock3, Listing.mock3, [Subtask.mock3])
             ]
         },
-        claimStrayTask: { taskId, staffId in
+        claimStrayTask: { _, staffId in
             var task = StrayTask.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
             task.status = .claimed
             return task
         },
-        claimListingTask: { taskId, staffId in
+        claimListingTask: { _, staffId in
             var task = ListingTask.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
@@ -257,12 +257,12 @@ extension TaskRepositoryClient {
         },
         deleteStrayTask: { _, _ in },
         deleteListingTask: { _, _ in },
-        completeSubtask: { subtaskId in
+        completeSubtask: { _ in
             var subtask = Subtask.mock1
             subtask.completedAt = Date()
             return subtask
         },
-        uncompleteSubtask: { subtaskId in
+        uncompleteSubtask: { _ in
             var subtask = Subtask.mock1
             subtask.completedAt = nil
             return subtask

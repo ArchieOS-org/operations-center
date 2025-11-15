@@ -16,7 +16,7 @@ final class InboxStore {
 
     var strayTasks: [(task: StrayTask, messages: [SlackMessage])] = []
     var listingTasks: [(task: ListingTask, listing: Listing, subtasks: [Subtask])] = []
-    var expandedTaskId: String? = nil
+    var expandedTaskId: String?
     var isLoading = false
     var errorMessage: String?
 

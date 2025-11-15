@@ -89,7 +89,7 @@ struct RootView: View {
 struct PlaceholderView: View {
     let title: String
     let icon: String
-    var subtitle: String? = nil
+    var subtitle: String?
 
     var body: some View {
         VStack(spacing: 16) {
