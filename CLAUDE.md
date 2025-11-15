@@ -155,7 +155,7 @@ apps/backend/api/
 
 ### Multi-Platform Apple App (iOS + macOS + iPadOS)
 
-**ALWAYS use --quiet flag with xcodebuild** to avoid flooding context window.
+**ALWAYS use -quiet flag with xcodebuild** (single dash, not double) to avoid flooding context window.
 
 ```bash
 cd apps/operations-center
@@ -163,24 +163,24 @@ cd apps/operations-center
 # Build for iOS
 xcodebuild -scheme "Operations Center" \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
-  build --quiet
+  build -quiet
 
 # Build for macOS
 xcodebuild -scheme "Operations Center" \
   -destination 'platform=macOS' \
-  build --quiet
+  build -quiet
 
 # Test iOS
 xcodebuild test \
   -scheme "Operations Center" \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
-  --quiet
+  -quiet
 
 # Test macOS
 xcodebuild test \
   -scheme "Operations Center" \
   -destination 'platform=macOS' \
-  --quiet
+  -quiet
 ```
 
 ### Python Backend
@@ -407,7 +407,7 @@ Always use Context7 MCP tools when needing:
 5. Auto-deploy to Vercel
 
 ## Important Notes
-- ALWAYS use `--quiet` flag with xcodebuild (output floods context)
+- ALWAYS use `-quiet` flag with xcodebuild (single dash, not double - output floods context)
 - NEVER commit files with secrets (.env, credentials.json)
 - NEVER skip hooks (--no-verify) unless explicitly requested
 - NEVER use git commands with `-i` flag (not supported in CLI)
