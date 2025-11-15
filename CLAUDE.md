@@ -201,6 +201,7 @@ python -m mypy .
 5. **Review all changes as diffs before committing**
 6. **Never bulk commit - stage selectively**
 7. **Archive, don't delete** - Move old code to `trash/` with timestamps
+8. **Verify Xcode schemes before every commit** - See Xcode Scheme Checklist below
 
 ### Agent Development Workflow
 1. **Research (Context7)**
@@ -480,6 +481,56 @@ def build_workflow() -> StateGraph:
     workflow.add_edge("step1", END)
     return workflow.compile()
 ```
+
+## Xcode Scheme Checklist
+
+**CRITICAL: Verify before EVERY commit involving Swift code changes**
+
+### Required Schemes
+The project MUST have these schemes tracked in git:
+1. **Operations Center** - Production mode (Supabase connection)
+2. **Operations Center Preview** - Development mode (mock data, no network)
+
+### Before Committing
+Run the validation script:
+```bash
+./tools/scripts/validate-xcode.sh
+```
+
+Or manually verify:
+```bash
+# Check schemes exist
+ls -la "apps/Operations Center/Operations Center.xcodeproj/xcshareddata/xcschemes/"
+
+# Verify git tracking
+git ls-files | grep xcscheme
+
+# Should show BOTH schemes tracked:
+# ✓ Operations Center.xcscheme
+# ✓ Operations Center Preview.xcscheme
+```
+
+### Pre-commit Hook
+Install the pre-commit hook to automatically verify schemes:
+```bash
+cp tools/scripts/pre-commit-verify-schemes.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### CI Enforcement
+GitHub Actions will FAIL the PR if:
+- Required schemes are missing
+- Schemes exist but aren't tracked in git
+- Scheme XML is malformed
+
+### Why This Matters
+Xcode schemes define how the app builds and runs. Without them:
+- Other developers can't build the project
+- CI/CD pipelines fail
+- Preview mode stops working
+- Hours wasted recreating lost configuration
+
+**Never commit Swift changes without verifying schemes are tracked.**
 
 ## The Philosophy
 

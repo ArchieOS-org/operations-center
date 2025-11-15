@@ -55,6 +55,22 @@ DerivedData/
 xcuserdata/
 
 ## Xcode Patch
+# CRITICAL: Use trailing /* (not just *) to allow negation patterns to work
+# The /* suffix ignores directory CONTENTS but not the directory itself,
+# which allows the ! negation patterns below to un-ignore specific files.
+#
+# What gets IGNORED:
+#   - User-specific settings (xcuserdata/)
+#   - Build artifacts (build/, DerivedData/)
+#   - Temporary files (*.xcuserstate, *.mode1v3, etc.)
+#
+# What gets TRACKED (via ! negation):
+#   - Project structure (project.pbxproj)
+#   - Shared schemes (xcshareddata/xcschemes/*.xcscheme) ← MUST be committed!
+#   - Workspace metadata (contents.xcworkspacedata)
+#
+# WARNING: Never change /* to just * - it will break negation and schemes won't commit!
+
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/

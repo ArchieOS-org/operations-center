@@ -18,6 +18,54 @@ env:
   DEVELOPER_DIR: /Applications/Xcode_16.1.app/Contents/Developer
 
 jobs:
+  verify-schemes:
+    name: Verify Xcode Schemes
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for required schemes
+        run: |
+          SCHEMES_DIR="apps/Operations Center/Operations Center.xcodeproj/xcshareddata/xcschemes"
+          REQUIRED_SCHEMES=("Operations Center.xcscheme" "Operations Center Preview.xcscheme")
+
+          echo "🔍 Verifying Xcode schemes..."
+
+          if [ ! -d "$SCHEMES_DIR" ]; then
+            echo "❌ ERROR: Schemes directory not found: $SCHEMES_DIR"
+            exit 1
+          fi
+
+          MISSING=()
+          for scheme in "${REQUIRED_SCHEMES[@]}"; do
+            if [ ! -f "$SCHEMES_DIR/$scheme" ]; then
+              MISSING+=("$scheme")
+            fi
+          done
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ ERROR: Required schemes are missing:"
+            for scheme in "${MISSING[@]}"; do
+              echo "  ✗ $scheme"
+            done
+            exit 1
+          fi
+
+          echo "✓ All required schemes found"
+
+      - name: Validate scheme XML
+        run: |
+          SCHEMES_DIR="apps/Operations Center/Operations Center.xcodeproj/xcshareddata/xcschemes"
+
+          for scheme in "$SCHEMES_DIR"/*.xcscheme; do
+            echo "Validating $(basename "$scheme")..."
+            xmllint --noout "$scheme" || exit 1
+          done
+
+          echo "✓ All schemes are valid XML"
+
   swiftlint:
     name: SwiftLint
     runs-on: macos-latest
@@ -81,7 +129,7 @@ jobs:
   code-quality:
     name: Code Quality Checks
     runs-on: macos-latest
-    needs: [swiftlint, build-and-test]
+    needs: [verify-schemes, swiftlint, build-and-test]
 
     steps:
       - name: Checkout code
