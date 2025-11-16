@@ -1,0 +1,80 @@
+//
+//  ListingCollapsedContent.swift
+//  OperationsCenterKit
+//
+//  Single source of truth for collapsed listing display
+//  Used by: ListingBrowseCard (with card chrome), AllListingsView (plain list rows)
+//
+
+import SwiftUI
+
+/// Collapsed listing content - shows realtor name, address, type chip, and due date
+/// This is the shared layout used everywhere a collapsed listing appears
+public struct ListingCollapsedContent: View {
+    // MARK: - Properties
+
+    let listing: Listing
+    let realtor: Realtor?
+
+    // MARK: - Initialization
+
+    public init(listing: Listing, realtor: Realtor? = nil) {
+        self.listing = listing
+        self.realtor = realtor
+    }
+
+    // MARK: - Body
+
+    public var body: some View {
+        CardHeader(
+            title: listing.title,
+            subtitle: realtor?.name,
+            chips: buildChips(),
+            dueDate: listing.dueDate,
+            isExpanded: false
+        )
+    }
+
+    // MARK: - Helper Methods
+
+    private func buildChips() -> [ChipData] {
+        var chips: [ChipData] = []
+
+        // Listing type chip only
+        if let type = listing.type {
+            chips.append(.custom(
+                text: type,
+                color: typeColor(for: type)
+            ))
+        }
+
+        return chips
+    }
+
+    private func typeColor(for type: String) -> Color {
+        switch type.uppercased() {
+        case "SALE": return .blue
+        case "RENTAL": return .purple
+        case "COMMERCIAL": return .orange
+        case "RESIDENTIAL": return .green
+        default: return .gray
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Active Listing") {
+    ListingCollapsedContent(listing: Listing.mock1, realtor: .mock1)
+        .padding()
+}
+
+#Preview("Pending Listing") {
+    ListingCollapsedContent(listing: Listing.mock2, realtor: .mock2)
+        .padding()
+}
+
+#Preview("Completed Listing") {
+    ListingCollapsedContent(listing: Listing.mock3, realtor: .mock1)
+        .padding()
+}

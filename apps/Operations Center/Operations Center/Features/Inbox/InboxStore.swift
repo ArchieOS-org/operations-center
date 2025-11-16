@@ -8,6 +8,7 @@
 import Foundation
 import Observation
 import OperationsCenterKit
+import OSLog
 
 @Observable
 @MainActor
@@ -66,21 +67,29 @@ final class InboxStore {
                 guard let firstActivity = activityGroup.first else { continue }
                 let listing = firstActivity.listing
 
-                // Fetch notes and realtor concurrently
-                async let notes = noteRepository.fetchNotes(listingId)
+                // Fetch notes - log errors but continue with empty array
+                var fetchedNotes: [ListingNote] = []
+                do {
+                    fetchedNotes = try await noteRepository.fetchNotes(listingId)
+                } catch {
+                    Logger.database.error("Failed to fetch notes for listing \(listingId): \(error.localizedDescription)")
+                }
 
-                let realtor: Realtor?
+                // Fetch realtor - log errors but continue with nil
+                var realtor: Realtor?
                 if let realtorId = listing.realtorId {
-                    realtor = try? await realtorRepository.fetchRealtor(realtorId)
-                } else {
-                    realtor = nil
+                    do {
+                        realtor = try await realtorRepository.fetchRealtor(realtorId)
+                    } catch {
+                        Logger.database.error("Failed to fetch realtor \(realtorId) for listing \(listingId): \(error.localizedDescription)")
+                    }
                 }
 
                 let listingWithDetails = ListingWithDetails(
                     listing: listing,
                     realtor: realtor,
                     activities: activityGroup.map { $0.task },
-                    notes: (try? await notes) ?? []
+                    notes: fetchedNotes
                 )
                 listingDetails.append(listingWithDetails)
             }

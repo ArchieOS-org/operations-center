@@ -2,84 +2,54 @@
 //  ListingBrowseCard.swift
 //  OperationsCenterKit
 //
-//  Simple collapsed-only card for browsing listings
+//  Collapsed listing with card chrome (background, border, padding)
 //  Per TASK_MANAGEMENT_SPEC.md lines 314-316: "Collapsed only - Click → Navigate to Listing Screen"
-//  Used in: All Listings, My Listings, Agent Detail
+//  Used in: My Listings, Agent Detail (card views)
 //
 
 import SwiftUI
 
-/// Simple listing card for browse views - always collapsed, taps handled by parent
+/// Listing card for browse views - wraps ListingCollapsedContent with card chrome
 public struct ListingBrowseCard: View {
     // MARK: - Properties
 
     let listing: Listing
+    let realtor: Realtor?
 
     // MARK: - Initialization
 
-    public init(listing: Listing) {
+    public init(listing: Listing, realtor: Realtor? = nil) {
         self.listing = listing
+        self.realtor = realtor
     }
 
     // MARK: - Body
 
     public var body: some View {
-        CardHeader(
-            title: "",
-            subtitle: listing.title,
-            chips: buildChips(),
-            dueDate: listing.dueDate,
-            isExpanded: false
-        )
-        .padding(Spacing.md)
-        .background(Colors.listingCardTint.opacity(0.05))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.md)
-                .stroke(Colors.listingCardTint, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-    }
-
-    // MARK: - Helper Methods
-
-    private func buildChips() -> [ChipData] {
-        var chips: [ChipData] = []
-
-        // Listing type chip only
-        if let type = listing.type {
-            chips.append(.custom(
-                text: type,
-                color: typeColor(for: type)
-            ))
-        }
-
-        return chips
-    }
-
-    private func typeColor(for type: String) -> Color {
-        switch type.uppercased() {
-        case "SALE": return .blue
-        case "RENTAL": return .purple
-        case "COMMERCIAL": return .orange
-        case "RESIDENTIAL": return .green
-        default: return .gray
-        }
+        ListingCollapsedContent(listing: listing, realtor: realtor)
+            .padding(Spacing.md)
+            .background(Colors.listingCardTint.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: Layout.cardCornerRadius)
+                    .stroke(Colors.listingCardTint, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: Layout.cardCornerRadius))
     }
 }
 
 // MARK: - Preview
 
 #Preview("Active Listing") {
-    ListingBrowseCard(listing: Listing.mock1)
+    ListingBrowseCard(listing: Listing.mock1, realtor: .mock1)
         .padding()
 }
 
 #Preview("Pending Listing") {
-    ListingBrowseCard(listing: Listing.mock2)
+    ListingBrowseCard(listing: Listing.mock2, realtor: .mock2)
         .padding()
 }
 
 #Preview("Completed Listing") {
-    ListingBrowseCard(listing: Listing.mock3)
+    ListingBrowseCard(listing: Listing.mock3, realtor: .mock1)
         .padding()
 }
