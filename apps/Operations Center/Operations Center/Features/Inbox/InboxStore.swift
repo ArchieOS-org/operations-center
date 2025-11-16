@@ -93,7 +93,10 @@ final class InboxStore {
                         realtor = try await realtorRepository.fetchRealtor(realtorId)
                     } catch {
                         Logger.database.error(
-                            "Failed to fetch realtor \(realtorId) for listing \(listingId): \(error.localizedDescription)"
+                            """
+                            Failed to fetch realtor \(realtorId) for listing \(listingId): \
+                            \(error.localizedDescription)
+                            """
                         )
                         realtorError = true
                     }
