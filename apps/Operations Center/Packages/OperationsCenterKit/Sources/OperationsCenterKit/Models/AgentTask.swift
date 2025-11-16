@@ -1,13 +1,13 @@
 //
-//  StrayTask.swift
+//  AgentTask.swift
 //  OperationsCenterKit
 //
-//  Data model for stray_tasks table (general agent tasks not tied to a listing)
+//  Data model for tasks table (general agent tasks not tied to a listing)
 //
 
 import Foundation
 
-public struct StrayTask: Identifiable, Codable, Sendable {
+public struct AgentTask: Identifiable, Codable, Sendable {
     public let id: String
     public let realtorId: String
     public let name: String
@@ -116,15 +116,15 @@ public struct StrayTask: Identifiable, Codable, Sendable {
 
 // MARK: - Mock Data
 
-extension StrayTask {
+extension AgentTask {
     /// Mock data for testing and previews
     /// Context7 best practice: Keep mock data with the model
     /// Reference: swift-dependencies/Articles/LivePreviewTest.md
     /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static var mock1: StrayTask {
-        StrayTask(
-            id: "stray_001",
+    public static var mock1: AgentTask {
+        AgentTask(
+            id: "task_001",
             realtorId: "realtor_001",
             name: "Update CRM Records",
             description: "Update all client contact information in the CRM system",
@@ -142,9 +142,9 @@ extension StrayTask {
         )
     }
 
-    public static var mock2: StrayTask {
-        StrayTask(
-            id: "stray_002",
+    public static var mock2: AgentTask {
+        AgentTask(
+            id: "task_002",
             realtorId: "realtor_002",
             name: "Email Marketing Campaign",
             description: "Design and send monthly newsletter to all subscribers",
@@ -162,9 +162,9 @@ extension StrayTask {
         )
     }
 
-    public static var mock3: StrayTask {
-        StrayTask(
-            id: "stray_003",
+    public static var mock3: AgentTask {
+        AgentTask(
+            id: "task_003",
             realtorId: "realtor_001",
             name: "Portfolio Photos Update",
             description: "Update website portfolio with recent property photos",

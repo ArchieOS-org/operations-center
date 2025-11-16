@@ -14,8 +14,8 @@ import OperationsCenterKit
 final class MockTaskRepository: TaskRepository, @unchecked Sendable {
     // MARK: - State
 
-    private var strayTasks: [StrayTask]
-    private var listingTasks: [ListingTask]
+    private var strayTasks: [AgentTask]
+    private var listingTasks: [Activity]
     private var listings: [String: Listing] // listingId -> Listing
     private var slackMessages: [String: [SlackMessage]] // taskId -> messages
     private var subtasks: [String: [Subtask]] // taskId -> subtasks
@@ -48,16 +48,16 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
 
     // MARK: - TaskRepository Implementation
 
-    func fetchStrayTasks() async throws -> [StrayTaskWithMessages] {
+    func fetchTasks() async throws -> [TaskWithMessages] {
         return strayTasks
             .filter { $0.deletedAt == nil }
             .map { task in
                 let messages = slackMessages[task.id] ?? []
-                return StrayTaskWithMessages(task: task, messages: messages)
+                return TaskWithMessages(task: task, messages: messages)
             }
     }
 
-    func fetchListingTasks() async throws -> [ListingTaskWithDetails] {
+    func fetchActivities() async throws -> [ActivityWithDetails] {
         return listingTasks
             .filter { $0.deletedAt == nil }
             .compactMap { task in
@@ -65,18 +65,18 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
                     return nil
                 }
                 let taskSubtasks = subtasks[task.id] ?? []
-                return ListingTaskWithDetails(task: task, listing: listing, subtasks: taskSubtasks)
+                return ActivityWithDetails(task: task, listing: listing, subtasks: taskSubtasks)
             }
     }
 
-    func claimStrayTask(taskId: String, staffId: String) async throws -> StrayTask {
+    func claimTask(taskId: String, staffId: String) async throws -> StrayTask {
         guard let index = strayTasks.firstIndex(where: { $0.id == taskId }) else {
             throw MockRepositoryError.taskNotFound
         }
 
         // Create updated task
         let original = strayTasks[index]
-        let updated = StrayTask(
+        let updated = AgentTask(
             id: original.id,
             realtorId: original.realtorId,
             name: original.name,
@@ -98,14 +98,14 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         return updated
     }
 
-    func claimListingTask(taskId: String, staffId: String) async throws -> ListingTask {
+    func claimActivity(taskId: String, staffId: String) async throws -> ListingTask {
         guard let index = listingTasks.firstIndex(where: { $0.id == taskId }) else {
             throw MockRepositoryError.taskNotFound
         }
 
         // Create updated task
         let original = listingTasks[index]
-        let updated = ListingTask(
+        let updated = Activity(
             id: original.id,
             listingId: original.listingId,
             realtorId: original.realtorId,
@@ -131,14 +131,14 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         return updated
     }
 
-    func deleteStrayTask(taskId: String, deletedBy: String) async throws {
+    func deleteTask(taskId: String, deletedBy: String) async throws {
         guard let index = strayTasks.firstIndex(where: { $0.id == taskId }) else {
             throw MockRepositoryError.taskNotFound
         }
 
         // Soft delete
         let original = strayTasks[index]
-        let updated = StrayTask(
+        let updated = AgentTask(
             id: original.id,
             realtorId: original.realtorId,
             name: original.name,
@@ -159,14 +159,14 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         strayTasks[index] = updated
     }
 
-    func deleteListingTask(taskId: String, deletedBy: String) async throws {
+    func deleteActivity(taskId: String, deletedBy: String) async throws {
         guard let index = listingTasks.firstIndex(where: { $0.id == taskId }) else {
             throw MockRepositoryError.taskNotFound
         }
 
         // Soft delete
         let original = listingTasks[index]
-        let updated = ListingTask(
+        let updated = Activity(
             id: original.id,
             listingId: original.listingId,
             realtorId: original.realtorId,

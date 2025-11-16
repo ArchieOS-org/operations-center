@@ -15,7 +15,7 @@ import OSLog
 final class TaskListStore {
     // MARK: - Observable State
 
-    var listingTasks: [ListingTaskWithDetails] = []
+    var activities: [ActivityWithDetails] = []
     var isLoading = false
     var errorMessage: String?
 
@@ -39,8 +39,8 @@ final class TaskListStore {
         errorMessage = nil
 
         do {
-            listingTasks = try await repository.fetchListingTasks()
-            Logger.tasks.info("Fetched listing tasks: \(self.listingTasks.count)")
+            activities = try await repository.fetchActivities()
+            Logger.tasks.info("Fetched listing tasks: \(self.activities.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
             Logger.tasks.error("Failed to fetch listing tasks: \(error.localizedDescription)")
@@ -50,14 +50,14 @@ final class TaskListStore {
     }
 
     /// Claim a task by assigning it to current staff member
-    func claimTask(_ task: ListingTask) async {
+    func claimTask(_ task: Activity) async {
         do {
             // Get current user ID - for now use a placeholder
             // swiftlint:disable:next todo
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimListingTask(task.id, currentUserId)
+            _ = try await repository.claimActivity(task.id, currentUserId)
 
             Logger.tasks.info("Claimed listing task: \(task.id) - \(task.name)")
 
@@ -70,12 +70,12 @@ final class TaskListStore {
     }
 
     /// Delete a listing task (soft delete)
-    func deleteTask(_ task: ListingTask) async {
+    func deleteTask(_ task: Activity) async {
         do {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteListingTask(task.id, currentUserId)
+            try await repository.deleteActivity(task.id, currentUserId)
 
             Logger.tasks.info("Deleted listing task: \(task.id) - \(task.name)")
 

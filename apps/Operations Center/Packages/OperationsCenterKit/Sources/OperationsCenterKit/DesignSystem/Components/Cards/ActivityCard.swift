@@ -1,18 +1,18 @@
 //
-//  ListingTaskCard.swift
+//  ActivityCard.swift
 //  OperationsCenterKit
 //
 //  Blue accent, with border, subtasks first
-//  First-class citizen for property-linked tasks
+//  First-class citizen for property-linked activities
 //
 
 import SwiftUI
 
-/// Card for displaying listing tasks (property-linked, has a home)
-public struct ListingTaskCard: View {
+/// Card for displaying activities (property-linked, has a home)
+public struct ActivityCard: View {
     // MARK: - Properties
 
-    let task: ListingTask
+    let task: Activity
     let listing: Listing
     let subtasks: [Subtask]
     let isExpanded: Bool
@@ -24,7 +24,7 @@ public struct ListingTaskCard: View {
     // MARK: - Initialization
 
     public init(
-        task: ListingTask,
+        task: Activity,
         listing: Listing,
         subtasks: [Subtask],
         isExpanded: Bool,
@@ -109,7 +109,7 @@ public struct ListingTaskCard: View {
         return chips
     }
 
-    private func categoryColor(for category: ListingTask.TaskCategory) -> Color {
+    private func categoryColor(for category: Activity.TaskCategory) -> Color {
         switch category {
         case .admin: return .blue
         case .marketing: return .purple
@@ -124,7 +124,7 @@ public struct ListingTaskCard: View {
 // MARK: - Preview
 
 #Preview("Collapsed") {
-    let task = ListingTask(
+    let task = Activity(
         id: "1",
         listingId: "listing-001",
         realtorId: "realtor-1",
@@ -162,7 +162,7 @@ public struct ListingTaskCard: View {
         deletedAt: nil
     )
 
-    ListingTaskCard(
+    ActivityCard(
         task: task,
         listing: listing,
         subtasks: [],
@@ -176,7 +176,7 @@ public struct ListingTaskCard: View {
 }
 
 #Preview("Expanded with Subtasks") {
-    let task = ListingTask(
+    let task = Activity(
         id: "1",
         listingId: "listing-001",
         realtorId: "realtor-1",
@@ -247,7 +247,7 @@ public struct ListingTaskCard: View {
         )
     ]
 
-    ListingTaskCard(
+    ActivityCard(
         task: task,
         listing: listing,
         subtasks: subtasks,

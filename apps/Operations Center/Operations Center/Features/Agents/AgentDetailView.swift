@@ -36,8 +36,8 @@ struct AgentDetailView: View {
         List {
             agentInfoSection
             listingsSection
-            listingTasksSection
-            strayTasksSection
+            activitiesSection
+            tasksSection
             emptyStateSection
         }
         .listStyle(.plain)
@@ -143,11 +143,11 @@ struct AgentDetailView: View {
     }
 
     @ViewBuilder
-    private var listingTasksSection: some View {
-        if !store.listingTasks.isEmpty {
+    private var activitiesSection: some View {
+        if !store.activities.isEmpty {
             Section("Property Tasks") {
-                ForEach(store.listingTasks, id: \.task.id) { taskWithDetails in
-                    ListingTaskCard(
+                ForEach(store.activities, id: \.task.id) { taskWithDetails in
+                    ActivityCard(
                         task: taskWithDetails.task,
                         listing: taskWithDetails.listing,
                         subtasks: taskWithDetails.subtasks,
@@ -160,12 +160,12 @@ struct AgentDetailView: View {
                         },
                         onClaim: {
                             Task {
-                                await store.claimListingTask(taskWithDetails.task)
+                                await store.claimActivity(taskWithDetails.task)
                             }
                         },
                         onDelete: {
                             Task {
-                                await store.deleteListingTask(taskWithDetails.task)
+                                await store.deleteActivity(taskWithDetails.task)
                             }
                         }
                     )
@@ -177,11 +177,11 @@ struct AgentDetailView: View {
     }
 
     @ViewBuilder
-    private var strayTasksSection: some View {
-        if !store.strayTasks.isEmpty {
+    private var tasksSection: some View {
+        if !store.tasks.isEmpty {
             Section("General Tasks") {
-                ForEach(store.strayTasks, id: \.task.id) { taskWithMessages in
-                    StrayTaskCard(
+                ForEach(store.tasks, id: \.task.id) { taskWithMessages in
+                    TaskCard(
                         task: taskWithMessages.task,
                         messages: taskWithMessages.messages,
                         isExpanded: store.expandedTaskId == taskWithMessages.task.id,
@@ -190,12 +190,12 @@ struct AgentDetailView: View {
                         },
                         onClaim: {
                             Task {
-                                await store.claimStrayTask(taskWithMessages.task)
+                                await store.claimTask(taskWithMessages.task)
                             }
                         },
                         onDelete: {
                             Task {
-                                await store.deleteStrayTask(taskWithMessages.task)
+                                await store.deleteTask(taskWithMessages.task)
                             }
                         }
                     )
@@ -208,7 +208,7 @@ struct AgentDetailView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.listings.isEmpty && store.listingTasks.isEmpty && store.strayTasks.isEmpty && !store.isLoading {
+        if store.listings.isEmpty && store.activities.isEmpty && store.tasks.isEmpty && !store.isLoading {
             VStack(spacing: 16) {
                 Image(systemName: "tray")
                     .font(.system(size: 60))

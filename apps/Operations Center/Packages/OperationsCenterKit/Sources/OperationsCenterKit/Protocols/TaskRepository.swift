@@ -11,27 +11,27 @@ import Foundation
 /// Repository protocol for task operations
 /// Enables seamless swap from mock to production data sources
 public protocol TaskRepository: Sendable {
-    /// Fetch all stray tasks with their associated Slack messages
-    func fetchStrayTasks() async throws -> [StrayTaskWithMessages]
+    /// Fetch all tasks with their associated Slack messages
+    func fetchTasks() async throws -> [TaskWithMessages]
 
-    /// Fetch all listing tasks with their listing data and subtasks
-    func fetchListingTasks() async throws -> [ListingTaskWithDetails]
+    /// Fetch all activities with their listing data and subtasks
+    func fetchActivities() async throws -> [ActivityWithDetails]
 
-    /// Claim a stray task
-    func claimStrayTask(taskId: String, staffId: String) async throws -> StrayTask
+    /// Claim a task
+    func claimTask(taskId: String, staffId: String) async throws -> AgentTask
 
-    /// Claim a listing task
-    func claimListingTask(taskId: String, staffId: String) async throws -> ListingTask
+    /// Claim an activity
+    func claimActivity(taskId: String, staffId: String) async throws -> Activity
 
-    /// Delete a stray task (soft delete)
-    func deleteStrayTask(taskId: String, deletedBy: String) async throws
+    /// Delete a task (soft delete)
+    func deleteTask(taskId: String, deletedBy: String) async throws
 
-    /// Delete a listing task (soft delete)
-    func deleteListingTask(taskId: String, deletedBy: String) async throws
+    /// Delete an activity (soft delete)
+    func deleteActivity(taskId: String, deletedBy: String) async throws
 
-    /// Complete a subtask within a listing task
+    /// Complete a subtask within an activity
     func completeSubtask(subtaskId: String) async throws -> Subtask
 
-    /// Uncomplete a subtask within a listing task
+    /// Uncomplete a subtask within an activity
     func uncompleteSubtask(subtaskId: String) async throws -> Subtask
 }

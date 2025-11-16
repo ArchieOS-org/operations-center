@@ -3,7 +3,7 @@
 //  OperationsCenterKit
 //
 //  Composite model per TASK_MANAGEMENT_SPEC.md
-//  Bundles a Listing with its Activities (ListingTasks), Slack messages, and notes
+//  Bundles a Listing with its Activities, Slack messages, and notes
 //
 
 import Foundation
@@ -19,10 +19,10 @@ public struct ListingWithActivities: Sendable, Identifiable {
     /// The core listing entity
     public let listing: Listing
 
-    /// Activities (ListingTask) belonging to this listing
+    /// Activities belonging to this listing
     /// Per spec: "Activities ALWAYS belong to a Listing" (line 42)
     /// Per spec: "Pre-set as Marketing or Admin (cannot toggle)" (line 55)
-    public let activities: [ListingTask]
+    public let activities: [Activity]
 
     /// Slack messages that spawned this listing
     /// Per spec line 29: "Slack messages that spawned it"
@@ -38,7 +38,7 @@ public struct ListingWithActivities: Sendable, Identifiable {
 
     public init(
         listing: Listing,
-        activities: [ListingTask],
+        activities: [Activity],
         slackMessages: [SlackMessage]
     ) {
         self.listing = listing
@@ -56,24 +56,24 @@ public struct ListingWithActivities: Sendable, Identifiable {
 
     /// Marketing activities only
     /// Per spec line 358: "Marketing Activities (separate section)"
-    public var marketingActivities: [ListingTask] {
+    public var marketingActivities: [Activity] {
         activities.filter { $0.taskCategory == .marketing }
     }
 
     /// Admin activities only
     /// Per spec line 359: "Admin Activities (separate section)"
-    public var adminActivities: [ListingTask] {
+    public var adminActivities: [Activity] {
         activities.filter { $0.taskCategory == .admin }
     }
 
     /// Completed activities (moved to bottom, crossed out)
     /// Per spec line 61: "When completed: move to bottom of list, show as crossed out"
-    public var completedActivities: [ListingTask] {
+    public var completedActivities: [Activity] {
         activities.filter { $0.completedAt != nil }
     }
 
     /// Incomplete activities (active work)
-    public var incompleteActivities: [ListingTask] {
+    public var incompleteActivities: [Activity] {
         activities.filter { $0.completedAt == nil }
     }
 }
@@ -87,8 +87,8 @@ extension ListingWithActivities {
     public static let mock1 = ListingWithActivities(
         listing: .mock1,
         activities: [
-            ListingTask.mock1,
-            ListingTask.mock2
+            Activity.mock1,
+            Activity.mock2
         ],
         slackMessages: []
     )
@@ -96,7 +96,7 @@ extension ListingWithActivities {
     public static let mock2 = ListingWithActivities(
         listing: .mock2,
         activities: [
-            ListingTask.mock3
+            Activity.mock3
         ],
         slackMessages: []
     )

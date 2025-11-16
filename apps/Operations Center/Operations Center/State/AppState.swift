@@ -15,7 +15,7 @@ import Supabase
 final class AppState {
     // MARK: - State
 
-    var allTasks: [ListingTask] = []
+    var allTasks: [Activity] = []
     var currentUser: User?
     var isLoading = false
     var errorMessage: String?
@@ -34,12 +34,12 @@ final class AppState {
     // MARK: - Computed Properties
 
     /// Tasks that are unclaimed (Inbox)
-    var inboxTasks: [ListingTask] {
+    var inboxTasks: [Activity] {
         allTasks.filter { $0.assignedStaffId == nil }
     }
 
     /// Tasks assigned to the current user
-    var myTasks: [ListingTask] {
+    var myTasks: [Activity] {
         guard let userId = currentUser?.id else { return [] }
         return allTasks.filter { $0.assignedStaffId == userId.uuidString }
     }
@@ -102,8 +102,8 @@ final class AppState {
 
         do {
             // Use TaskRepositoryClient (production or preview based on init)
-            let taskData = try await taskRepository.fetchListingTasks()
-            allTasks = taskData.map(\.task)  // Extract just the tasks
+            let taskData = try await taskRepository.fetchActivities()
+            allTasks = taskData.map(\.task)  // Extract just the activities
 
             // Save to cache
             saveCachedData()
@@ -126,7 +126,7 @@ final class AppState {
             do {
                 // Setup listener BEFORE subscribing
                 let listenerTask = Task {
-                    for await change in channel.postgresChange(AnyAction.self, table: "listing_tasks") {
+                    for await change in channel.postgresChange(AnyAction.self, table: "activities") {
                         await handleRealtimeChange(change)
                     }
                 }
@@ -148,8 +148,8 @@ final class AppState {
         // Refresh entire list on any change
         // This ensures all views stay in sync
         do {
-            let taskData = try await taskRepository.fetchListingTasks()
-            allTasks = taskData.map(\.task)  // Extract just the tasks
+            let taskData = try await taskRepository.fetchActivities()
+            allTasks = taskData.map(\.task)  // Extract just the activities
 
             // Save to cache
             saveCachedData()
@@ -160,7 +160,7 @@ final class AppState {
 
     // MARK: - Task Actions
 
-    func claimTask(_ task: ListingTask) async {
+    func claimTask(_ task: Activity) async {
         errorMessage = nil
 
         guard let userId = currentUser?.id else {
@@ -169,8 +169,8 @@ final class AppState {
         }
 
         do {
-            let _: ListingTask = try await supabase
-                .from("listing_tasks")
+            let _: Activity = try await supabase
+                .from("activities")
                 .update([
                     "assigned_staff_id": userId.uuidString,
                     "claimed_at": ISO8601DateFormatter().string(from: Date()),
@@ -187,12 +187,12 @@ final class AppState {
         }
     }
 
-    func deleteTask(_ task: ListingTask) async {
+    func deleteTask(_ task: Activity) async {
         errorMessage = nil
 
         do {
             try await supabase
-                .from("listing_tasks")
+                .from("activities")
                 .delete()
                 .eq("task_id", value: task.id)
                 .execute()
@@ -207,7 +207,7 @@ final class AppState {
 
     private func loadCachedData() {
         if let data = UserDefaults.standard.data(forKey: "cached_tasks"),
-           let tasks = try? JSONDecoder().decode([ListingTask].self, from: data) {
+           let tasks = try? JSONDecoder().decode([Activity].self, from: data) {
             allTasks = tasks
         }
     }

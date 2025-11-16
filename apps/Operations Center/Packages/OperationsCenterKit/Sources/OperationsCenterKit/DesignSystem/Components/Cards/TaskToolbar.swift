@@ -1,15 +1,15 @@
 //
-//  StrayTaskToolbar.swift
+//  TaskToolbar.swift
 //  OperationsCenterKit
 //
-//  Simple toolbar for stray tasks: Claim + Delete
+//  Simple toolbar for tasks: Claim + Delete
 //  No menus on first ship
 //
 
 import SwiftUI
 
-/// Toolbar for stray task cards with primary actions
-struct StrayTaskToolbar: View {
+/// Toolbar for task cards with primary actions
+struct TaskToolbar: View {
     // MARK: - Properties
 
     let onClaim: () -> Void
@@ -60,7 +60,7 @@ struct StrayTaskToolbar: View {
             Text("Update CRM with Q4 contacts")
                 .font(Typography.cardTitle)
 
-            StrayTaskToolbar(
+            TaskToolbar(
                 onClaim: {},
                 onDelete: {}
             )
@@ -80,7 +80,7 @@ struct StrayTaskToolbar: View {
                 .font(Typography.callout)
                 .foregroundStyle(.secondary)
 
-            StrayTaskToolbar(
+            TaskToolbar(
                 onClaim: {},
                 onDelete: {}
             )

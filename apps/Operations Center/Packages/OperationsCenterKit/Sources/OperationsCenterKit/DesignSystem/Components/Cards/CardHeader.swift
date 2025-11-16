@@ -3,7 +3,7 @@
 //  OperationsCenterKit
 //
 //  Card header with title, subtitle, and embedded chips
-//  Used by both StrayTaskCard and ListingTaskCard
+//  Used by both TaskCard and ActivityCard
 //
 
 import SwiftUI

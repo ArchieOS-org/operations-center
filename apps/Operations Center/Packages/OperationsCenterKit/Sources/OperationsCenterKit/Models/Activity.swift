@@ -1,13 +1,13 @@
 //
-//  ListingTask.swift
+//  Activity.swift
 //  Operations Center
 //
-//  Data model for listing_tasks table
+//  Data model for activities table
 //
 
 import Foundation
 
-public struct ListingTask: Identifiable, Codable, Sendable {
+public struct Activity: Identifiable, Codable, Sendable {
     public let id: String
     public let listingId: String
     public let realtorId: String?
@@ -138,15 +138,15 @@ public struct ListingTask: Identifiable, Codable, Sendable {
 
 // MARK: - Mock Data
 
-extension ListingTask {
+extension Activity {
     /// Mock data for testing and previews
     /// Context7 best practice: Keep mock data with the model
     /// Reference: swift-dependencies/Articles/LivePreviewTest.md
     /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static var mock1: ListingTask {
-        ListingTask(
-            id: "task_001",
+    public static var mock1: Activity {
+        Activity(
+            id: "activity_001",
             listingId: "listing_001",
             realtorId: "realtor_001",
             name: "Professional Photography",
@@ -168,9 +168,9 @@ extension ListingTask {
         )
     }
 
-    public static var mock2: ListingTask {
-        ListingTask(
-            id: "task_002",
+    public static var mock2: Activity {
+        Activity(
+            id: "activity_002",
             listingId: "listing_002",
             realtorId: "realtor_002",
             name: "Social Media Campaign",
@@ -192,9 +192,9 @@ extension ListingTask {
         )
     }
 
-    public static var mock3: ListingTask {
-        ListingTask(
-            id: "task_003",
+    public static var mock3: Activity {
+        Activity(
+            id: "activity_003",
             listingId: "listing_003",
             realtorId: "realtor_001",
             name: "Home Inspection Coordination",

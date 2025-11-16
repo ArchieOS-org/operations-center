@@ -12,10 +12,10 @@ public struct ListingCard: View {
     // MARK: - Properties
 
     let listing: Listing
-    let tasks: [ListingTask]
+    let tasks: [Activity]
     let isExpanded: Bool
     let onTap: () -> Void
-    let onTaskTap: (ListingTask) -> Void
+    let onTaskTap: (Activity) -> Void
     let onMove: () -> Void
     let onDelete: () -> Void
 
@@ -25,11 +25,11 @@ public struct ListingCard: View {
 
     public init(
         listing: Listing,
-        tasks: [ListingTask],
+        tasks: [Activity],
         editableNotes: Binding<String>,
         isExpanded: Bool,
         onTap: @escaping () -> Void,
-        onTaskTap: @escaping (ListingTask) -> Void,
+        onTaskTap: @escaping (Activity) -> Void,
         onMove: @escaping () -> Void,
         onDelete: @escaping () -> Void
     ) {
@@ -162,7 +162,7 @@ public struct ListingCard: View {
     }
 
     @ViewBuilder
-    private func listingTaskRow(for task: ListingTask) -> some View {
+    private func listingTaskRow(for task: Activity) -> some View {
         Button {
             onTaskTap(task)
         } label: {
@@ -193,7 +193,7 @@ public struct ListingCard: View {
         .buttonStyle(.plain)
     }
 
-    private func statusColor(for status: ListingTask.TaskStatus) -> Color {
+    private func statusColor(for status: Activity.TaskStatus) -> Color {
         switch status {
         case .open: return .gray
         case .claimed: return .orange
@@ -260,7 +260,7 @@ public struct ListingCard: View {
     )
 
     let tasks = [
-        ListingTask(
+        Activity(
             id: "1",
             listingId: "listing-001",
             realtorId: "realtor-1",
@@ -281,7 +281,7 @@ public struct ListingCard: View {
             inputs: nil,
             outputs: nil
         ),
-        ListingTask(
+        Activity(
             id: "2",
             listingId: "listing-001",
             realtorId: "realtor-1",
@@ -302,7 +302,7 @@ public struct ListingCard: View {
             inputs: nil,
             outputs: nil
         ),
-        ListingTask(
+        Activity(
             id: "3",
             listingId: "listing-001",
             realtorId: "realtor-1",

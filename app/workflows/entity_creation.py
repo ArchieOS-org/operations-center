@@ -87,7 +87,7 @@ async def resolve_realtor(assignee_hint: Optional[str]) -> Optional[str]:
 
 def map_task_key_to_category(task_key: Optional[TaskKey]) -> str:
     """
-    Map ClassificationV1 task_key enum to listing_tasks.task_category.
+    Map ClassificationV1 task_key enum to activities.task_category.
 
     Mapping:
     - SALE_ACTIVE_TASKS → MARKETING
@@ -168,14 +168,14 @@ async def create_listing_record(
         return None
 
 
-async def create_stray_task_record(
+async def create_agent_task_record(
     classification: ClassificationV1,
     realtor_id: Optional[str],
     message_text: str,
     is_info_request: bool = False
 ) -> Optional[str]:
     """
-    Create a stray_task record from STRAY or INFO_REQUEST classification.
+    Create an agent_task record from STRAY or INFO_REQUEST classification.
 
     Context7 Pattern: Supabase insert with .execute()
     Source: /supabase/supabase-py insert examples
@@ -209,18 +209,18 @@ async def create_stray_task_record(
             "created_at": datetime.utcnow().isoformat(),
         }
 
-        result = client.table("stray_tasks").insert(task_data).execute()
+        result = client.table("agent_tasks").insert(task_data).execute()
 
         if result.data and len(result.data) > 0:
             task_id = result.data[0]["task_id"]
-            logger.info(f"Created stray task: {task_id} - {task_data['name']}")
+            logger.info(f"Created agent task: {task_id} - {task_data['name']}")
             return task_id
         else:
-            logger.error("Failed to create stray task - no data returned")
+            logger.error("Failed to create agent task - no data returned")
             return None
 
     except Exception as e:
-        logger.error(f"Error creating stray task: {str(e)}")
+        logger.error(f"Error creating agent task: {str(e)}")
         return None
 
 
@@ -261,7 +261,7 @@ async def update_slack_message_with_entity(
 
         if task_id:
             update_data["created_task_id"] = task_id
-            update_data["created_task_type"] = task_type or "stray_task"
+            update_data["created_task_type"] = task_type or "agent_task"
 
         result = client.table("slack_messages").update(update_data).eq("id", message_id).execute()
 
@@ -360,11 +360,11 @@ async def create_entities_from_classification(
                     "reason": "Failed to create listing"
                 }
 
-        # STRAY or INFO_REQUEST messages → Create stray task
+        # STRAY or INFO_REQUEST messages → Create agent task
         elif message_type in [MessageType.STRAY, MessageType.INFO_REQUEST]:
             is_info_request = (message_type == MessageType.INFO_REQUEST)
 
-            task_id = await create_stray_task_record(
+            task_id = await create_agent_task_record(
                 classification=classification,
                 realtor_id=realtor_id,
                 message_text=message_text,
@@ -375,13 +375,13 @@ async def create_entities_from_classification(
                 await update_slack_message_with_entity(
                     message_id=message_id,
                     task_id=task_id,
-                    task_type="stray_task",
+                    task_type="agent_task",
                     processing_status="processed"
                 )
                 return {
                     "status": "success",
                     "message_type": message_type.value,
-                    "entity_type": "stray_task",
+                    "entity_type": "agent_task",
                     "entity_id": task_id,
                     "realtor_id": realtor_id
                 }
@@ -393,7 +393,7 @@ async def create_entities_from_classification(
                 return {
                     "status": "error",
                     "message_type": message_type.value,
-                    "reason": "Failed to create stray task"
+                    "reason": "Failed to create agent task"
                 }
 
         else:

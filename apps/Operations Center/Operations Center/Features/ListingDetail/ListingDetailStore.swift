@@ -59,10 +59,10 @@ final class ListingDetailStore {
 
         do {
             // Fetch listing and notes in parallel
-            async let listingFetch = listingRepository.fetchListing(listingId)
+            async let activitiesFetch = listingRepository.fetchListing(listingId)
             async let notesFetch = noteRepository.fetchNotes(listingId)
 
-            let (fetchedListing, fetchedNotes) = try await (listingFetch, notesFetch)
+            let (fetchedListing, fetchedNotes) = try await (activitiesFetch, notesFetch)
 
             listing = fetchedListing
             notes = fetchedNotes

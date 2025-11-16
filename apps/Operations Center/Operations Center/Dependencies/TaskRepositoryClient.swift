@@ -14,44 +14,44 @@ import Supabase
 
 /// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
-    /// Fetch all stray tasks with their associated Slack messages
-    public var fetchStrayTasks: @Sendable () async throws -> [StrayTaskWithMessages]
+    /// Fetch all tasks with their associated Slack messages
+    public var fetchTasks: @Sendable () async throws -> [TaskWithMessages]
 
-    /// Fetch all listing tasks with their listing data and subtasks
-    public var fetchListingTasks: @Sendable () async throws -> [ListingTaskWithDetails]
+    /// Fetch all activities with their listing data and subtasks
+    public var fetchActivities: @Sendable () async throws -> [ActivityWithDetails]
 
-    /// Claim a stray task
-    public var claimStrayTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> StrayTask
+    /// Claim a task
+    public var claimTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> AgentTask
 
-    /// Claim a listing task
-    public var claimListingTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> ListingTask
+    /// Claim an activity
+    public var claimActivity: @Sendable (_ taskId: String, _ staffId: String) async throws -> Activity
 
-    /// Delete a stray task (soft delete)
-    public var deleteStrayTask: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
+    /// Delete a task (soft delete)
+    public var deleteTask: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
 
-    /// Delete a listing task (soft delete)
-    public var deleteListingTask: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
+    /// Delete an activity (soft delete)
+    public var deleteActivity: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
 
-    /// Complete a subtask within a listing task
+    /// Complete a subtask within an activity
     public var completeSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
 
-    /// Uncomplete a subtask within a listing task
+    /// Uncomplete a subtask within an activity
     public var uncompleteSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
 
-    /// Fetch stray tasks for a specific realtor
-    public var fetchStrayTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [StrayTaskWithMessages]
+    /// Fetch tasks for a specific realtor
+    public var fetchTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [TaskWithMessages]
 
-    /// Fetch listing tasks for a specific realtor
-    public var fetchListingTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [ListingTaskWithDetails]
+    /// Fetch activities for a specific realtor
+    public var fetchActivitiesByRealtor: @Sendable (_ realtorId: String) async throws -> [ActivityWithDetails]
 
-    /// Fetch completed stray tasks (for Logbook)
-    public var fetchCompletedStrayTasks: @Sendable () async throws -> [StrayTask]
+    /// Fetch completed tasks (for Logbook)
+    public var fetchCompletedTasks: @Sendable () async throws -> [AgentTask]
 }
 
 // MARK: - Response Models
 
-/// Decodable response model for listing tasks with nested listings join
-private struct ListingTaskResponse: Decodable {
+/// Decodable response model for activities with nested listings join
+private struct ActivityResponse: Decodable {
     let taskId: String
     let listingId: String
     let realtorId: String?
@@ -99,24 +99,24 @@ private struct ListingTaskResponse: Decodable {
 
 // MARK: - Helper Functions
 
-/// Map a ListingTaskResponse to ListingTaskWithDetails
-/// Shared by fetchListingTasks and fetchListingTasksByRealtor
-nonisolated private func mapListingTaskResponse(_ row: ListingTaskResponse) -> ListingTaskWithDetails? {
+/// Map an ActivityResponse to ActivityWithDetails
+/// Shared by fetchActivities and fetchActivitiesByRealtor
+nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> ActivityWithDetails? {
     guard let listing = row.listing else {
         // Logging removed to avoid introducing MainActor isolation in this pure mapping function
         return nil
     }
 
-    let task = ListingTask(
+    let task = Activity(
         id: row.taskId,
         listingId: row.listingId,
         realtorId: row.realtorId,
         name: row.name,
         description: row.description,
-        taskCategory: ListingTask.TaskCategory(rawValue: row.taskCategory) ?? .other,
-        status: ListingTask.TaskStatus(rawValue: row.status) ?? .open,
+        taskCategory: Activity.TaskCategory(rawValue: row.taskCategory) ?? .other,
+        status: Activity.TaskStatus(rawValue: row.status) ?? .open,
         priority: row.priority,
-        visibilityGroup: ListingTask.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
+        visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
         assignedStaffId: row.assignedStaffId,
         dueDate: row.dueDate,
         claimedAt: row.claimedAt,
@@ -133,7 +133,7 @@ nonisolated private func mapListingTaskResponse(_ row: ListingTaskResponse) -> L
     // TODO: Add subtasks query once subtasks table exists
     let subtasks: [Subtask] = []
 
-    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
+    return ActivityWithDetails(task: task, listing: listing, subtasks: subtasks)
 }
 
 // MARK: - Live Implementation
@@ -141,9 +141,9 @@ nonisolated private func mapListingTaskResponse(_ row: ListingTaskResponse) -> L
 extension TaskRepositoryClient {
     /// Production implementation using global Supabase client
     public static let live = Self(
-            fetchStrayTasks: {
-                let response: [StrayTask] = try await supabase
-                    .from("stray_tasks")
+            fetchTasks: {
+                let response: [AgentTask] = try await supabase
+                    .from("agent_tasks")
                     .select()
                     .is("deleted_at", value: nil)
                     .order("priority", ascending: false)
@@ -152,12 +152,12 @@ extension TaskRepositoryClient {
                     .value
 
                 // Return tasks with empty messages - nested queries need better handling
-                return response.map { StrayTaskWithMessages(task: $0, messages: []) }
+                return response.map { TaskWithMessages(task: $0, messages: []) }
             },
-            fetchListingTasks: {
-                // Query listing_tasks with nested listings join
-                let response: [ListingTaskResponse] = try await supabase
-                    .from("listing_tasks")
+            fetchActivities: {
+                // Query activities with nested listings join
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
                     .select("*, listings(*)")
                     .is("deleted_at", value: nil)
                     .order("priority", ascending: false)
@@ -165,17 +165,17 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap(mapListingTaskResponse)
+                return response.compactMap(mapActivityResponse)
             },
-            claimStrayTask: { taskId, staffId in
+            claimTask: { taskId, staffId in
                 let now = Date()
 
-                let response: StrayTask = try await supabase
-                    .from("stray_tasks")
+                let response: AgentTask = try await supabase
+                    .from("agent_tasks")
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": StrayTask.TaskStatus.claimed.rawValue
+                        "status": AgentTask.TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -185,15 +185,15 @@ extension TaskRepositoryClient {
 
                 return response
             },
-            claimListingTask: { taskId, staffId in
+            claimActivity: { taskId, staffId in
                 let now = Date()
 
-                let response: ListingTask = try await supabase
-                    .from("listing_tasks")
+                let response: Activity = try await supabase
+                    .from("activities")
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": ListingTask.TaskStatus.claimed.rawValue
+                        "status": Activity.TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -203,11 +203,11 @@ extension TaskRepositoryClient {
 
                 return response
             },
-            deleteStrayTask: { taskId, deletedBy in
+            deleteTask: { taskId, deletedBy in
                 let now = Date()
 
                 try await supabase
-                    .from("stray_tasks")
+                    .from("agent_tasks")
                     .update([
                         "deleted_at": now.ISO8601Format(),
                         "deleted_by": deletedBy
@@ -215,11 +215,11 @@ extension TaskRepositoryClient {
                     .eq("task_id", value: taskId)
                     .execute()
             },
-            deleteListingTask: { taskId, deletedBy in
+            deleteActivity: { taskId, deletedBy in
                 let now = Date()
 
                 try await supabase
-                    .from("listing_tasks")
+                    .from("activities")
                     .update([
                         "deleted_at": now.ISO8601Format(),
                         "deleted_by": deletedBy
@@ -241,9 +241,9 @@ extension TaskRepositoryClient {
                     NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
                 ])
             },
-            fetchStrayTasksByRealtor: { realtorId in
-                let response: [StrayTask] = try await supabase
-                    .from("stray_tasks")
+            fetchTasksByRealtor: { realtorId in
+                let response: [AgentTask] = try await supabase
+                    .from("agent_tasks")
                     .select()
                     .eq("realtor_id", value: realtorId)
                     .is("deleted_at", value: nil)
@@ -253,12 +253,12 @@ extension TaskRepositoryClient {
                     .value
 
                 // Return tasks with empty messages - nested queries need better handling
-                return response.map { StrayTaskWithMessages(task: $0, messages: []) }
+                return response.map { TaskWithMessages(task: $0, messages: []) }
             },
-            fetchListingTasksByRealtor: { realtorId in
-                // Query listing_tasks with nested listings join
-                let response: [ListingTaskResponse] = try await supabase
-                    .from("listing_tasks")
+            fetchActivitiesByRealtor: { realtorId in
+                // Query activities with nested listings join
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
                     .select("*, listings(*)")
                     .eq("realtor_id", value: realtorId)
                     .is("deleted_at", value: nil)
@@ -267,14 +267,14 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap(mapListingTaskResponse)
+                return response.compactMap(mapActivityResponse)
             },
-            fetchCompletedStrayTasks: {
-                Logger.database.info("Fetching completed stray tasks")
-                let tasks: [StrayTask] = try await supabase
-                    .from("stray_tasks")
+            fetchCompletedTasks: {
+                Logger.database.info("Fetching completed tasks")
+                let tasks: [AgentTask] = try await supabase
+                    .from("agent_tasks")
                     .select()
-                    .eq("status", value: StrayTask.TaskStatus.done.rawValue)
+                    .eq("status", value: AgentTask.TaskStatus.done.rawValue)
                     .is("deleted_at", value: nil)
                     .order("completed_at", ascending: false)
                     .execute()
@@ -291,48 +291,48 @@ extension TaskRepositoryClient {
 extension TaskRepositoryClient {
     /// Preview implementation with mock data for Xcode previews
     public static let preview = Self(
-        fetchStrayTasks: {
+        fetchTasks: {
             [
-                StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
-                StrayTaskWithMessages(task: StrayTask.mock2, messages: []),
-                StrayTaskWithMessages(task: StrayTask.mock3, messages: [SlackMessage.mock2])
+                TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
+                TaskWithMessages(task: AgentTask.mock2, messages: []),
+                TaskWithMessages(task: AgentTask.mock3, messages: [SlackMessage.mock2])
             ]
         },
-        fetchListingTasks: {
+        fetchActivities: {
             [
-                ListingTaskWithDetails(
-                    task: ListingTask.mock1,
+                ActivityWithDetails(
+                    task: Activity.mock1,
                     listing: Listing.mock1,
                     subtasks: [Subtask.mock1, Subtask.mock2]
                 ),
-                ListingTaskWithDetails(
-                    task: ListingTask.mock2,
+                ActivityWithDetails(
+                    task: Activity.mock2,
                     listing: Listing.mock2,
                     subtasks: []
                 ),
-                ListingTaskWithDetails(
-                    task: ListingTask.mock3,
+                ActivityWithDetails(
+                    task: Activity.mock3,
                     listing: Listing.mock3,
                     subtasks: [Subtask.mock3]
                 )
             ]
         },
-        claimStrayTask: { _, staffId in
-            var task = StrayTask.mock1
+        claimTask: { _, staffId in
+            var task = AgentTask.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
             task.status = .claimed
             return task
         },
-        claimListingTask: { _, staffId in
-            var task = ListingTask.mock1
+        claimActivity: { _, staffId in
+            var task = Activity.mock1
             task.assignedStaffId = staffId
             task.claimedAt = Date()
             task.status = .claimed
             return task
         },
-        deleteStrayTask: { _, _ in },
-        deleteListingTask: { _, _ in },
+        deleteTask: { _, _ in },
+        deleteActivity: { _, _ in },
         completeSubtask: { _ in
             var subtask = Subtask.mock1
             subtask.completedAt = Date()
@@ -343,31 +343,31 @@ extension TaskRepositoryClient {
             subtask.completedAt = nil
             return subtask
         },
-        fetchStrayTasksByRealtor: { _ in
+        fetchTasksByRealtor: { _ in
             // Simulate network delay
             try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [
-                StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
-                StrayTaskWithMessages(task: StrayTask.mock2, messages: [])
+                TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
+                TaskWithMessages(task: AgentTask.mock2, messages: [])
             ]
         },
-        fetchListingTasksByRealtor: { _ in
+        fetchActivitiesByRealtor: { _ in
             // Simulate network delay
             try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [
-                ListingTaskWithDetails(
-                    task: ListingTask.mock1,
+                ActivityWithDetails(
+                    task: Activity.mock1,
                     listing: Listing.mock1,
                     subtasks: [Subtask.mock1]
                 ),
-                ListingTaskWithDetails(
-                    task: ListingTask.mock2,
+                ActivityWithDetails(
+                    task: Activity.mock2,
                     listing: Listing.mock2,
                     subtasks: []
                 )
             ]
         },
-        fetchCompletedStrayTasks: {
+        fetchCompletedTasks: {
             // Simulate network delay
             try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             // Return empty array - no completed tasks in mock data yet

@@ -186,7 +186,7 @@ struct LogbookView: View {
 
     // MARK: - Helper Methods
 
-    private func categoryIcon(for category: StrayTask.TaskCategory) -> String {
+    private func categoryIcon(for category: AgentTask.TaskCategory) -> String {
         switch category {
         case .admin: return "gearshape"
         case .marketing: return "megaphone"

@@ -24,7 +24,7 @@ final class MyTasksStore {
 
     // MARK: - State
 
-    var tasks: [StrayTask] = []
+    var tasks: [AgentTask] = []
     var expandedTaskId: String?
     var isLoading = false
     var errorMessage: String?
@@ -36,7 +36,7 @@ final class MyTasksStore {
 
     /// Initialize store with repository injection
     /// Following Context7 @Observable pattern
-    init(repository: TaskRepositoryClient, initialTasks: [StrayTask] = []) {
+    init(repository: TaskRepositoryClient, initialTasks: [AgentTask] = []) {
         self.repository = repository
         self.tasks = initialTasks
     }
@@ -52,10 +52,10 @@ final class MyTasksStore {
 
         do {
             // Fetch stray tasks and filter for current user
-            let strayResults = try await repository.fetchStrayTasks()
+            let tasksResults = try await repository.fetchTasks()
 
             // Filter for stray tasks claimed by me - break up for type-checker
-            let allStrayTasks = strayResults.map(\.task)
+            let allStrayTasks = tasksResults.map(\.task)
             tasks = allStrayTasks.filter { task in
                 task.assignedStaffId == currentUserId &&
                 (task.status == .claimed || task.status == .inProgress)
@@ -74,9 +74,9 @@ final class MyTasksStore {
 
     /// Claim a task for current user
     /// Per spec line 428: "Press: Claim for yourself"
-    func claimTask(_ task: StrayTask) async {
+    func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimStrayTask(task.id, currentUserId)
+            _ = try await repository.claimTask(task.id, currentUserId)
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
@@ -84,9 +84,9 @@ final class MyTasksStore {
     }
 
     /// Delete a task
-    func deleteTask(_ task: StrayTask) async {
+    func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteStrayTask(task.id, currentUserId)
+            try await repository.deleteTask(task.id, currentUserId)
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
@@ -95,7 +95,7 @@ final class MyTasksStore {
 
     /// Toggle task user type (Marketing/Admin)
     /// Per spec line 79: "Tagged as Marketing or Admin (can be toggled)"
-    func toggleUserType(for task: StrayTask) async {
+    func toggleUserType(for task: AgentTask) async {
         // TODO: Implement task category update when repository supports it
         errorMessage = "Category toggle not yet implemented"
     }

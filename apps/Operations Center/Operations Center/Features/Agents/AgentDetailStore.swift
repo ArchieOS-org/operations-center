@@ -24,8 +24,8 @@ final class AgentDetailStore {
 
     private(set) var realtor: Realtor?
     private(set) var listings: [ListingWithActivities] = []
-    private(set) var listingTasks: [ListingTaskWithDetails] = []
-    private(set) var strayTasks: [StrayTaskWithMessages] = []
+    private(set) var activities: [ActivityWithDetails] = []
+    private(set) var tasks: [TaskWithMessages] = []
 
     private(set) var isLoading = false
     var errorMessage: String?
@@ -55,21 +55,21 @@ final class AgentDetailStore {
             // Fetch all data in parallel
             async let realtorFetch = realtorRepository.fetchRealtor(realtorId)
             async let listingsFetch = fetchListingsForAgent()
-            async let listingTasksFetch = fetchListingTasksForAgent()
-            async let strayTasksFetch = fetchStrayTasksForAgent()
+            async let activitiesFetch = fetchActivitiesForAgent()
+            async let tasksFetch = fetchTasksForAgent()
 
             // Await all results
             let (fetchedRealtor, fetchedListings, fetchedListingTasks, fetchedStrayTasks) = try await (
                 realtorFetch,
                 listingsFetch,
-                listingTasksFetch,
-                strayTasksFetch
+                activitiesFetch,
+                tasksFetch
             )
 
             self.realtor = fetchedRealtor
             self.listings = fetchedListings
-            self.listingTasks = fetchedListingTasks
-            self.strayTasks = fetchedStrayTasks
+            self.activities = fetchedListingTasks
+            self.tasks = fetchedStrayTasks
 
             Logger.database.info(
                 "Fetched agent data: \(fetchedListings.count) listings, \(fetchedListingTasks.count) listing tasks, \(fetchedStrayTasks.count) stray tasks"
@@ -95,15 +95,15 @@ final class AgentDetailStore {
         return []
     }
 
-    private func fetchListingTasksForAgent() async throws -> [ListingTaskWithDetails] {
+    private func fetchActivitiesForAgent() async throws -> [ActivityWithDetails] {
         Logger.database.info("Fetching listing tasks for agent \(self.realtorId)")
-        let tasks = try await taskRepository.fetchListingTasksByRealtor(realtorId)
+        let tasks = try await taskRepository.fetchActivitiesByRealtor(realtorId)
         return tasks
     }
 
-    private func fetchStrayTasksForAgent() async throws -> [StrayTaskWithMessages] {
+    private func fetchTasksForAgent() async throws -> [TaskWithMessages] {
         Logger.database.info("Fetching stray tasks for agent \(self.realtorId)")
-        let tasks = try await taskRepository.fetchStrayTasksByRealtor(realtorId)
+        let tasks = try await taskRepository.fetchTasksByRealtor(realtorId)
         return tasks
     }
 
@@ -129,22 +129,22 @@ final class AgentDetailStore {
 
     // MARK: - Task Actions
 
-    func claimStrayTask(_ task: StrayTask) async {
+    func claimTask(_ task: AgentTask) async {
         Logger.tasks.info("Claiming stray task: \(task.id)")
         // TODO: Implement claim functionality
     }
 
-    func deleteStrayTask(_ task: StrayTask) async {
+    func deleteTask(_ task: AgentTask) async {
         Logger.tasks.info("Deleting stray task: \(task.id)")
         // TODO: Implement delete functionality
     }
 
-    func claimListingTask(_ task: ListingTask) async {
+    func claimActivity(_ task: Activity) async {
         Logger.tasks.info("Claiming listing task: \(task.id)")
         // TODO: Implement claim functionality
     }
 
-    func deleteListingTask(_ task: ListingTask) async {
+    func deleteActivity(_ task: Activity) async {
         Logger.tasks.info("Deleting listing task: \(task.id)")
         // TODO: Implement delete functionality
     }

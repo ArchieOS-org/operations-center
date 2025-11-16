@@ -2,14 +2,14 @@
 //  CardBase.swift
 //  OperationsCenterKit
 //
-//  Shared foundation for StrayTaskCard and ListingTaskCard
+//  Shared foundation for TaskCard and ActivityCard
 //  Modern implementation: dual-layer shadows, spring animations, system colors
 //
 
 import SwiftUI
 
 /// Base card component providing shared structure for all task cards
-/// Not used directly - extended by StrayTaskCard and ListingTaskCard
+/// Not used directly - extended by TaskCard and ActivityCard
 struct CardBase<Content: View>: View {
     // MARK: - Configuration
 

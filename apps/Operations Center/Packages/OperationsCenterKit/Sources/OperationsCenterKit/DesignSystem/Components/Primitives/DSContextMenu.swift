@@ -33,7 +33,7 @@ public struct DSContextAction: Identifiable {
 
 public extension DSContextAction {
     /// Standard task actions: Claim + Delete
-    /// Shared by StrayTaskCard and ListingTaskCard
+    /// Shared by TaskCard and ActivityCard
     static func standardTaskActions(
         onClaim: @escaping () -> Void,
         onDelete: @escaping () -> Void

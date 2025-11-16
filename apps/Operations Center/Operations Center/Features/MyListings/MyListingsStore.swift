@@ -53,7 +53,7 @@ final class MyListingsStore {
             let currentUserId = "current-user"
 
             // Get listing tasks claimed by this realtor directly from repository
-            let userListingTasks = try await taskRepository.fetchListingTasksByRealtor(currentUserId)
+            let userListingTasks = try await taskRepository.fetchActivitiesByRealtor(currentUserId)
 
             // Extract unique listing IDs
             let listingIds = Set(userListingTasks.map { $0.task.listingId })
