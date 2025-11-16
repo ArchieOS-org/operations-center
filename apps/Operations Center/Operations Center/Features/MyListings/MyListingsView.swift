@@ -16,7 +16,6 @@ struct MyListingsView: View {
     // MARK: - Properties
 
     @State private var store: MyListingsStore
-    @State private var navigationPath: [Route] = []
 
     // MARK: - Initialization
 
@@ -30,13 +29,7 @@ struct MyListingsView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            listingsList
-                .navigationDestination(for: Route.self) { _ in
-                    // Route to detail views
-                    EmptyView()
-                }
-        }
+        listingsList
     }
 
     // MARK: - Subviews
@@ -81,7 +74,7 @@ struct MyListingsView: View {
                     ListingBrowseCard(
                         listing: listing,
                         onTap: {
-                            navigationPath.append(.listing(id: listing.id))
+                            // TODO: Wire up navigation to listing detail via parent NavigationStack
                         }
                     )
                     .listRowSeparator(.hidden)

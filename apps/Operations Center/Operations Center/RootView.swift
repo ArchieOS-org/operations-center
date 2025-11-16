@@ -54,11 +54,11 @@ struct RootView: View {
             .navigationDestination(for: Route.self) { route in
                 destinationView(for: route)
             }
-        }
-        .task {
-            // Skip startup in preview mode - zero network calls
-            guard !CommandLine.arguments.contains("--use-preview-data") else { return }
-            await appState.startup()
+            .task {
+                // Skip startup in preview mode - zero network calls
+                guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+                await appState.startup()
+            }
         }
     }
 

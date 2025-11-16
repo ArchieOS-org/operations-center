@@ -16,7 +16,6 @@ struct LogbookView: View {
     // MARK: - Properties
 
     @State private var store: LogbookStore
-    @State private var navigationPath: [Route] = []
 
     // MARK: - Initialization
 
@@ -33,13 +32,7 @@ struct LogbookView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            archiveList
-                .navigationDestination(for: Route.self) { _ in
-                    // Route to detail views (listings only for now)
-                    EmptyView()
-                }
-        }
+        archiveList
     }
 
     // MARK: - Subviews
@@ -86,8 +79,7 @@ struct LogbookView: View {
                     ListingBrowseCard(
                         listing: listing,
                         onTap: {
-                            // Navigate to listing detail (not yet wired up)
-                            navigationPath.append(.listing(id: listing.id))
+                            // TODO: Wire up navigation to listing detail via parent NavigationStack
                         }
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
