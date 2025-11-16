@@ -88,7 +88,7 @@ struct RootView: View {
         case .allTasks:
             AllTasksView(repository: usePreviewData ? .preview : .live)
         case .allListings:
-            PlaceholderView(title: "All Listings", icon: "building.2")
+            AllListingsView(repository: usePreviewData ? .preview : .live)
         case .settings:
             SettingsView()
         }

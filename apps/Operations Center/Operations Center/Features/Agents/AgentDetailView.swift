@@ -107,15 +107,13 @@ struct AgentDetailView: View {
                         }
                     }
 
-                    if let email = realtor.email {
-                        HStack(spacing: 8) {
-                            Image(systemName: "envelope")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(email)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                    HStack(spacing: 8) {
+                        Image(systemName: "envelope")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(realtor.email)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 8)
