@@ -78,7 +78,11 @@ struct RootView: View {
         case .agents:
             AgentsView(repository: usePreviewData ? .preview : .live)
         case .agent(let id):
-            PlaceholderView(title: "Agent", icon: "person.fill", subtitle: id)
+            AgentDetailView(
+                realtorId: id,
+                realtorRepository: usePreviewData ? .preview : .live,
+                taskRepository: usePreviewData ? .preview : .live
+            )
         case .listing(let id):
             PlaceholderView(title: "Listing", icon: "building.2.fill", subtitle: id)
         case .allTasks:
