@@ -87,7 +87,11 @@ struct RootView: View {
                 taskRepository: usePreviewData ? .preview : .live
             )
         case .listing(let id):
-            PlaceholderView(title: "Listing", icon: "building.2.fill", subtitle: id)
+            ListingDetailView(
+                listingId: id,
+                listingRepository: usePreviewData ? .preview : .live,
+                noteRepository: usePreviewData ? .preview : .live
+            )
         case .allTasks:
             AllTasksView(repository: usePreviewData ? .preview : .live)
         case .allListings:
