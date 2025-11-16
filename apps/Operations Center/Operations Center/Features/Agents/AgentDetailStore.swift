@@ -89,8 +89,8 @@ final class AgentDetailStore {
     // MARK: - Private Helpers
 
     private func fetchListingsForAgent() async throws -> [ListingWithActivities] {
-        // TODO: Implement when ListingRepositoryClient is available
-        // For now return empty array
+        // NOTE: Placeholder until ListingRepositoryClient is available.
+        // For now, return an empty array.
         Logger.database.info("Fetching listings for agent \(self.realtorId)")
         return []
     }
@@ -130,22 +130,70 @@ final class AgentDetailStore {
     // MARK: - Task Actions
 
     func claimTask(_ task: AgentTask) async {
-        Logger.tasks.info("Claiming agent task: \(task.id)")
-        // TODO: Implement claim functionality
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            _ = try await taskRepository.claimTask(task.id, currentUserId)
+
+            Logger.tasks.info("Claimed agent task: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to claim agent task: \(error.localizedDescription)")
+            errorMessage = "Failed to claim task: \(error.localizedDescription)"
+        }
     }
 
     func deleteTask(_ task: AgentTask) async {
-        Logger.tasks.info("Deleting agent task: \(task.id)")
-        // TODO: Implement delete functionality
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            try await taskRepository.deleteTask(task.id, currentUserId)
+
+            Logger.tasks.info("Deleted agent task: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to delete agent task: \(error.localizedDescription)")
+            errorMessage = "Failed to delete task: \(error.localizedDescription)"
+        }
     }
 
     func claimActivity(_ task: Activity) async {
-        Logger.tasks.info("Claiming activity: \(task.id)")
-        // TODO: Implement claim functionality
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            _ = try await taskRepository.claimActivity(task.id, currentUserId)
+
+            Logger.tasks.info("Claimed activity: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
+            errorMessage = "Failed to claim task: \(error.localizedDescription)"
+        }
     }
 
     func deleteActivity(_ task: Activity) async {
-        Logger.tasks.info("Deleting activity: \(task.id)")
-        // TODO: Implement delete functionality
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            try await taskRepository.deleteActivity(task.id, currentUserId)
+
+            Logger.tasks.info("Deleted activity: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
+            errorMessage = "Failed to delete task: \(error.localizedDescription)"
+        }
     }
 }
