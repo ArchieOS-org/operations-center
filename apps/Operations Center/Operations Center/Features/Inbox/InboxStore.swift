@@ -73,33 +73,12 @@ final class InboxStore {
                 guard let firstActivity = activityGroup.first else { continue }
                 let listing = firstActivity.listing
 
-                // Fetch notes - log errors and track failure
-                var fetchedNotes: [ListingNote] = []
-                var notesError = false
-                do {
-                    fetchedNotes = try await noteRepository.fetchNotes(listingId)
-                } catch {
-                    Logger.database.error(
-                        "Failed to fetch notes for listing \(listingId): \(error.localizedDescription)"
-                    )
-                    notesError = true
-                }
-
-                // Fetch realtor - log errors and track failure
+                // Fetch notes and realtor
+                let (fetchedNotes, notesError) = await fetchNotes(for: listingId)
                 var realtor: Realtor?
                 var realtorError = false
                 if let realtorId = listing.realtorId {
-                    do {
-                        realtor = try await realtorRepository.fetchRealtor(realtorId)
-                    } catch {
-                        Logger.database.error(
-                            """
-                            Failed to fetch realtor \(realtorId) for listing \(listingId): \
-                            \(error.localizedDescription)
-                            """
-                        )
-                        realtorError = true
-                    }
+                    (realtor, realtorError) = await fetchRealtor(for: realtorId, listingId: listingId)
                 }
 
                 let listingWithDetails = ListingWithDetails(
@@ -124,6 +103,37 @@ final class InboxStore {
 
     func refresh() async {
         await fetchTasks()
+    }
+
+    // MARK: - Private Helpers
+
+    /// Fetch notes for a listing, logging any errors
+    private func fetchNotes(for listingId: String) async -> (notes: [ListingNote], hasError: Bool) {
+        do {
+            let notes = try await noteRepository.fetchNotes(listingId)
+            return (notes, false)
+        } catch {
+            Logger.database.error(
+                "Failed to fetch notes for listing \(listingId): \(error.localizedDescription)"
+            )
+            return ([], true)
+        }
+    }
+
+    /// Fetch realtor for a listing, logging any errors
+    private func fetchRealtor(for realtorId: String, listingId: String) async -> (realtor: Realtor?, hasError: Bool) {
+        do {
+            let realtor = try await realtorRepository.fetchRealtor(realtorId)
+            return (realtor, false)
+        } catch {
+            Logger.database.error(
+                """
+                Failed to fetch realtor \(realtorId) for listing \(listingId): \
+                \(error.localizedDescription)
+                """
+            )
+            return (nil, true)
+        }
     }
 
     // MARK: - Expansion State
