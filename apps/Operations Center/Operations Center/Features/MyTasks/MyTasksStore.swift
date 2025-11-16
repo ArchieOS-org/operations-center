@@ -29,7 +29,6 @@ final class MyTasksStore {
     var isLoading = false
     var errorMessage: String?
 
-    // swiftlint:disable:next todo
     // TODO: Replace with real user ID from auth system
     private let currentUserId = "current-user"
 
@@ -77,7 +76,6 @@ final class MyTasksStore {
     /// Per spec line 428: "Press: Claim for yourself"
     func claimTask(_ task: StrayTask) async {
         do {
-            // swiftlint:disable:next todo
             // TODO: Use actual user ID when auth is implemented
             _ = try await repository.claimStrayTask(task.id, "current-user")
             await fetchMyTasks()
@@ -89,7 +87,6 @@ final class MyTasksStore {
     /// Delete a task
     func deleteTask(_ task: StrayTask) async {
         do {
-            // swiftlint:disable:next todo
             // TODO: Use actual user ID when auth is implemented
             try await repository.deleteStrayTask(task.id, "current-user")
             await fetchMyTasks()
@@ -101,7 +98,6 @@ final class MyTasksStore {
     /// Toggle task user type (Marketing/Admin)
     /// Per spec line 79: "Tagged as Marketing or Admin (can be toggled)"
     func toggleUserType(for task: StrayTask) async {
-        // swiftlint:disable:next todo
         // TODO: Implement task category update when repository supports it
         errorMessage = "Category toggle not yet implemented"
     }

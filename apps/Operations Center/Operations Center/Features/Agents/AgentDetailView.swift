@@ -132,7 +132,6 @@ struct AgentDetailView: View {
                     ListingBrowseCard(
                         listing: listingWithActivities.listing,
                         onTap: {
-                            // swiftlint:disable:next todo
                             // TODO: Navigate to listing detail
                         }
                     )
@@ -157,7 +156,6 @@ struct AgentDetailView: View {
                             store.toggleTaskExpansion(for: taskWithDetails.task.id)
                         },
                         onSubtaskToggle: { _ in
-                            // swiftlint:disable:next todo
                             // TODO: Implement subtask toggle
                         },
                         onClaim: {
