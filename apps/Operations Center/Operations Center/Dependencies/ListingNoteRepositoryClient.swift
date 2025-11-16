@@ -85,7 +85,7 @@ extension ListingNoteRepositoryClient {
 
 extension ListingNoteRepositoryClient {
     public static let preview = Self(
-        fetchNotes: { listingId in
+        fetchNotes: { _ in
             // Simulate network delay
             try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
@@ -111,7 +111,7 @@ extension ListingNoteRepositoryClient {
                 updatedAt: Date()
             )
         },
-        deleteNote: { noteId in
+        deleteNote: { _ in
             // Simulate network delay
             try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
             // No-op for preview
