@@ -43,6 +43,9 @@ public struct TaskRepositoryClient {
 
     /// Fetch listing tasks for a specific realtor
     public var fetchListingTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [ListingTaskWithDetails]
+
+    /// Fetch completed stray tasks (for Logbook)
+    public var fetchCompletedStrayTasks: @Sendable () async throws -> [StrayTask]
 }
 
 // MARK: - Live Implementation
@@ -339,6 +342,20 @@ extension TaskRepositoryClient {
 
                     return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
                 }
+            },
+            fetchCompletedStrayTasks: {
+                Logger.database.info("Fetching completed stray tasks")
+                let tasks: [StrayTask] = try await supabase
+                    .from("stray_tasks")
+                    .select()
+                    .eq("status", value: "DONE")
+                    .is("deleted_at", value: nil)
+                    .order("completed_at", ascending: false)
+                    .execute()
+                    .value
+
+                Logger.database.info("Fetched \(tasks.count) completed stray tasks")
+                return tasks
             }
         )
     }
@@ -423,6 +440,12 @@ extension TaskRepositoryClient {
                     subtasks: []
                 )
             ]
+        },
+        fetchCompletedStrayTasks: {
+            // Simulate network delay
+            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+            // Return empty array - no completed tasks in mock data yet
+            return []
         }
     )
 }

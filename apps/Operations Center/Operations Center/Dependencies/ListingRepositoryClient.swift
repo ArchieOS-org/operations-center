@@ -23,6 +23,9 @@ public struct ListingRepositoryClient {
     /// Fetch listings for a specific realtor
     public var fetchListingsByRealtor: @Sendable (_ realtorId: String) async throws -> [Listing]
 
+    /// Fetch completed listings (for Logbook)
+    public var fetchCompletedListings: @Sendable () async throws -> [Listing]
+
     /// Delete a listing (soft delete)
     public var deleteListing: @Sendable (_ listingId: String, _ deletedBy: String) async throws -> Void
 }
@@ -71,6 +74,20 @@ extension ListingRepositoryClient {
             Logger.database.info("Fetched \(listings.count) listings for realtor")
             return listings
         },
+        fetchCompletedListings: {
+            Logger.database.info("Fetching completed listings")
+            let listings: [Listing] = try await supabase
+                .from("listings")
+                .select()
+                .not("completed_at", operator: .is, value: "null")
+                .is("deleted_at", value: nil)
+                .order("completed_at", ascending: false)
+                .execute()
+                .value
+
+            Logger.database.info("Fetched \(listings.count) completed listings")
+            return listings
+        },
         deleteListing: { listingId, deletedBy in
             Logger.database.info("Deleting listing: \(listingId)")
             let now = Date()
@@ -108,6 +125,12 @@ extension ListingRepositoryClient {
             // Simulate network delay
             try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [Listing.mock1, Listing.mock2]
+        },
+        fetchCompletedListings: {
+            // Simulate network delay
+            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+            // Return mock3 which is marked as completed
+            return [Listing.mock3]
         },
         deleteListing: { _, _ in
             // Simulate network delay
