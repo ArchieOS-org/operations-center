@@ -54,7 +54,9 @@ final class LogbookStore {
             completedListings = listings
             completedTasks = tasks
 
-            Logger.database.info("Fetched \(self.completedListings.count) completed listings, \(self.completedTasks.count) completed tasks")
+            Logger.database.info(
+                "Fetched \(self.completedListings.count) completed listings, \(self.completedTasks.count) completed tasks"
+            )
         } catch {
             Logger.database.error("Failed to fetch completed items: \(error.localizedDescription)")
             errorMessage = "Failed to load archive: \(error.localizedDescription)"

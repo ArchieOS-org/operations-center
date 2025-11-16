@@ -62,7 +62,9 @@ final class AllTasksStore {
             strayTasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
             listingTasks = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
-            Logger.tasks.info("Fetched \(self.strayTasks.count) stray tasks and \(self.listingTasks.count) listing tasks")
+            Logger.tasks.info(
+                "Fetched \(self.strayTasks.count) stray tasks and \(self.listingTasks.count) listing tasks"
+            )
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"

@@ -71,7 +71,9 @@ final class AgentDetailStore {
             self.listingTasks = fetchedListingTasks
             self.strayTasks = fetchedStrayTasks
 
-            Logger.database.info("Fetched agent data: \(fetchedListings.count) listings, \(fetchedListingTasks.count) listing tasks, \(fetchedStrayTasks.count) stray tasks")
+            Logger.database.info(
+                "Fetched agent data: \(fetchedListings.count) listings, \(fetchedListingTasks.count) listing tasks, \(fetchedStrayTasks.count) stray tasks"
+            )
         } catch {
             Logger.database.error("Failed to fetch agent data: \(error.localizedDescription)")
             errorMessage = "Failed to load agent data: \(error.localizedDescription)"
