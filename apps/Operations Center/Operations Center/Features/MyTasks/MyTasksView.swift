@@ -35,19 +35,30 @@ struct MyTasksView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            // Task list
-            if store.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if store.tasks.isEmpty && !showingNewTask {
-                emptyState
-            } else {
-                taskList
+            OCListScaffold(
+                onRefresh: {
+                    await store.fetchMyTasks()
+                }
+            ) {
+                if store.isLoading && store.tasks.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 60)
+                        .listRowSeparator(.hidden)
+                } else if store.tasks.isEmpty && !showingNewTask {
+                    OCEmptyState.noTasks
+                        .listRowSeparator(.hidden)
+                } else {
+                    tasksSection
+                    if showingNewTask {
+                        newTaskSection
+                    }
+                }
             }
-        }
-        .floatingActionButton(isHidden: store.expandedTaskId != nil) {
-            // Per spec line 185: "Creates new Task inline at bottom"
-            showingNewTask = true
+            .floatingActionButton(isHidden: store.expandedTaskId != nil) {
+                // Per spec line 185: "Creates new Task inline at bottom"
+                showingNewTask = true
+            }
         }
         .overlay(alignment: .bottom) {
             // Floating context menu - appears at screen bottom when card is expanded
@@ -79,40 +90,38 @@ struct MyTasksView: View {
         }
     }
 
-    // MARK: - Task List
+    // MARK: - Tasks Section
 
-    private var taskList: some View {
-        ScrollView {
-            LazyVStack(spacing: Spacing.md) {
+    @ViewBuilder
+    private var tasksSection: some View {
+        if !store.tasks.isEmpty {
+            Section {
                 ForEach(store.tasks) { task in
-                    taskCard(for: task)
+                    OCTaskRow(task: task)
+                        .onTapGesture {
+                            store.toggleExpansion(for: task.id)
+                        }
                 }
-
-                // New task creation inline
-                // Per spec line 186: "No action bar shown during creation"
-                if showingNewTask {
-                    newTaskCard
-                }
+            } header: {
+                OCSectionHeader(
+                    title: "My Tasks",
+                    count: store.tasks.count
+                )
             }
-            .padding()
         }
     }
 
-    // MARK: - Task Card
+    // MARK: - New Task Section
 
     @ViewBuilder
-    private func taskCard(for task: AgentTask) -> some View {
-        let isExpanded = store.expandedTaskId == task.id
-
-        TaskCard(
-            task: task,
-            messages: [], // NOTE: Load Slack messages
-            isExpanded: isExpanded,
-            onTap: {
-                store.toggleExpansion(for: task.id)
-            }
-        )
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: isExpanded)
+    private var newTaskSection: some View {
+        Section {
+            newTaskCard
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+        } header: {
+            OCSectionHeader(title: "New Task")
+        }
     }
 
     // MARK: - New Task Card
@@ -164,26 +173,6 @@ struct MyTasksView: View {
                 }
             }
         )
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: Spacing.lg) {
-            Image(systemName: "tray")
-                .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
-
-            VStack(spacing: Spacing.xs) {
-                Text("No Tasks")
-                    .font(Typography.title)
-
-                Text("You haven't claimed any tasks yet")
-                    .font(Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
 }

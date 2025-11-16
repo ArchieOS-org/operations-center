@@ -34,15 +34,15 @@ struct ListingDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
+            }
+        ) {
             notesSection
             placeholderSections
         }
-        .listStyle(.plain)
         .navigationTitle(store.listing?.title ?? "Listing")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchListingData()
         }
@@ -85,31 +85,16 @@ struct ListingDetailView: View {
             // Per spec: "Shows author name per note. Unlimited notes" (lines 354-355)
             if !store.notes.isEmpty {
                 ForEach(store.notes) { note in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(note.content)
-                            .font(.body)
-
-                        HStack {
-                            if let author = note.createdBy {
-                                Text(author)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    OCMessageRow(note: note, showBackground: false)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await store.deleteNote(note)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
-
-                            Text(note.createdAt, style: .relative)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task {
-                                await store.deleteNote(note)
-                            }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
                 }
             } else {
                 Text("No notes yet")
@@ -118,8 +103,10 @@ struct ListingDetailView: View {
                     .padding(.vertical, 8)
             }
         } header: {
-            Text("Notes")
-                .font(.headline)
+            OCSectionHeader(
+                title: "Notes",
+                count: store.notes.isEmpty ? nil : store.notes.count
+            )
         }
     }
 
@@ -135,8 +122,7 @@ struct ListingDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         } header: {
-            Text("Marketing Activities")
-                .font(.headline)
+            OCSectionHeader(title: "Marketing Activities")
         }
 
         Section {
@@ -146,8 +132,7 @@ struct ListingDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         } header: {
-            Text("Admin Activities")
-                .font(.headline)
+            OCSectionHeader(title: "Admin Activities")
         }
 
         Section {
@@ -157,8 +142,7 @@ struct ListingDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         } header: {
-            Text("Tasks")
-                .font(.headline)
+            OCSectionHeader(title: "Tasks")
         }
     }
 }
