@@ -1,14 +1,14 @@
 //
-//  SubtasksSection.swift
+//  ActivitiesSection.swift
 //  OperationsCenterKit
 //
-//  Displays subtasks for activities in expanded state
+//  Displays activities for listings in expanded state
 //
 
 import SwiftUI
 
-/// Section displaying subtasks with completion checkboxes
-struct SubtasksSection: View {
+/// Section displaying activities with completion checkboxes
+struct ActivitiesSection: View {
     // MARK: - Properties
 
     let subtasks: [Subtask]
@@ -21,7 +21,7 @@ struct SubtasksSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Section header with progress
                 HStack {
-                    Text("Subtasks")
+                    Text("Activities")
                         .font(Typography.caption1)
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
@@ -114,6 +114,6 @@ struct SubtasksSection: View {
         )
     ]
 
-    SubtasksSection(subtasks: mockSubtasks) { _ in }
+    ActivitiesSection(subtasks: mockSubtasks) { _ in }
     .padding()
 }

@@ -30,6 +30,54 @@ struct AllTasksView: View {
             tasksList
             bottomControls
         }
+        .overlay(alignment: .bottom) {
+            // Floating context menu - appears at screen bottom when card is expanded
+            if let expandedId = store.expandedTaskId {
+                Group {
+                    if let task = findExpandedTask(id: expandedId) {
+                        DSContextMenu(actions: buildTaskActions(for: task))
+                    } else if let activity = findExpandedActivity(id: expandedId) {
+                        DSContextMenu(actions: buildActivityActions(for: activity))
+                    }
+                }
+                .padding(.bottom, Spacing.lg)
+                .padding(.horizontal)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
+    }
+
+    // MARK: - Helpers
+
+    private func findExpandedTask(id: String) -> AgentTask? {
+        store.filteredTasks.filter { String(describing: $0.task.id) == id }.first?.task
+    }
+
+    private func findExpandedActivity(id: String) -> Activity? {
+        store.filteredActivities.filter { String(describing: $0.task.id) == id }.first?.task
+    }
+
+    private func buildTaskActions(for task: AgentTask) -> [DSContextAction] {
+        DSContextAction.standardTaskActions(
+            onClaim: {
+                Task { await store.claimTask(task) }
+            },
+            onDelete: {
+                Task { await store.deleteTask(task) }
+            }
+        )
+    }
+
+    private func buildActivityActions(for activity: Activity) -> [DSContextAction] {
+        DSContextAction.standardTaskActions(
+            onClaim: {
+                Task { await store.claimActivity(activity) }
+            },
+            onDelete: {
+                Task { await store.deleteActivity(activity) }
+            }
+        )
     }
 
     // MARK: - Subviews
@@ -161,6 +209,9 @@ struct AllTasksView: View {
             )
             .padding(.trailing, 16)
             .padding(.bottom, 16)
+            .offset(y: store.expandedTaskId != nil ? 100 : 0)
+            .opacity(store.expandedTaskId != nil ? 0 : 1)
+            .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
         }
     }
 }

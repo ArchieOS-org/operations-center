@@ -62,7 +62,7 @@ public struct ActivityCard: View {
             )
         } expandedContent: {
             // Expanded content (only when expanded)
-            SubtasksSection(subtasks: subtasks, onToggle: onSubtaskToggle)
+            ActivitiesSection(subtasks: subtasks, onToggle: onSubtaskToggle)
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .move(edge: .top)),
                     removal: .opacity

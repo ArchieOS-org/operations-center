@@ -48,32 +48,21 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            // The card itself using existing CardBase system
-            CardBase(
-                tintColor: tintColor,
-                isExpanded: isExpanded,
-                onTap: onTap
-            ) {
-                VStack(alignment: .leading, spacing: Spacing.md) {
-                    // Always show collapsed content
-                    collapsedContent()
+        // The card itself using existing CardBase system
+        // Action bar is now rendered at screen-level via .overlay() in parent views
+        CardBase(
+            tintColor: tintColor,
+            isExpanded: isExpanded,
+            onTap: onTap
+        ) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Always show collapsed content
+                collapsedContent()
 
-                    // Show expanded content when expanded
-                    if isExpanded {
-                        expandedContent()
-                    }
+                // Show expanded content when expanded
+                if isExpanded {
+                    expandedContent()
                 }
-            }
-
-            // Action bar floats at bottom when expanded
-            // Per spec line 470: "Floats at bottom middle of screen, only when a card is expanded"
-            if isExpanded && !actions.isEmpty {
-                VStack {
-                    Spacer()
-                    DSContextMenu(actions: actions)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: isExpanded)
