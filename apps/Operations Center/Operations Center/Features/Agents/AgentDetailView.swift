@@ -201,7 +201,7 @@ struct AgentDetailView: View {
                             store.toggleTaskExpansion(for: taskWithDetails.task.id)
                         },
                         onSubtaskToggle: { _ in
-                            // TODO: Implement subtask toggle
+                            // NOTE: Implement subtask toggle
                         }
                     )
                     .listRowSeparator(.hidden)

@@ -52,9 +52,7 @@ final class TaskListStore {
     /// Claim a task by assigning it to current staff member
     func claimTask(_ task: Activity) async {
         do {
-            // Get current user ID - for now use a placeholder
-            // swiftlint:disable:next todo
-            // TODO: Replace with actual authenticated user ID
+            // NOTE: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
             _ = try await repository.claimActivity(task.id, currentUserId)

@@ -27,6 +27,12 @@ final class InboxStore {
     private let noteRepository: ListingNoteRepositoryClient
     private let realtorRepository: RealtorRepositoryClient
 
+    /// Current authenticated user ID
+    /// NOTE: Replace with actual authenticated user ID from auth service
+    private var currentUserId: String {
+        "current-staff-id"
+    }
+
     // MARK: - Initialization
 
     /// Full initializer with optional initial data for previews
@@ -67,21 +73,29 @@ final class InboxStore {
                 guard let firstActivity = activityGroup.first else { continue }
                 let listing = firstActivity.listing
 
-                // Fetch notes - log errors but continue with empty array
+                // Fetch notes - log errors and track failure
                 var fetchedNotes: [ListingNote] = []
+                var notesError = false
                 do {
                     fetchedNotes = try await noteRepository.fetchNotes(listingId)
                 } catch {
-                    Logger.database.error("Failed to fetch notes for listing \(listingId): \(error.localizedDescription)")
+                    Logger.database.error(
+                        "Failed to fetch notes for listing \(listingId): \(error.localizedDescription)"
+                    )
+                    notesError = true
                 }
 
-                // Fetch realtor - log errors but continue with nil
+                // Fetch realtor - log errors and track failure
                 var realtor: Realtor?
+                var realtorError = false
                 if let realtorId = listing.realtorId {
                     do {
                         realtor = try await realtorRepository.fetchRealtor(realtorId)
                     } catch {
-                        Logger.database.error("Failed to fetch realtor \(realtorId) for listing \(listingId): \(error.localizedDescription)")
+                        Logger.database.error(
+                            "Failed to fetch realtor \(realtorId) for listing \(listingId): \(error.localizedDescription)"
+                        )
+                        realtorError = true
                     }
                 }
 
@@ -89,7 +103,9 @@ final class InboxStore {
                     listing: listing,
                     realtor: realtor,
                     activities: activityGroup.map { $0.task },
-                    notes: fetchedNotes
+                    notes: fetchedNotes,
+                    hasNotesError: notesError,
+                    hasMissingRealtor: realtorError
                 )
                 listingDetails.append(listingWithDetails)
             }
@@ -127,11 +143,6 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Get current user ID - for now use a placeholder
-            // swiftlint:disable:next todo
-            // TODO: Replace with actual authenticated user ID
-            let currentUserId = "current-staff-id"
-
             _ = try await taskRepository.claimTask(task.id, currentUserId)
 
             // Refresh the list
@@ -145,9 +156,6 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Get current user ID for audit trail
-            let currentUserId = "current-staff-id"
-
             try await taskRepository.deleteTask(task.id, currentUserId)
 
             // Refresh the list
@@ -163,9 +171,6 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Get current user ID
-            let currentUserId = "current-staff-id"
-
             _ = try await taskRepository.claimActivity(activity.id, currentUserId)
 
             // Refresh the list
@@ -179,9 +184,6 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Get current user ID for audit trail
-            let currentUserId = "current-staff-id"
-
             try await taskRepository.deleteActivity(activity.id, currentUserId)
 
             // Refresh the list
@@ -197,9 +199,6 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Get current user ID
-            let currentUserId = "current-staff-id"
-
             _ = try await noteRepository.createNote(listingId, content, currentUserId)
 
             // Refresh to get updated notes

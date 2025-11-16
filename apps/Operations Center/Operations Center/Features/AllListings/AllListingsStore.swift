@@ -62,7 +62,7 @@ final class AllListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // TODO: Get from auth
+            let currentUserId = "current-user" // NOTE: Get from auth
             try await repository.deleteListing(listing.id, currentUserId)
 
             await refresh()

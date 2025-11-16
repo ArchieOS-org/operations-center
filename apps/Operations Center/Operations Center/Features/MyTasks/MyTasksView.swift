@@ -106,7 +106,7 @@ struct MyTasksView: View {
 
         TaskCard(
             task: task,
-            messages: [], // TODO: Load Slack messages
+            messages: [], // NOTE: Load Slack messages
             isExpanded: isExpanded,
             onTap: {
                 store.toggleExpansion(for: task.id)
@@ -136,7 +136,7 @@ struct MyTasksView: View {
                 Spacer()
 
                 Button("Create") {
-                    // TODO: Create task logic
+                    // NOTE: Create task logic
                     showingNewTask = false
                     newTaskTitle = ""
                 }

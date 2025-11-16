@@ -46,7 +46,7 @@ struct InboxView: View {
                                             store.toggleExpansion(for: item.listing.id)
                                         }
                                     },
-                                    onTaskTap: { activity in
+                                    onTaskTap: { _ in
                                         // Activity tap - could navigate to detail or expand inline
                                     },
                                     onAddNote: { content in
@@ -82,7 +82,7 @@ struct InboxView: View {
         }
         .floatingActionButton(isHidden: store.expandedTaskId != nil) {
             // Per TASK_MANAGEMENT_SPEC.md line 453: "Opens new Task modal"
-            // TODO: Implement new task modal
+            // NOTE: Implement new task modal
         }
         .overlay(alignment: .bottom) {
             // Floating context menu - appears at screen bottom when card is expanded

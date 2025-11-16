@@ -41,23 +41,14 @@ public struct ListingCollapsedContent: View {
         var chips: [ChipData] = []
 
         // Listing type chip only
-        if let type = listing.type {
+        if let listingType = listing.listingType {
             chips.append(.custom(
-                text: type,
-                color: typeColor(for: type)
+                text: listingType.rawValue,
+                color: listingType.color
             ))
         }
 
         return chips
-    }
-
-    private func typeColor(for type: String) -> Color {
-        switch type.uppercased() {
-        case "RESIDENTIAL": return Colors.badgeResidential
-        case "COMMERCIAL": return Colors.badgeCommercial
-        case "LUXURY": return Colors.badgeLuxury
-        default: return Colors.badgeDefault
-        }
     }
 }
 

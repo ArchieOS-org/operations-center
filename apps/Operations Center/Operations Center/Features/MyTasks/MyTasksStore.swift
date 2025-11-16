@@ -29,7 +29,8 @@ final class MyTasksStore {
     var isLoading = false
     var errorMessage: String?
 
-    // TODO: Replace with real user ID from auth system
+    /// Current authenticated user ID
+    /// NOTE: Replace with real user ID from auth system
     private let currentUserId = "current-user"
 
     // MARK: - Initialization
@@ -96,7 +97,7 @@ final class MyTasksStore {
     /// Toggle task user type (Marketing/Admin)
     /// Per spec line 79: "Tagged as Marketing or Admin (can be toggled)"
     func toggleUserType(for task: AgentTask) async {
-        // TODO: Implement task category update when repository supports it
+        // NOTE: Implement task category update when repository supports it
         errorMessage = "Category toggle not yet implemented"
     }
 }

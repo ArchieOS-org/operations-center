@@ -6,6 +6,33 @@
 //
 
 import Foundation
+import SwiftUI
+
+// MARK: - ListingType
+
+/// Enum representing the type of listing
+public enum ListingType: String, Codable, Sendable {
+    case sale = "SALE"
+    case rental = "RENTAL"
+    case commercial = "COMMERCIAL"
+    case residential = "RESIDENTIAL"
+
+    /// Color associated with this listing type
+    public var color: Color {
+        switch self {
+        case .sale:
+            return .blue
+        case .rental:
+            return .purple
+        case .commercial:
+            return .orange
+        case .residential:
+            return .green
+        }
+    }
+}
+
+// MARK: - Listing
 
 public struct Listing: Identifiable, Codable, Sendable {
     // MARK: - Properties
@@ -67,6 +94,12 @@ public struct Listing: Identifiable, Codable, Sendable {
     /// Whether this listing has been completed
     public var isComplete: Bool {
         completedAt != nil
+    }
+
+    /// Parsed listing type from the underlying string value
+    public var listingType: ListingType? {
+        guard let type else { return nil }
+        return ListingType(rawValue: type.uppercased())
     }
 
     // MARK: - CodingKeys
