@@ -76,12 +76,12 @@ struct LogbookView: View {
         Section {
             if !store.completedListings.isEmpty {
                 ForEach(store.completedListings) { listing in
-                    ListingBrowseCard(
-                        listing: listing,
-                        onTap: {
-                            // TODO: Wire up navigation to listing detail via parent NavigationStack
-                        }
-                    )
+                    NavigationLink(value: Route.listing(id: listing.id)) {
+                        ListingBrowseCard(
+                            listing: listing,
+                            onTap: {}
+                        )
+                    }
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparator(.hidden)
                 }

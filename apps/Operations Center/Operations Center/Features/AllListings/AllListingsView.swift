@@ -16,7 +16,6 @@ struct AllListingsView: View {
     // MARK: - Properties
 
     @State private var store: AllListingsStore
-    @State private var navigationPath: [Route] = []
 
     // MARK: - Initialization
 
@@ -27,9 +26,7 @@ struct AllListingsView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            listingsList
-        }
+        listingsList
     }
 
     // MARK: - Subviews
@@ -71,12 +68,12 @@ struct AllListingsView: View {
         if !store.listings.isEmpty {
             Section {
                 ForEach(store.listings, id: \.id) { listing in
-                    ListingBrowseCard(
-                        listing: listing,
-                        onTap: {
-                            navigationPath.append(.listing(id: listing.id))
-                        }
-                    )
+                    NavigationLink(value: Route.listing(id: listing.id)) {
+                        ListingBrowseCard(
+                            listing: listing,
+                            onTap: {}
+                        )
+                    }
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }

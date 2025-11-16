@@ -71,12 +71,12 @@ struct MyListingsView: View {
         if !store.listings.isEmpty {
             Section {
                 ForEach(store.listings, id: \.id) { listing in
-                    ListingBrowseCard(
-                        listing: listing,
-                        onTap: {
-                            // TODO: Wire up navigation to listing detail via parent NavigationStack
-                        }
-                    )
+                    NavigationLink(value: Route.listing(id: listing.id)) {
+                        ListingBrowseCard(
+                            listing: listing,
+                            onTap: {}
+                        )
+                    }
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
