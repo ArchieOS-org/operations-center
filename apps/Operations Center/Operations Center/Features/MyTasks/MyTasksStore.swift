@@ -29,6 +29,9 @@ final class MyTasksStore {
     var isLoading = false
     var errorMessage: String?
 
+    // TODO: Replace with real user ID from auth system
+    private let currentUserId = "current-user"
+
     // MARK: - Initialization
 
     /// Initialize store with repository injection
@@ -41,16 +44,23 @@ final class MyTasksStore {
     // MARK: - Actions
 
     /// Fetch tasks claimed by current user
-    /// Per spec line 173: "See all Tasks I've claimed"
+    /// Per spec line 173, 176: "See all Tasks I've claimed"
+    /// Shows standalone stray tasks only (listing-backed tasks shown in My Listings)
     func fetchMyTasks() async {
         isLoading = true
         defer { isLoading = false }
 
         do {
-            // Fetch all stray tasks and filter for now
-            // TODO: Add proper user filtering when auth is implemented
-            let allTasks = try await repository.fetchStrayTasks()
-            tasks = allTasks.map(\.task)
+            // Fetch stray tasks and filter for current user
+            let strayResults = try await repository.fetchStrayTasks()
+
+            // Filter for stray tasks claimed by me - break up for type-checker
+            let allStrayTasks = strayResults.map(\.task)
+            tasks = allStrayTasks.filter { task in
+                task.assignedStaffId == currentUserId &&
+                (task.status == .claimed || task.status == .inProgress)
+            }
+
             errorMessage = nil
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"

@@ -67,10 +67,7 @@ public struct StrayTaskCard: View {
     // MARK: - Helper Methods
 
     private func buildActions() -> [DSContextAction] {
-        [
-            DSContextAction(title: "Claim", systemImage: "hand.raised", action: onClaim),
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive, action: onDelete)
-        ]
+        DSContextAction.standardTaskActions(onClaim: onClaim, onDelete: onDelete)
     }
 
     private func buildChips() -> [ChipData] {

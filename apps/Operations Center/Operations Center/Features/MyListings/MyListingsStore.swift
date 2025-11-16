@@ -24,9 +24,6 @@ final class MyListingsStore {
     /// Currently expanded listing ID (only one can be expanded at a time)
     var expandedListingId: String?
 
-    /// Filter by team: marketing, admin, or all
-    var teamFilter: OperationsCenterKit.TeamFilter = .all
-
     /// Error message to display
     var errorMessage: String?
 
@@ -52,12 +49,11 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
-            // Fetch all listing tasks for current user (TODO: Get actual user ID from auth)
+            // Fetch listing tasks for current user (TODO: Get actual user ID from auth)
             let currentUserId = "current-user"
 
-            // Get all listing tasks claimed by this user
-            let userListingTasks = try await taskRepository.fetchListingTasks()
-                .filter { $0.task.assignedStaffId == currentUserId }
+            // Get listing tasks claimed by this realtor directly from repository
+            let userListingTasks = try await taskRepository.fetchListingTasksByRealtor(currentUserId)
 
             // Extract unique listing IDs
             let listingIds = Set(userListingTasks.map { $0.task.listingId })
@@ -99,23 +95,6 @@ final class MyListingsStore {
         } catch {
             Logger.database.error("Failed to delete listing: \(error.localizedDescription)")
             errorMessage = "Failed to delete listing: \(error.localizedDescription)"
-        }
-    }
-
-    // MARK: - Computed Properties
-
-    /// Filtered listings based on team filter
-    /// Per spec: Marketing/Admin/All toggle (lines 209)
-    var filteredListings: [Listing] {
-        switch teamFilter {
-        case .all:
-            return listings
-        case .marketing:
-            // Marketing team sees all listings (buyer and seller side)
-            return listings
-        case .admin:
-            // Admin team sees all listings (buyer and seller side)
-            return listings
         }
     }
 }

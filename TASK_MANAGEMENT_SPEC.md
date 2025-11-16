@@ -502,7 +502,7 @@ This document defines the complete behavior of the Task Management system within
 ## Data Flow Summary
 
 ### Listing Lifecycle
-```
+```text
 Slack Message → AI Creates Listing → Inbox (All Users)
   ↓
 User Acknowledges → Appears in User's All Listings/Agent Screen
@@ -513,7 +513,7 @@ All Activities Completed → Moves to Logbook
 ```
 
 ### Task Lifecycle
-```
+```text
 Slack Message OR Manual Creation → Inbox (Unclaimed)
   ↓
 User Claims Task → My Tasks, All Tasks, Team Views
@@ -522,7 +522,7 @@ Task Completed → Logbook
 ```
 
 ### Activity Lifecycle
-```
+```text
 Listing Created → Activities Auto-Generated (Based on Type)
   ↓
 User Claims Activity → Appears on Listing Screen

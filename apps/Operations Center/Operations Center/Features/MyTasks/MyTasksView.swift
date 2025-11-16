@@ -39,7 +39,7 @@ struct MyTasksView: View {
             if store.isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if store.tasks.isEmpty {
+            } else if store.tasks.isEmpty && !showingNewTask {
                 emptyState
             } else {
                 taskList
@@ -50,6 +50,18 @@ struct MyTasksView: View {
             showingNewTask = true
         }
         .navigationTitle("My Tasks")
+        .alert("Error", isPresented: Binding(
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
+        )) {
+            Button("OK") {
+                store.errorMessage = nil
+            }
+        } message: {
+            if let errorMessage = store.errorMessage {
+                Text(errorMessage)
+            }
+        }
         .task {
             await store.fetchMyTasks()
         }

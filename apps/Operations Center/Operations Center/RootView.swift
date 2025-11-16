@@ -66,39 +66,45 @@ struct RootView: View {
     private func destinationView(for route: Route) -> some View {
         let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
 
+        // DRY up repository selection - extract constants to avoid repetition
+        let taskRepo: TaskRepositoryClient = usePreviewData ? .preview : .live
+        let listingRepo: ListingRepositoryClient = usePreviewData ? .preview : .live
+        let realtorRepo: RealtorRepositoryClient = usePreviewData ? .preview : .live
+        let noteRepo: ListingNoteRepositoryClient = usePreviewData ? .preview : .live
+
         switch route {
         case .inbox:
-            InboxView(store: InboxStore(repository: usePreviewData ? .preview : .live))
+            InboxView(store: InboxStore(repository: taskRepo))
         case .myTasks:
-            MyTasksView(repository: usePreviewData ? .preview : .live)
+            MyTasksView(repository: taskRepo)
         case .myListings:
             MyListingsView(
-                listingRepository: usePreviewData ? .preview : .live,
-                taskRepository: usePreviewData ? .preview : .live
+                listingRepository: listingRepo,
+                taskRepository: taskRepo
             )
         case .logbook:
             LogbookView(
-                listingRepository: usePreviewData ? .preview : .live,
-                taskRepository: usePreviewData ? .preview : .live
+                listingRepository: listingRepo,
+                taskRepository: taskRepo
             )
         case .agents:
-            AgentsView(repository: usePreviewData ? .preview : .live)
+            AgentsView(repository: realtorRepo)
         case .agent(let id):
             AgentDetailView(
                 realtorId: id,
-                realtorRepository: usePreviewData ? .preview : .live,
-                taskRepository: usePreviewData ? .preview : .live
+                realtorRepository: realtorRepo,
+                taskRepository: taskRepo
             )
         case .listing(let id):
             ListingDetailView(
                 listingId: id,
-                listingRepository: usePreviewData ? .preview : .live,
-                noteRepository: usePreviewData ? .preview : .live
+                listingRepository: listingRepo,
+                noteRepository: noteRepo
             )
         case .allTasks:
-            AllTasksView(repository: usePreviewData ? .preview : .live)
+            AllTasksView(repository: taskRepo)
         case .allListings:
-            AllListingsView(repository: usePreviewData ? .preview : .live)
+            AllListingsView(repository: listingRepo)
         case .settings:
             SettingsView()
         }

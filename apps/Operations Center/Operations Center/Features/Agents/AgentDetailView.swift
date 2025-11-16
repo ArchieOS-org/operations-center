@@ -53,7 +53,10 @@ struct AgentDetailView: View {
                 ProgressView()
             }
         }
-        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
+        .alert("Error", isPresented: Binding(
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
+        )) {
             Button("OK") {
                 store.errorMessage = nil
             }
@@ -126,15 +129,14 @@ struct AgentDetailView: View {
         if !store.listings.isEmpty {
             Section("Listings") {
                 ForEach(store.listings, id: \.listing.id) { listingWithActivities in
-                    // TODO: Replace with actual ListingCard when implemented
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(listingWithActivities.listing.addressString)
-                            .font(.headline)
-                        Text("Status: \(listingWithActivities.listing.status)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    ListingBrowseCard(
+                        listing: listingWithActivities.listing,
+                        onTap: {
+                            // TODO: Navigate to listing detail
+                        }
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
             }
         }

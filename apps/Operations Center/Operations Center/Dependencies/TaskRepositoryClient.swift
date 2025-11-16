@@ -48,6 +48,94 @@ public struct TaskRepositoryClient {
     public var fetchCompletedStrayTasks: @Sendable () async throws -> [StrayTask]
 }
 
+// MARK: - Response Models
+
+/// Decodable response model for listing tasks with nested listings join
+private struct ListingTaskResponse: Decodable {
+    let taskId: String
+    let listingId: String
+    let realtorId: String?
+    let name: String
+    let description: String?
+    let taskCategory: String
+    let status: String
+    let priority: Int
+    let visibilityGroup: String
+    let assignedStaffId: String?
+    let dueDate: Date?
+    let claimedAt: Date?
+    let completedAt: Date?
+    let createdAt: Date
+    let updatedAt: Date
+    let deletedAt: Date?
+    let deletedBy: String?
+    let inputs: [String: AnyCodable]?
+    let outputs: [String: AnyCodable]?
+    let listing: Listing?
+
+    enum CodingKeys: String, CodingKey {
+        case taskId = "task_id"
+        case listingId = "listing_id"
+        case realtorId = "realtor_id"
+        case name
+        case description
+        case taskCategory = "task_category"
+        case status
+        case priority
+        case visibilityGroup = "visibility_group"
+        case assignedStaffId = "assigned_staff_id"
+        case dueDate = "due_date"
+        case claimedAt = "claimed_at"
+        case completedAt = "completed_at"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case deletedAt = "deleted_at"
+        case deletedBy = "deleted_by"
+        case inputs
+        case outputs
+        case listing = "listings"
+    }
+}
+
+// MARK: - Helper Functions
+
+/// Map a ListingTaskResponse to ListingTaskWithDetails
+/// Shared by fetchListingTasks and fetchListingTasksByRealtor
+nonisolated private func mapListingTaskResponse(_ row: ListingTaskResponse) -> ListingTaskWithDetails? {
+    guard let listing = row.listing else {
+        // Logging removed to avoid introducing MainActor isolation in this pure mapping function
+        return nil
+    }
+
+    let task = ListingTask(
+        id: row.taskId,
+        listingId: row.listingId,
+        realtorId: row.realtorId,
+        name: row.name,
+        description: row.description,
+        taskCategory: ListingTask.TaskCategory(rawValue: row.taskCategory) ?? .other,
+        status: ListingTask.TaskStatus(rawValue: row.status) ?? .open,
+        priority: row.priority,
+        visibilityGroup: ListingTask.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
+        assignedStaffId: row.assignedStaffId,
+        dueDate: row.dueDate,
+        claimedAt: row.claimedAt,
+        completedAt: row.completedAt,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        deletedAt: row.deletedAt,
+        deletedBy: row.deletedBy,
+        inputs: row.inputs,
+        outputs: row.outputs
+    )
+
+    // swiftlint:disable:next todo
+    // TODO: Add subtasks query once subtasks table exists
+    let subtasks: [Subtask] = []
+
+    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
+}
+
 // MARK: - Live Implementation
 
 extension TaskRepositoryClient {
@@ -68,54 +156,6 @@ extension TaskRepositoryClient {
             },
             fetchListingTasks: {
                 // Query listing_tasks with nested listings join
-                struct ListingTaskResponse: Decodable {
-                    let taskId: String
-                    let listingId: String
-                    let realtorId: String?
-                    let name: String
-                    let description: String?
-                    let taskCategory: String
-                    let status: String
-                    let priority: Int
-                    let visibilityGroup: String
-                    let assignedStaffId: String?
-                    let dueDate: Date?
-                    let claimedAt: Date?
-                    let completedAt: Date?
-                    let createdAt: Date
-                    let updatedAt: Date
-                    let deletedAt: Date?
-                    let deletedBy: String?
-                    let inputs: [String: AnyCodable]?
-                    let outputs: [String: AnyCodable]?
-                    let listing: Listing?
-
-                    // swiftlint:disable nesting
-                    enum CodingKeys: String, CodingKey {
-                        case taskId = "task_id"
-                        case listingId = "listing_id"
-                        case realtorId = "realtor_id"
-                        case name
-                        case description
-                        case taskCategory = "task_category"
-                        case status
-                        case priority
-                        case visibilityGroup = "visibility_group"
-                        case assignedStaffId = "assigned_staff_id"
-                        case dueDate = "due_date"
-                        case claimedAt = "claimed_at"
-                        case completedAt = "completed_at"
-                        case createdAt = "created_at"
-                        case updatedAt = "updated_at"
-                        case deletedAt = "deleted_at"
-                        case deletedBy = "deleted_by"
-                        case inputs
-                        case outputs
-                        case listing = "listings"
-                    }
-                    // swiftlint:enable nesting
-                }
-
                 let response: [ListingTaskResponse] = try await supabase
                     .from("listing_tasks")
                     .select("*, listings(*)")
@@ -125,40 +165,7 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap { row -> ListingTaskWithDetails? in
-                    guard let listing = row.listing else {
-                        Logger.database.warning("Listing task missing listing data: \(row.taskId)")
-                        return nil
-                    }
-
-                    let task = ListingTask(
-                        id: row.taskId,
-                        listingId: row.listingId,
-                        realtorId: row.realtorId,
-                        name: row.name,
-                        description: row.description,
-                        taskCategory: ListingTask.TaskCategory(rawValue: row.taskCategory) ?? .other,
-                        status: ListingTask.TaskStatus(rawValue: row.status) ?? .open,
-                        priority: row.priority,
-                        visibilityGroup: ListingTask.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
-                        assignedStaffId: row.assignedStaffId,
-                        dueDate: row.dueDate,
-                        claimedAt: row.claimedAt,
-                        completedAt: row.completedAt,
-                        createdAt: row.createdAt,
-                        updatedAt: row.updatedAt,
-                        deletedAt: row.deletedAt,
-                        deletedBy: row.deletedBy,
-                        inputs: row.inputs,
-                        outputs: row.outputs
-                    )
-
-                    // swiftlint:disable:next todo
-                    // TODO: Add subtasks query once subtasks table exists
-                    let subtasks: [Subtask] = []
-
-                    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
-                }
+                return response.compactMap(mapListingTaskResponse)
             },
             claimStrayTask: { taskId, staffId in
                 let now = Date()
@@ -250,54 +257,6 @@ extension TaskRepositoryClient {
             },
             fetchListingTasksByRealtor: { realtorId in
                 // Query listing_tasks with nested listings join
-                struct ListingTaskResponse: Decodable {
-                    let taskId: String
-                    let listingId: String
-                    let realtorId: String?
-                    let name: String
-                    let description: String?
-                    let taskCategory: String
-                    let status: String
-                    let priority: Int
-                    let visibilityGroup: String
-                    let assignedStaffId: String?
-                    let dueDate: Date?
-                    let claimedAt: Date?
-                    let completedAt: Date?
-                    let createdAt: Date
-                    let updatedAt: Date
-                    let deletedAt: Date?
-                    let deletedBy: String?
-                    let inputs: [String: AnyCodable]?
-                    let outputs: [String: AnyCodable]?
-                    let listing: Listing?
-
-                    // swiftlint:disable nesting
-                    enum CodingKeys: String, CodingKey {
-                        case taskId = "task_id"
-                        case listingId = "listing_id"
-                        case realtorId = "realtor_id"
-                        case name
-                        case description
-                        case taskCategory = "task_category"
-                        case status
-                        case priority
-                        case visibilityGroup = "visibility_group"
-                        case assignedStaffId = "assigned_staff_id"
-                        case dueDate = "due_date"
-                        case claimedAt = "claimed_at"
-                        case completedAt = "completed_at"
-                        case createdAt = "created_at"
-                        case updatedAt = "updated_at"
-                        case deletedAt = "deleted_at"
-                        case deletedBy = "deleted_by"
-                        case inputs
-                        case outputs
-                        case listing = "listings"
-                    }
-                    // swiftlint:enable nesting
-                }
-
                 let response: [ListingTaskResponse] = try await supabase
                     .from("listing_tasks")
                     .select("*, listings(*)")
@@ -308,47 +267,14 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                return response.compactMap { row -> ListingTaskWithDetails? in
-                    guard let listing = row.listing else {
-                        Logger.database.warning("Listing task missing listing data: \(row.taskId)")
-                        return nil
-                    }
-
-                    let task = ListingTask(
-                        id: row.taskId,
-                        listingId: row.listingId,
-                        realtorId: row.realtorId,
-                        name: row.name,
-                        description: row.description,
-                        taskCategory: ListingTask.TaskCategory(rawValue: row.taskCategory) ?? .other,
-                        status: ListingTask.TaskStatus(rawValue: row.status) ?? .open,
-                        priority: row.priority,
-                        visibilityGroup: ListingTask.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
-                        assignedStaffId: row.assignedStaffId,
-                        dueDate: row.dueDate,
-                        claimedAt: row.claimedAt,
-                        completedAt: row.completedAt,
-                        createdAt: row.createdAt,
-                        updatedAt: row.updatedAt,
-                        deletedAt: row.deletedAt,
-                        deletedBy: row.deletedBy,
-                        inputs: row.inputs,
-                        outputs: row.outputs
-                    )
-
-                    // swiftlint:disable:next todo
-                    // TODO: Add subtasks query once subtasks table exists
-                    let subtasks: [Subtask] = []
-
-                    return ListingTaskWithDetails(task: task, listing: listing, subtasks: subtasks)
-                }
+                return response.compactMap(mapListingTaskResponse)
             },
             fetchCompletedStrayTasks: {
                 Logger.database.info("Fetching completed stray tasks")
                 let tasks: [StrayTask] = try await supabase
                     .from("stray_tasks")
                     .select()
-                    .eq("status", value: "DONE")
+                    .eq("status", value: StrayTask.TaskStatus.done.rawValue)
                     .is("deleted_at", value: nil)
                     .order("completed_at", ascending: false)
                     .execute()
@@ -449,3 +375,4 @@ extension TaskRepositoryClient {
         }
     )
 }
+

@@ -51,7 +51,10 @@ struct ListingDetailView: View {
                 ProgressView()
             }
         }
-        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
+        .alert("Error", isPresented: Binding(
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
+        )) {
             Button("OK") {
                 store.errorMessage = nil
             }

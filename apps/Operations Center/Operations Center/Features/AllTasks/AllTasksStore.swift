@@ -13,6 +13,7 @@ import SwiftUI
 
 /// Store for All Tasks screen - all claimed tasks across the entire system
 /// Per spec: "All claimed Tasks system-wide (standalone + assigned to listings)"
+@MainActor
 @Observable
 final class AllTasksStore {
     // MARK: - Properties

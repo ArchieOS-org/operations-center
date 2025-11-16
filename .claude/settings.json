@@ -11,6 +11,6 @@
     }
   },
   "permissions": {
-    "allowedTools": ["mcp__*"]
+    "allowedTools": ["mcp__xcodebuildmcp*"]
   }
 }

@@ -41,6 +41,7 @@ final class LogbookStore {
     /// Per Context7: Use async let for parallel fetching
     func fetchCompletedItems() async {
         isLoading = true
+        defer { isLoading = false }
         errorMessage = nil
 
         do {
@@ -58,8 +59,6 @@ final class LogbookStore {
             Logger.database.error("Failed to fetch completed items: \(error.localizedDescription)")
             errorMessage = "Failed to load archive: \(error.localizedDescription)"
         }
-
-        isLoading = false
     }
 
     /// Refresh the completed items

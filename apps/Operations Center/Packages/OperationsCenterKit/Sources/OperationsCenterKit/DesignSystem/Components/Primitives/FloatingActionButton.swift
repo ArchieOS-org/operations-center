@@ -20,18 +20,17 @@ public struct FloatingActionButton: View {
 
     private let action: () -> Void
     private let systemImage: String
-
-    // MARK: - State
-
-    @State private var isPressed = false
+    private let accessibilityLabel: String
 
     // MARK: - Initialization
 
     public init(
         systemImage: String = "plus",
+        accessibilityLabel: String = "Add",
         action: @escaping () -> Void
     ) {
         self.systemImage = systemImage
+        self.accessibilityLabel = accessibilityLabel
         self.action = action
     }
 
@@ -51,13 +50,19 @@ public struct FloatingActionButton: View {
                     x: 0,
                     y: 4
                 )
-                .scaleEffect(isPressed ? 0.9 : 1.0)
         }
-        .buttonStyle(.plain)
-        .animation(.spring(duration: 0.2, bounce: 0.3), value: isPressed)
-        ._onButtonGesture { pressing in
-            isPressed = pressing
-        } perform: {}
+        .buttonStyle(FloatingActionButtonStyle())
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+// MARK: - Button Style
+
+private struct FloatingActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(duration: 0.2, bounce: 0.3), value: configuration.isPressed)
     }
 }
 
@@ -69,14 +74,20 @@ public extension View {
     ///
     /// - Parameters:
     ///   - systemImage: SF Symbol name (default: "plus")
+    ///   - accessibilityLabel: VoiceOver label (default: "Add")
     ///   - action: Action to perform when tapped
     func floatingActionButton(
         systemImage: String = "plus",
+        accessibilityLabel: String = "Add",
         action: @escaping () -> Void
     ) -> some View {
         overlay(alignment: .bottomTrailing) {
-            FloatingActionButton(systemImage: systemImage, action: action)
-                .padding(Spacing.lg)
+            FloatingActionButton(
+                systemImage: systemImage,
+                accessibilityLabel: accessibilityLabel,
+                action: action
+            )
+            .padding(Spacing.lg)
         }
     }
 }

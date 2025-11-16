@@ -11,7 +11,7 @@ import OperationsCenterKit
 
 /// My Listings screen - see all listings where I've claimed activities
 /// Per spec: "Listings where user has claimed at least one Activity"
-/// Features: Collapsed cards only, click-to-navigate, Marketing/Admin/All toggle
+/// Features: Collapsed cards only, click-to-navigate
 struct MyListingsView: View {
     // MARK: - Properties
 
@@ -31,10 +31,7 @@ struct MyListingsView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ZStack(alignment: .bottomLeading) {
-                listingsList
-                teamToggle
-            }
+            listingsList
         }
     }
 
@@ -58,7 +55,10 @@ struct MyListingsView: View {
                 ProgressView()
             }
         }
-        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
+        .alert("Error", isPresented: Binding(
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
+        )) {
             Button("OK") {
                 store.errorMessage = nil
             }
@@ -71,9 +71,9 @@ struct MyListingsView: View {
 
     @ViewBuilder
     private var listingsSection: some View {
-        if !store.filteredListings.isEmpty {
+        if !store.listings.isEmpty {
             Section {
-                ForEach(store.filteredListings, id: \.id) { listing in
+                ForEach(store.listings, id: \.id) { listing in
                     ListingBrowseCard(
                         listing: listing,
                         onTap: {
@@ -89,7 +89,7 @@ struct MyListingsView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.filteredListings.isEmpty && !store.isLoading {
+        if store.listings.isEmpty && !store.isLoading {
             VStack(spacing: 16) {
                 Image(systemName: "house.circle")
                     .font(.system(size: 60))
@@ -106,12 +106,6 @@ struct MyListingsView: View {
             .padding(.vertical, 60)
             .listRowSeparator(.hidden)
         }
-    }
-
-    private var teamToggle: some View {
-        TeamToggle(selection: $store.teamFilter)
-            .padding(.leading, 16)
-            .padding(.bottom, 16)
     }
 }
 

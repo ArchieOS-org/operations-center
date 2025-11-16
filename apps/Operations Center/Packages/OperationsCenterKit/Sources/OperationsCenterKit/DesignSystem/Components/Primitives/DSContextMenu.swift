@@ -29,6 +29,22 @@ public struct DSContextAction: Identifiable {
     }
 }
 
+// MARK: - Shared Action Builders
+
+public extension DSContextAction {
+    /// Standard task actions: Claim + Delete
+    /// Shared by StrayTaskCard and ListingTaskCard
+    static func standardTaskActions(
+        onClaim: @escaping () -> Void,
+        onDelete: @escaping () -> Void
+    ) -> [DSContextAction] {
+        [
+            DSContextAction(title: "Claim", systemImage: "hand.raised", action: onClaim),
+            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive, action: onDelete)
+        ]
+    }
+}
+
 // MARK: - Context Menu Component
 
 public struct DSContextMenu: View {

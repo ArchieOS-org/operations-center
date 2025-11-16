@@ -141,5 +141,7 @@ public extension Realtor {
         )
     }
 
-    static let mockList: [Realtor] = [mock1, mock2, mock3]
+    static var mockList: [Realtor] {
+        [mock1, mock2, mock3]
+    }
 }

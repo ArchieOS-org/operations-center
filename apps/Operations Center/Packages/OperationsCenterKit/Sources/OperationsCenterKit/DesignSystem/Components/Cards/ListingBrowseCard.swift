@@ -68,7 +68,11 @@ public struct ListingBrowseCard: View {
 
         // Progress chip (if in progress)
         if let progress = listing.progress, progress > 0 {
-            let progressPercent = Int(truncating: progress as NSDecimalNumber)
+            // Convert Decimal to Int with safe clamping to 0-100 range
+            var roundedProgress = progress
+            var result: Decimal = 0
+            NSDecimalRound(&result, &roundedProgress, 0, .plain)
+            let progressPercent = min(100, max(0, Int(truncating: result as NSDecimalNumber)))
             chips.append(.custom(
                 text: "\(progressPercent)%",
                 color: progressPercent >= 75 ? .green : .orange
