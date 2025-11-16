@@ -142,72 +142,79 @@ extension ListingTask {
     /// Mock data for testing and previews
     /// Context7 best practice: Keep mock data with the model
     /// Reference: swift-dependencies/Articles/LivePreviewTest.md
+    /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static let mock1 = ListingTask(
-        id: "task_001",
-        listingId: "listing_001",
-        realtorId: "realtor_001",
-        name: "Professional Photography",
-        description: "Schedule and complete professional photography for the listing",
-        taskCategory: .photo,
-        status: .open,
-        priority: 100,
-        visibilityGroup: .both,
-        assignedStaffId: nil,
-        dueDate: Date().addingTimeInterval(86400 * 2), // 2 days from now
-        claimedAt: nil,
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 5), // 5 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 5),
-        deletedAt: nil,
-        deletedBy: nil,
-        inputs: ["photographer": AnyCodable("John Smith Photography")],
-        outputs: nil
-    )
+    public static var mock1: ListingTask {
+        ListingTask(
+            id: "task_001",
+            listingId: "listing_001",
+            realtorId: "realtor_001",
+            name: "Professional Photography",
+            description: "Schedule and complete professional photography for the listing",
+            taskCategory: .photo,
+            status: .open,
+            priority: 100,
+            visibilityGroup: .both,
+            assignedStaffId: nil,
+            dueDate: Date().addingTimeInterval(86400 * 2), // 2 days from now
+            claimedAt: nil,
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 5), // 5 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 5),
+            deletedAt: nil,
+            deletedBy: nil,
+            inputs: ["photographer": AnyCodable("John Smith Photography")],
+            outputs: nil
+        )
+    }
 
-    public static let mock2 = ListingTask(
-        id: "task_002",
-        listingId: "listing_002",
-        realtorId: "realtor_002",
-        name: "Social Media Campaign",
-        description: "Launch Instagram and Facebook ads for new listing",
-        taskCategory: .marketing,
-        status: .claimed,
-        priority: 80,
-        visibilityGroup: .marketing,
-        assignedStaffId: "staff_001",
-        dueDate: Date().addingTimeInterval(86400 * 3), // 3 days from now
-        claimedAt: Date().addingTimeInterval(-86400), // 1 day ago
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 3), // 3 days ago
-        updatedAt: Date().addingTimeInterval(-86400),
-        deletedAt: nil,
-        deletedBy: nil,
-        inputs: ["budget": AnyCodable(500), "platforms": AnyCodable(["instagram", "facebook"])],
-        outputs: nil
-    )
+    public static var mock2: ListingTask {
+        ListingTask(
+            id: "task_002",
+            listingId: "listing_002",
+            realtorId: "realtor_002",
+            name: "Social Media Campaign",
+            description: "Launch Instagram and Facebook ads for new listing",
+            taskCategory: .marketing,
+            status: .claimed,
+            priority: 80,
+            visibilityGroup: .marketing,
+            assignedStaffId: "staff_001",
+            dueDate: Date().addingTimeInterval(86400 * 3), // 3 days from now
+            claimedAt: Date().addingTimeInterval(-86400), // 1 day ago
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 3), // 3 days ago
+            updatedAt: Date().addingTimeInterval(-86400),
+            deletedAt: nil,
+            deletedBy: nil,
+            inputs: ["budget": AnyCodable(500), "platforms": AnyCodable(["instagram", "facebook"])],
+            outputs: nil
+        )
+    }
 
-    public static let mock3 = ListingTask(
-        id: "task_003",
-        listingId: "listing_003",
-        realtorId: "realtor_001",
-        name: "Home Inspection Coordination",
-        description: "Schedule and coordinate the home inspection",
-        taskCategory: .inspection,
-        status: .done,
-        priority: 90,
-        visibilityGroup: .agent,
-        assignedStaffId: "staff_002",
-        dueDate: Date().addingTimeInterval(-86400), // 1 day ago
-        claimedAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
-        completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
-        createdAt: Date().addingTimeInterval(-86400 * 10), // 10 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 2),
-        deletedAt: nil,
-        deletedBy: nil,
-        inputs: ["inspector": AnyCodable("AAA Home Inspections")],
-        outputs: ["report_url": AnyCodable("https://example.com/report.pdf")]
-    )
+    public static var mock3: ListingTask {
+        ListingTask(
+            id: "task_003",
+            listingId: "listing_003",
+            realtorId: "realtor_001",
+            name: "Home Inspection Coordination",
+            description: "Schedule and coordinate the home inspection",
+            taskCategory: .inspection,
+            status: .done,
+            priority: 90,
+            visibilityGroup: .agent,
+            assignedStaffId: "staff_002",
+            dueDate: Date().addingTimeInterval(-86400), // 1 day ago
+            claimedAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
+            completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+            createdAt: Date().addingTimeInterval(-86400 * 10), // 10 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 2),
+            deletedAt: nil,
+            deletedBy: nil,
+            inputs: ["inspector": AnyCodable("AAA Home Inspections")],
+            outputs: ["report_url": AnyCodable("https://example.com/report.pdf")]
+        )
+    }
 }
 
 // MARK: - AnyCodable Helper

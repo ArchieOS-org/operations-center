@@ -38,6 +38,9 @@ struct RootView: View {
                     NavigationLink(value: Route.allListings) {
                         Label("All Listings", systemImage: "building.2")
                     }
+                    NavigationLink(value: Route.agents) {
+                        Label("Agents", systemImage: "person.2.fill")
+                    }
                 }
 
                 // Settings section
@@ -63,23 +66,45 @@ struct RootView: View {
     private func destinationView(for route: Route) -> some View {
         let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
 
+        // DRY up repository selection - extract constants to avoid repetition
+        let taskRepo: TaskRepositoryClient = usePreviewData ? .preview : .live
+        let listingRepo: ListingRepositoryClient = usePreviewData ? .preview : .live
+        let realtorRepo: RealtorRepositoryClient = usePreviewData ? .preview : .live
+        let noteRepo: ListingNoteRepositoryClient = usePreviewData ? .preview : .live
+
         switch route {
         case .inbox:
-            InboxView(store: InboxStore(repository: usePreviewData ? .preview : .live))
+            InboxView(store: InboxStore(repository: taskRepo))
         case .myTasks:
-            PlaceholderView(title: "My Tasks", icon: "checkmark.circle.fill")
+            MyTasksView(repository: taskRepo)
         case .myListings:
-            PlaceholderView(title: "My Listings", icon: "house.fill")
+            MyListingsView(
+                listingRepository: listingRepo,
+                taskRepository: taskRepo
+            )
         case .logbook:
-            PlaceholderView(title: "Logbook", icon: "clock.fill")
+            LogbookView(
+                listingRepository: listingRepo,
+                taskRepository: taskRepo
+            )
+        case .agents:
+            AgentsView(repository: realtorRepo)
         case .agent(let id):
-            PlaceholderView(title: "Agent", icon: "person.fill", subtitle: id)
+            AgentDetailView(
+                realtorId: id,
+                realtorRepository: realtorRepo,
+                taskRepository: taskRepo
+            )
         case .listing(let id):
-            PlaceholderView(title: "Listing", icon: "building.2.fill", subtitle: id)
+            ListingDetailView(
+                listingId: id,
+                listingRepository: listingRepo,
+                noteRepository: noteRepo
+            )
         case .allTasks:
-            ContentView()
+            AllTasksView(repository: taskRepo)
         case .allListings:
-            PlaceholderView(title: "All Listings", icon: "building.2")
+            AllListingsView(repository: listingRepo)
         case .settings:
             SettingsView()
         }

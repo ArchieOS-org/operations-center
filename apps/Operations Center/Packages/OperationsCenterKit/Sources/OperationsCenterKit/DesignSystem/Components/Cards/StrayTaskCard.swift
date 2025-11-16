@@ -40,44 +40,35 @@ public struct StrayTaskCard: View {
     // MARK: - Body
 
     public var body: some View {
-        CardBase(
+        ExpandableCardWrapper(
             tintColor: Colors.strayCardTint,
             isExpanded: isExpanded,
+            actions: buildActions(),
             onTap: onTap
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                // Header
-                CardHeader(
-                    title: task.name,
-                    subtitle: nil,
-                    chips: buildChips(),
-                    dueDate: task.dueDate,
-                    isExpanded: isExpanded
-                )
-
-                // Slack messages (when expanded)
-                if isExpanded {
-                    SlackMessagesSection(messages: messages)
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .top)),
-                            removal: .opacity
-                        ))
-
-                    // Toolbar
-                    StrayTaskToolbar(
-                        onClaim: onClaim,
-                        onDelete: onDelete
-                    )
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity
-                    ))
-                }
-            }
+            // Collapsed content (always shown)
+            CardHeader(
+                title: task.name,
+                subtitle: nil,
+                chips: buildChips(),
+                dueDate: task.dueDate,
+                isExpanded: isExpanded
+            )
+        } expandedContent: {
+            // Expanded content (only when expanded)
+            SlackMessagesSection(messages: messages)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity
+                ))
         }
     }
 
     // MARK: - Helper Methods
+
+    private func buildActions() -> [DSContextAction] {
+        DSContextAction.standardTaskActions(onClaim: onClaim, onDelete: onDelete)
+    }
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []

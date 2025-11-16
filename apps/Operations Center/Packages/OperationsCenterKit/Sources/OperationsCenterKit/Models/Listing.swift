@@ -93,52 +93,59 @@ public struct Listing: Identifiable, Codable, Sendable {
 extension Listing {
     /// Mock data for testing and previews
     /// Context7 best practice: Keep mock data with the model
+    /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static let mock1 = Listing(
-        id: "listing_001",
-        addressString: "123 Main St, San Francisco, CA 94102",
-        status: "ACTIVE",
-        assignee: "staff_001",
-        agentId: "realtor_001",
-        dueDate: Date().addingTimeInterval(86400 * 7), // 7 days from now
-        progress: 0.45,
-        type: "SALE",
-        notes: "Prime location, needs staging",
-        createdAt: Date().addingTimeInterval(-86400 * 14), // 14 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 1),
-        completedAt: nil,
-        deletedAt: nil
-    )
+    public static var mock1: Listing {
+        Listing(
+            id: "listing_001",
+            addressString: "123 Main St, San Francisco, CA 94102",
+            status: "ACTIVE",
+            assignee: "staff_001",
+            agentId: "realtor_001",
+            dueDate: Date().addingTimeInterval(86400 * 7), // 7 days from now
+            progress: 0.45,
+            type: "SALE",
+            notes: "Prime location, needs staging",
+            createdAt: Date().addingTimeInterval(-86400 * 14), // 14 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 1),
+            completedAt: nil,
+            deletedAt: nil
+        )
+    }
 
-    public static let mock2 = Listing(
-        id: "listing_002",
-        addressString: "456 Oak Ave, Palo Alto, CA 94301",
-        status: "PENDING",
-        assignee: "staff_002",
-        agentId: "realtor_002",
-        dueDate: Date().addingTimeInterval(86400 * 14), // 14 days from now
-        progress: 0.20,
-        type: "RENTAL",
-        notes: "Luxury rental, professional photos required",
-        createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 2),
-        completedAt: nil,
-        deletedAt: nil
-    )
+    public static var mock2: Listing {
+        Listing(
+            id: "listing_002",
+            addressString: "456 Oak Ave, Palo Alto, CA 94301",
+            status: "PENDING",
+            assignee: "staff_002",
+            agentId: "realtor_002",
+            dueDate: Date().addingTimeInterval(86400 * 14), // 14 days from now
+            progress: 0.20,
+            type: "RENTAL",
+            notes: "Luxury rental, professional photos required",
+            createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 2),
+            completedAt: nil,
+            deletedAt: nil
+        )
+    }
 
-    public static let mock3 = Listing(
-        id: "listing_003",
-        addressString: "789 Market St, San Jose, CA 95113",
-        status: "COMPLETED",
-        assignee: "staff_001",
-        agentId: "realtor_001",
-        dueDate: Date().addingTimeInterval(-86400 * 3), // 3 days ago
-        progress: 1.0,
-        type: "SALE",
-        notes: "Successfully sold above asking price",
-        createdAt: Date().addingTimeInterval(-86400 * 30), // 30 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 3),
-        completedAt: Date().addingTimeInterval(-86400 * 3),
-        deletedAt: nil
-    )
+    public static var mock3: Listing {
+        Listing(
+            id: "listing_003",
+            addressString: "789 Market St, San Jose, CA 95113",
+            status: "COMPLETED",
+            assignee: "staff_001",
+            agentId: "realtor_001",
+            dueDate: Date().addingTimeInterval(-86400 * 3), // 3 days ago
+            progress: 1.0,
+            type: "SALE",
+            notes: "Successfully sold above asking price",
+            createdAt: Date().addingTimeInterval(-86400 * 30), // 30 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 3),
+            completedAt: Date().addingTimeInterval(-86400 * 3),
+            deletedAt: nil
+        )
+    }
 }
