@@ -9,43 +9,35 @@
 
 import SwiftUI
 
-/// Simple listing card for browse views - always collapsed, taps navigate to detail
+/// Simple listing card for browse views - always collapsed, taps handled by parent
 public struct ListingBrowseCard: View {
     // MARK: - Properties
 
     let listing: Listing
-    let onTap: () -> Void
 
     // MARK: - Initialization
 
-    public init(
-        listing: Listing,
-        onTap: @escaping () -> Void = {}
-    ) {
+    public init(listing: Listing) {
         self.listing = listing
-        self.onTap = onTap
     }
 
     // MARK: - Body
 
     public var body: some View {
-        Button(action: onTap) {
-            CardHeader(
-                title: listing.title,
-                subtitle: listing.status,
-                chips: buildChips(),
-                dueDate: listing.dueDate,
-                isExpanded: false
-            )
-            .padding(Spacing.md)
-            .background(Colors.listingCardTint.opacity(0.05))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.md)
-                    .stroke(Colors.listingCardTint, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        }
-        .buttonStyle(.plain)
+        CardHeader(
+            title: "",
+            subtitle: listing.title,
+            chips: buildChips(),
+            dueDate: listing.dueDate,
+            isExpanded: false
+        )
+        .padding(Spacing.md)
+        .background(Colors.listingCardTint.opacity(0.05))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .stroke(Colors.listingCardTint, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
     }
 
     // MARK: - Helper Methods
@@ -53,29 +45,11 @@ public struct ListingBrowseCard: View {
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []
 
-        // Agent chip
-        if let realtorId = listing.realtorId {
-            chips.append(.agent(name: realtorId, style: .activity))
-        }
-
-        // Listing type chip
+        // Listing type chip only
         if let type = listing.type {
             chips.append(.custom(
                 text: type,
                 color: typeColor(for: type)
-            ))
-        }
-
-        // Progress chip (if in progress)
-        if let progress = listing.progress, progress > 0 {
-            // Convert Decimal to Int with safe clamping to 0-100 range
-            var roundedProgress = progress
-            var result: Decimal = 0
-            NSDecimalRound(&result, &roundedProgress, 0, .plain)
-            let progressPercent = min(100, max(0, Int(truncating: result as NSDecimalNumber)))
-            chips.append(.custom(
-                text: "\(progressPercent)%",
-                color: progressPercent >= 75 ? .green : .orange
             ))
         }
 
@@ -96,25 +70,16 @@ public struct ListingBrowseCard: View {
 // MARK: - Preview
 
 #Preview("Active Listing") {
-    ListingBrowseCard(
-        listing: Listing.mock1,
-        onTap: { }
-    )
-    .padding()
+    ListingBrowseCard(listing: Listing.mock1)
+        .padding()
 }
 
 #Preview("Pending Listing") {
-    ListingBrowseCard(
-        listing: Listing.mock2,
-        onTap: { }
-    )
-    .padding()
+    ListingBrowseCard(listing: Listing.mock2)
+        .padding()
 }
 
 #Preview("Completed Listing") {
-    ListingBrowseCard(
-        listing: Listing.mock3,
-        onTap: { }
-    )
-    .padding()
+    ListingBrowseCard(listing: Listing.mock3)
+        .padding()
 }
