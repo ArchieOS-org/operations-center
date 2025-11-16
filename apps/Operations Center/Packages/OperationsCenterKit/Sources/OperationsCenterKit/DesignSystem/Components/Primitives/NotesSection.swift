@@ -72,9 +72,9 @@ public struct NotesSection: View {
                         // First render - scroll to bottom if needed
                         lastNoteIdToScroll = notes.last?.id
                     }
-                    .onChange(of: notes.count) { _ in
-                        // Someone added or removed a note - remember id
-                        lastNoteIdToScroll = notes.last?.id
+                    .onChange(of: notes.last?.id) { newId in
+                        // Note added, edited, or reordered - scroll to latest
+                        lastNoteIdToScroll = newId
                     }
                     .onChange(of: lastNoteIdToScroll) { id in
                         guard let id else { return }

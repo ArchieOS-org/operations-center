@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-/// Collapsed listing content - shows realtor name, address, type chip, and due date
+/// Collapsed listing content - shows listing title, realtor name, type chip, and due date
 /// This is the shared layout used everywhere a collapsed listing appears
 public struct ListingCollapsedContent: View {
     // MARK: - Properties

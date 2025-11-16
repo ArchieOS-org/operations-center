@@ -40,6 +40,11 @@ extension DSChip {
     /// Create a chip for displaying an agent name with card-style color
     public init(agentName: String, style: CardStyle) {
         self.text = agentName
-        self.color = style == .agentTask ? Colors.accentAgentTask : Colors.accentListing
+        switch style {
+        case .agentTask:
+            self.color = Colors.accentAgentTask
+        case .activity:
+            self.color = Colors.accentListing
+        }
     }
 }

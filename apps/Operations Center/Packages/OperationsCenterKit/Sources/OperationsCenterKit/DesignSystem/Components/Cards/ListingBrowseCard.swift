@@ -9,7 +9,9 @@
 
 import SwiftUI
 
-/// Listing card for browse views - wraps ListingCollapsedContent with card chrome
+/// Non-interactive listing card for browse views
+/// Wraps ListingCollapsedContent with card chrome (background, border, padding)
+/// Callers must wrap this in a Button or NavigationLink to handle taps and navigation
 public struct ListingBrowseCard: View {
     // MARK: - Properties
 
