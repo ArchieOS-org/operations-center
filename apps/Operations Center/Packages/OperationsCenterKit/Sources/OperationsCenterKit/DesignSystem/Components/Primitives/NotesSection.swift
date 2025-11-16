@@ -17,6 +17,7 @@ public struct NotesSection: View {
 
     @State private var newNoteText = ""
     @FocusState private var isInputFocused: Bool
+    @State private var lastNoteIdToScroll: String?
 
     // MARK: - Initialization
 
@@ -68,16 +69,19 @@ public struct NotesSection: View {
                     }
                     .frame(maxHeight: 200)
                     .task {
-                        // Scroll to latest note on first render
-                        if let lastNote = notes.last {
-                            proxy.scrollTo(lastNote.id, anchor: .bottom)
-                        }
+                        // First render - scroll to bottom if needed
+                        lastNoteIdToScroll = notes.last?.id
                     }
                     .onChange(of: notes.count) { _ in
-                        // Auto-scroll to newest note (at bottom)
-                        if let lastNote = notes.last {
+                        // Someone added or removed a note - remember id
+                        lastNoteIdToScroll = notes.last?.id
+                    }
+                    .onChange(of: lastNoteIdToScroll) { id in
+                        guard let id else { return }
+                        // Defer to next runloop so views are laid out
+                        DispatchQueue.main.async {
                             withAnimation {
-                                proxy.scrollTo(lastNote.id, anchor: .bottom)
+                                proxy.scrollTo(id, anchor: .bottom)
                             }
                         }
                     }
