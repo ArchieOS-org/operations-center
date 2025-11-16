@@ -38,6 +38,9 @@ struct RootView: View {
                     NavigationLink(value: Route.allListings) {
                         Label("All Listings", systemImage: "building.2")
                     }
+                    NavigationLink(value: Route.agents) {
+                        Label("Agents", systemImage: "person.2.fill")
+                    }
                 }
 
                 // Settings section
@@ -67,17 +70,19 @@ struct RootView: View {
         case .inbox:
             InboxView(store: InboxStore(repository: usePreviewData ? .preview : .live))
         case .myTasks:
-            PlaceholderView(title: "My Tasks", icon: "checkmark.circle.fill")
+            MyTasksView(repository: usePreviewData ? .preview : .live)
         case .myListings:
             PlaceholderView(title: "My Listings", icon: "house.fill")
         case .logbook:
             PlaceholderView(title: "Logbook", icon: "clock.fill")
+        case .agents:
+            AgentsView(repository: usePreviewData ? .preview : .live)
         case .agent(let id):
             PlaceholderView(title: "Agent", icon: "person.fill", subtitle: id)
         case .listing(let id):
             PlaceholderView(title: "Listing", icon: "building.2.fill", subtitle: id)
         case .allTasks:
-            ContentView()
+            AllTasksView(repository: usePreviewData ? .preview : .live)
         case .allListings:
             PlaceholderView(title: "All Listings", icon: "building.2")
         case .settings:
