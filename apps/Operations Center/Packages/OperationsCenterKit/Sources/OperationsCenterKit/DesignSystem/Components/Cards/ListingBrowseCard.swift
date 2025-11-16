@@ -54,8 +54,8 @@ public struct ListingBrowseCard: View {
         var chips: [ChipData] = []
 
         // Agent chip
-        if let agentId = listing.agentId {
-            chips.append(.agent(name: agentId, style: .activity))
+        if let realtorId = listing.realtorId {
+            chips.append(.agent(name: realtorId, style: .activity))
         }
 
         // Listing type chip

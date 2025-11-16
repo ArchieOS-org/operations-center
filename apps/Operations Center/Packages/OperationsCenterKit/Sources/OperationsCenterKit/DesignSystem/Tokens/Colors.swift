@@ -65,4 +65,39 @@ public enum Colors {
 
     /// Color for complete actions
     public static let completeAction = Color.green
+
+    // MARK: - Activity Row
+
+    /// Background for activity rows in cards
+    public static let activityRowBackground = Color.gray.opacity(0.05)
+
+    // MARK: - Activity Status
+
+    /// Status indicator colors
+    public static let activityStatusOpen = Color.gray
+    public static let activityStatusClaimed = Color.orange
+    public static let activityStatusInProgress = Color.blue
+    public static let activityStatusDone = Color.green
+    public static let activityStatusFailed = Color.red
+    public static let activityStatusCancelled = Color.secondary
+
+    // MARK: - Input & Notes
+
+    /// Background for text input fields
+    public static let textFieldBackground: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .secondarySystemBackground)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
+    }()
+
+    /// Background for note rows
+    public static let noteRowBackground: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .secondarySystemBackground)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
+    }()
 }

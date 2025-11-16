@@ -12,35 +12,34 @@ public struct ListingCard: View {
     // MARK: - Properties
 
     let listing: Listing
+    let realtor: Realtor?
     let tasks: [Activity]
+    let notes: [ListingNote]
     let isExpanded: Bool
     let onTap: () -> Void
     let onTaskTap: (Activity) -> Void
-    let onMove: () -> Void
-    let onDelete: () -> Void
-
-    @Binding var editableNotes: String
+    let onAddNote: (String) -> Void
 
     // MARK: - Initialization
 
     public init(
         listing: Listing,
+        realtor: Realtor?,
         tasks: [Activity],
-        editableNotes: Binding<String>,
+        notes: [ListingNote],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
         onTaskTap: @escaping (Activity) -> Void,
-        onMove: @escaping () -> Void,
-        onDelete: @escaping () -> Void
+        onAddNote: @escaping (String) -> Void
     ) {
         self.listing = listing
+        self.realtor = realtor
         self.tasks = tasks
-        self._editableNotes = editableNotes
+        self.notes = notes
         self.isExpanded = isExpanded
         self.onTap = onTap
         self.onTaskTap = onTaskTap
-        self.onMove = onMove
-        self.onDelete = onDelete
+        self.onAddNote = onAddNote
     }
 
     // MARK: - Body
@@ -55,7 +54,7 @@ public struct ListingCard: View {
                 // Header
                 CardHeader(
                     title: listing.title,
-                    subtitle: agentName,
+                    subtitle: realtor?.name,
                     chips: buildChips(),
                     dueDate: listing.dueDate,
                     isExpanded: isExpanded
@@ -64,62 +63,29 @@ public struct ListingCard: View {
                 // Expanded content
                 if isExpanded {
                     // Notes Section
+                    NotesSection(notes: notes, onAddNote: onAddNote)
+
+                    // Listing Activities Section
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text("Notes")
+                        Text("Activities")
                             .font(Typography.cardSubtitle)
                             .foregroundStyle(.secondary)
 
-                        TextEditor(text: $editableNotes)
-                            .font(Typography.body)
-                            .foregroundStyle(.primary)
-                            .frame(minHeight: 80)
-                            .padding(Spacing.sm)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(CornerRadius.sm)
-                            .scrollContentBackground(.hidden)
-                    }
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity
-                    ))
-
-                    // Listing Tasks Section
-                    if !tasks.isEmpty {
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            Text("Tasks")
-                                .font(Typography.cardSubtitle)
-                                .foregroundStyle(.secondary)
-
+                        if tasks.isEmpty {
+                            Text("No activities yet")
+                                .font(Typography.body)
+                                .foregroundStyle(.tertiary)
+                                .padding(.vertical, Spacing.sm)
+                        } else {
                             VStack(spacing: 0) {
                                 ForEach(tasks) { task in
                                     listingTaskRow(for: task)
                                 }
                             }
                         }
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .top)),
-                            removal: .opacity
-                        ))
                     }
-
-                    // Context Menu (Bottom Actions)
-                    DSContextMenu(actions: [
-                        DSContextAction(
-                            title: "Move",
-                            systemImage: "arrow.right.circle"
-                        ) {
-                            onMove()
-                        },
-                        DSContextAction(
-                            title: "Delete",
-                            systemImage: "trash",
-                            role: .destructive
-                        ) {
-                            onDelete()
-                        }
-                    ])
                     .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                        insertion: .opacity.combined(with: .move(edge: .top)),
                         removal: .opacity
                     ))
                 }
@@ -129,19 +95,10 @@ public struct ListingCard: View {
 
     // MARK: - Helper Methods
 
-    private var agentName: String? {
-        listing.agentId
-    }
-
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []
 
-        // Agent chip (if present)
-        if let agentId = listing.agentId {
-            chips.append(.agent(name: agentId, style: .activity))
-        }
-
-        // Type chip (if present)
+        // Type chip only
         if let type = listing.type {
             chips.append(.custom(
                 text: type,
@@ -180,42 +137,50 @@ public struct ListingCard: View {
 
                 Spacer()
 
-                // Task category badge (if needed)
-                Text(task.taskCategory.rawValue)
+                // Task category badge
+                Text(task.taskCategory.displayName)
                     .font(Typography.chipLabel)
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal, Spacing.sm)
-            .background(Color.gray.opacity(0.05))
+            .background(Colors.activityRowBackground)
             .cornerRadius(CornerRadius.sm)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(activityAccessibilityLabel(for: task))
         }
         .buttonStyle(.plain)
     }
 
     private func statusColor(for status: Activity.TaskStatus) -> Color {
         switch status {
-        case .open: return .gray
-        case .claimed: return .orange
-        case .inProgress: return .blue
-        case .done: return .green
-        case .failed: return .red
-        case .cancelled: return .secondary
+        case .open: return Colors.activityStatusOpen
+        case .claimed: return Colors.activityStatusClaimed
+        case .inProgress: return Colors.activityStatusInProgress
+        case .done: return Colors.activityStatusDone
+        case .failed: return Colors.activityStatusFailed
+        case .cancelled: return Colors.activityStatusCancelled
         }
+    }
+
+    private func activityAccessibilityLabel(for task: Activity) -> String {
+        let statusName = task.status.displayName
+        let categoryName = task.taskCategory.displayName
+        return "\(task.name), \(statusName), \(categoryName)"
     }
 }
 
 // MARK: - Preview
 
 #Preview("Collapsed") {
-    @Previewable @State var notes = ""
+    @Previewable @State var notes: [ListingNote] = []
 
     let listing = Listing(
         id: "listing-001",
         addressString: "123 Maple Street",
         status: "inbox",
         assignee: nil,
-        agentId: "Sarah Chen",
+        realtorId: "realtor_001",
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 0.0,
         type: "RESIDENTIAL",
@@ -228,31 +193,60 @@ public struct ListingCard: View {
 
     ListingCard(
         listing: listing,
+        realtor: .mock1,
         tasks: [],
-        editableNotes: $notes,
+        notes: notes,
         isExpanded: false,
         onTap: {},
         onTaskTap: { _ in },
-        onMove: {},
-        onDelete: {}
+        onAddNote: { content in
+            let newNote = ListingNote(
+                id: UUID().uuidString,
+                listingId: listing.id,
+                content: content,
+                type: "general",
+                createdBy: "Current User",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            notes.append(newNote)
+        }
     )
     .padding()
 }
 
 #Preview("Expanded with Tasks") {
-    @Previewable @State var notes =
-        "Follow up with agent about staging timeline. Property needs deep cleaning before photos."
+    @Previewable @State var notes: [ListingNote] = [
+        ListingNote(
+            id: "note-1",
+            listingId: "listing-001",
+            content: "Follow up with agent about staging timeline",
+            type: "general",
+            createdBy: "Sarah Chen",
+            createdAt: Date().addingTimeInterval(-7200),
+            updatedAt: Date().addingTimeInterval(-7200)
+        ),
+        ListingNote(
+            id: "note-2",
+            listingId: "listing-001",
+            content: "Property needs deep cleaning before photos",
+            type: "general",
+            createdBy: "Mike Torres",
+            createdAt: Date().addingTimeInterval(-3600),
+            updatedAt: Date().addingTimeInterval(-3600)
+        )
+    ]
 
     let listing = Listing(
         id: "listing-001",
         addressString: "456 Oak Avenue",
         status: "inbox",
         assignee: nil,
-        agentId: "Mike Torres",
+        realtorId: "realtor_002",
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 30.0,
         type: "LUXURY",
-        notes: notes,
+        notes: "",
         createdAt: Date().addingTimeInterval(-5 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-1 * 24 * 3600),
         completedAt: nil,
@@ -263,7 +257,7 @@ public struct ListingCard: View {
         Activity(
             id: "1",
             listingId: "listing-001",
-            realtorId: "realtor-1",
+            realtorId: "realtor_002",
             name: "Schedule professional photos",
             description: "Book photographer",
             taskCategory: .photo,
@@ -284,7 +278,7 @@ public struct ListingCard: View {
         Activity(
             id: "2",
             listingId: "listing-001",
-            realtorId: "realtor-1",
+            realtorId: "realtor_002",
             name: "Deep clean interior",
             description: "Professional cleaning service",
             taskCategory: .admin,
@@ -305,7 +299,7 @@ public struct ListingCard: View {
         Activity(
             id: "3",
             listingId: "listing-001",
-            realtorId: "realtor-1",
+            realtorId: "realtor_002",
             name: "Stage master bedroom",
             description: "Furniture and decor",
             taskCategory: .staging,
@@ -327,30 +321,51 @@ public struct ListingCard: View {
 
     ListingCard(
         listing: listing,
+        realtor: .mock2,
         tasks: tasks,
-        editableNotes: $notes,
+        notes: notes,
         isExpanded: true,
         onTap: {},
         onTaskTap: { _ in },
-        onMove: {},
-        onDelete: {}
+        onAddNote: { content in
+            let newNote = ListingNote(
+                id: UUID().uuidString,
+                listingId: listing.id,
+                content: content,
+                type: "general",
+                createdBy: "Current User",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            notes.append(newNote)
+        }
     )
     .padding()
 }
 
 #Preview("Expanded No Tasks") {
-    @Previewable @State var notes = "New listing - needs initial assessment"
+    @Previewable @State var notes: [ListingNote] = [
+        ListingNote(
+            id: "note-1",
+            listingId: "listing-002",
+            content: "New listing - needs initial assessment",
+            type: "general",
+            createdBy: "Emma Rodriguez",
+            createdAt: Date().addingTimeInterval(-3600),
+            updatedAt: Date().addingTimeInterval(-3600)
+        )
+    ]
 
     let listing = Listing(
         id: "listing-002",
         addressString: "789 Pine Boulevard",
         status: "inbox",
         assignee: nil,
-        agentId: "Emma Rodriguez",
+        realtorId: "realtor_003",
         dueDate: Date().addingTimeInterval(14 * 24 * 3600),
         progress: 0.0,
         type: "COMMERCIAL",
-        notes: notes,
+        notes: "",
         createdAt: Date().addingTimeInterval(-1 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-1 * 24 * 3600),
         completedAt: nil,
@@ -359,13 +374,24 @@ public struct ListingCard: View {
 
     ListingCard(
         listing: listing,
+        realtor: .mock3,
         tasks: [],
-        editableNotes: $notes,
+        notes: notes,
         isExpanded: true,
         onTap: {},
         onTaskTap: { _ in },
-        onMove: {},
-        onDelete: {}
+        onAddNote: { content in
+            let newNote = ListingNote(
+                id: UUID().uuidString,
+                listingId: listing.id,
+                content: content,
+                type: "general",
+                createdBy: "Current User",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            notes.append(newNote)
+        }
     )
     .padding()
 }
