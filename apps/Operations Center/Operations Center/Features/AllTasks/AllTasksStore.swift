@@ -21,7 +21,7 @@ final class AllTasksStore {
     /// All agent tasks (standalone tasks)
     private(set) var tasks: [TaskWithMessages] = []
 
-    /// All activitys (property-linked tasks)
+    /// All activities (property-linked tasks)
     private(set) var activities: [ActivityWithDetails] = []
 
     /// Currently expanded task ID (only one can be expanded at a time)
@@ -63,7 +63,7 @@ final class AllTasksStore {
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
             Logger.tasks.info(
-                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activitys"
+                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activities"
             )
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
@@ -152,7 +152,7 @@ final class AllTasksStore {
         }
     }
 
-    /// Filtered activitys based on team filter
+    /// Filtered activities based on team filter
     var filteredActivities: [ActivityWithDetails] {
         switch teamFilter {
         case .all:
