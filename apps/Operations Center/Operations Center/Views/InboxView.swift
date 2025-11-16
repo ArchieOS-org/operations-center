@@ -120,11 +120,11 @@ struct InboxView: View {
     // MARK: - Helpers
 
     private func findExpandedTask(id: String) -> AgentTask? {
-        store.tasks.filter { String(describing: $0.task.id) == id }.first?.task
+        store.tasks.first(where: { $0.task.id == id })?.task
     }
 
     private func findExpandedActivity(id: String) -> Activity? {
-        store.activities.filter { String(describing: $0.task.id) == id }.first?.task
+        store.activities.first(where: { $0.task.id == id })?.task
     }
 
     private func buildTaskActions(for task: AgentTask) -> [DSContextAction] {

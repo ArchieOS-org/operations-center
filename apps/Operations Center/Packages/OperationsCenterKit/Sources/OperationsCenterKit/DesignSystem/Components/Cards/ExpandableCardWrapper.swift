@@ -21,7 +21,6 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
 
     let tintColor: Color
     let isExpanded: Bool
-    let actions: [DSContextAction]
     let onTap: () -> Void
 
     @ViewBuilder let collapsedContent: () -> CollapsedContent
@@ -32,14 +31,12 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
     init(
         tintColor: Color,
         isExpanded: Bool,
-        actions: [DSContextAction] = [],
         onTap: @escaping () -> Void,
         @ViewBuilder collapsedContent: @escaping () -> CollapsedContent,
         @ViewBuilder expandedContent: @escaping () -> ExpandedContent
     ) {
         self.tintColor = tintColor
         self.isExpanded = isExpanded
-        self.actions = actions
         self.onTap = onTap
         self.collapsedContent = collapsedContent
         self.expandedContent = expandedContent
@@ -76,14 +73,12 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     init(
         tintColor: Color,
         isExpanded: Bool,
-        actions: [DSContextAction] = [],
         onTap: @escaping () -> Void,
         @ViewBuilder content: @escaping () -> CollapsedContent
     ) {
         self.init(
             tintColor: tintColor,
             isExpanded: isExpanded,
-            actions: actions,
             onTap: onTap,
             collapsedContent: content,
             expandedContent: content
@@ -97,10 +92,6 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     ExpandableCardWrapper(
         tintColor: Colors.strayCardTint,
         isExpanded: false,
-        actions: [
-            DSContextAction(title: "Claim", systemImage: "hand.raised") {},
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
-        ],
         onTap: {}
     ) {
         VStack(alignment: .leading, spacing: 8) {
@@ -124,10 +115,6 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     ExpandableCardWrapper(
         tintColor: Colors.strayCardTint,
         isExpanded: true,
-        actions: [
-            DSContextAction(title: "Claim", systemImage: "hand.raised") {},
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
-        ],
         onTap: {}
     ) {
         VStack(alignment: .leading, spacing: 8) {

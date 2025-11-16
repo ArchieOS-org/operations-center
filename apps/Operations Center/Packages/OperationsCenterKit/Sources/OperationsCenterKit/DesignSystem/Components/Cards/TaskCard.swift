@@ -43,7 +43,6 @@ public struct TaskCard: View {
         ExpandableCardWrapper(
             tintColor: Colors.strayCardTint,
             isExpanded: isExpanded,
-            actions: buildActions(),
             onTap: onTap
         ) {
             // Collapsed content (always shown)
@@ -65,10 +64,6 @@ public struct TaskCard: View {
     }
 
     // MARK: - Helper Methods
-
-    private func buildActions() -> [DSContextAction] {
-        DSContextAction.standardTaskActions(onClaim: onClaim, onDelete: onDelete)
-    }
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []

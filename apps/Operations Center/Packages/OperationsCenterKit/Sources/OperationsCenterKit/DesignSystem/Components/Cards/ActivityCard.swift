@@ -49,7 +49,6 @@ public struct ActivityCard: View {
         ExpandableCardWrapper(
             tintColor: Colors.listingCardTint,
             isExpanded: isExpanded,
-            actions: buildActions(),
             onTap: onTap
         ) {
             // Collapsed content (always shown)
@@ -71,10 +70,6 @@ public struct ActivityCard: View {
     }
 
     // MARK: - Helper Methods
-
-    private func buildActions() -> [DSContextAction] {
-        DSContextAction.standardTaskActions(onClaim: onClaim, onDelete: onDelete)
-    }
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []

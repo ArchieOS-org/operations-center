@@ -34,7 +34,7 @@ struct ActivitiesSection: View {
                 }
                 .padding(.top, 4)
 
-                // Subtasks
+                // Activities
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(subtasks) { subtask in
                         subtaskRow(subtask)
