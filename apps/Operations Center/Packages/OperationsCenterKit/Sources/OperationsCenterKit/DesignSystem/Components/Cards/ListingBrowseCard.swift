@@ -98,7 +98,7 @@ public struct ListingBrowseCard: View {
 #Preview("Active Listing") {
     ListingBrowseCard(
         listing: Listing.mock1,
-        onTap: { print("Tapped listing") }
+        onTap: { }
     )
     .padding()
 }
@@ -106,7 +106,7 @@ public struct ListingBrowseCard: View {
 #Preview("Pending Listing") {
     ListingBrowseCard(
         listing: Listing.mock2,
-        onTap: { print("Tapped listing") }
+        onTap: { }
     )
     .padding()
 }
@@ -114,7 +114,7 @@ public struct ListingBrowseCard: View {
 #Preview("Completed Listing") {
     ListingBrowseCard(
         listing: Listing.mock3,
-        onTap: { print("Tapped listing") }
+        onTap: { }
     )
     .padding()
 }

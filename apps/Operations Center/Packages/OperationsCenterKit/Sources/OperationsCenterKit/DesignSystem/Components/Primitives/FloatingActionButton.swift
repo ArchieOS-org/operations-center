@@ -105,7 +105,6 @@ public extension View {
         }
     }
     .floatingActionButton {
-        print("Add tapped")
     }
 }
 
@@ -120,6 +119,5 @@ public extension View {
         }
     }
     .floatingActionButton(systemImage: "list.bullet") {
-        print("Add activity tapped")
     }
 }
