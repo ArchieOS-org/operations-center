@@ -22,14 +22,14 @@ struct ActivitiesSection: View {
                 // Section header with progress
                 HStack {
                     Text("Activities")
-                        .font(Typography.caption1)
+                        .font(Typography.cardMeta)
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
 
                     Spacer()
 
                     Text(progressText)
-                        .font(Typography.caption2)
+                        .font(Typography.chipLabel)
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.top, 4)
@@ -62,7 +62,7 @@ struct ActivitiesSection: View {
                 Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
                     .foregroundStyle(
-                        subtask.isCompleted ? Colors.completeAction : Color.gray.opacity(0.3)
+                        subtask.isCompleted ? Colors.actionPositive : Color.gray.opacity(0.3)
                     )
 
                 // Subtask name

@@ -77,10 +77,7 @@ struct LogbookView: View {
             if !store.completedListings.isEmpty {
                 ForEach(store.completedListings) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
-                        ListingBrowseCard(
-                            listing: listing,
-                            onTap: {}
-                        )
+                        ListingBrowseCard(listing: listing)
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparator(.hidden)

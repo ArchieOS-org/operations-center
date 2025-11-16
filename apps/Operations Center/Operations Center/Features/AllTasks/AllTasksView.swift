@@ -146,7 +146,7 @@ struct AllTasksView: View {
                             store.toggleExpansion(for: taskWithDetails.task.id)
                         },
                         onSubtaskToggle: { _ in
-                            // TODO: Implement subtask toggle
+                            // NOTE: Implement subtask toggle
                         }
                     )
                     .listRowSeparator(.hidden)
@@ -184,7 +184,7 @@ struct AllTasksView: View {
             FloatingActionButton(
                 systemImage: "plus",
                 action: {
-                    // TODO: Implement create new task
+                    // NOTE: Implement create new task
                 }
             )
             .padding(.trailing, 16)

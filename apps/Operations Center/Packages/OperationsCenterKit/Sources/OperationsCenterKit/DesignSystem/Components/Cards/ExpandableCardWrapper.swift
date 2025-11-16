@@ -90,7 +90,7 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
 
 #Preview("Collapsed") {
     ExpandableCardWrapper(
-        tintColor: Colors.strayCardTint,
+        tintColor: Colors.surfaceAgentTaskTinted,
         isExpanded: false,
         onTap: {}
     ) {
@@ -113,7 +113,7 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
 
 #Preview("Expanded") {
     ExpandableCardWrapper(
-        tintColor: Colors.strayCardTint,
+        tintColor: Colors.surfaceAgentTaskTinted,
         isExpanded: true,
         onTap: {}
     ) {
@@ -131,7 +131,7 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
                 .foregroundStyle(.secondary)
 
             Text("Status: In Progress")
-                .font(Typography.caption1)
+                .font(Typography.cardMeta)
                 .foregroundStyle(.tertiary)
         }
     }

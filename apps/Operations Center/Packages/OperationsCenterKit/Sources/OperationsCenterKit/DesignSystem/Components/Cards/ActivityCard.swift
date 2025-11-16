@@ -41,7 +41,7 @@ public struct ActivityCard: View {
 
     public var body: some View {
         ExpandableCardWrapper(
-            tintColor: Colors.listingCardTint,
+            tintColor: Colors.surfaceListingTinted,
             isExpanded: isExpanded,
             onTap: onTap
         ) {
@@ -140,7 +140,7 @@ public struct ActivityCard: View {
         addressString: "123 Maple Street",
         status: "new",
         assignee: nil,
-        agentId: "realtor-1",
+        realtorId: "realtor-1",
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 0.0,
         type: "RESIDENTIAL",
@@ -190,7 +190,7 @@ public struct ActivityCard: View {
         addressString: "123 Maple Street",
         status: "in_progress",
         assignee: nil,
-        agentId: "realtor-1",
+        realtorId: "realtor-1",
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 50.0,
         type: "LUXURY",

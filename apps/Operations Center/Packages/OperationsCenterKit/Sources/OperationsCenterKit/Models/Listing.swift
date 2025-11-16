@@ -6,6 +6,33 @@
 //
 
 import Foundation
+import SwiftUI
+
+// MARK: - ListingType
+
+/// Enum representing the type of listing
+public enum ListingType: String, Codable, Sendable {
+    case sale = "SALE"
+    case rental = "RENTAL"
+    case commercial = "COMMERCIAL"
+    case residential = "RESIDENTIAL"
+
+    /// Color associated with this listing type
+    public var color: Color {
+        switch self {
+        case .sale:
+            return .blue
+        case .rental:
+            return .purple
+        case .commercial:
+            return .orange
+        case .residential:
+            return .green
+        }
+    }
+}
+
+// MARK: - Listing
 
 public struct Listing: Identifiable, Codable, Sendable {
     // MARK: - Properties
@@ -14,7 +41,7 @@ public struct Listing: Identifiable, Codable, Sendable {
     public let addressString: String
     public let status: String
     public let assignee: String?
-    public let agentId: String?
+    public let realtorId: String?
     public let dueDate: Date?
     public let progress: Decimal?
     public let type: String?
@@ -32,7 +59,7 @@ public struct Listing: Identifiable, Codable, Sendable {
         addressString: String,
         status: String,
         assignee: String? = nil,
-        agentId: String? = nil,
+        realtorId: String? = nil,
         dueDate: Date? = nil,
         progress: Decimal? = nil,
         type: String? = nil,
@@ -46,7 +73,7 @@ public struct Listing: Identifiable, Codable, Sendable {
         self.addressString = addressString
         self.status = status
         self.assignee = assignee
-        self.agentId = agentId
+        self.realtorId = realtorId
         self.dueDate = dueDate
         self.progress = progress
         self.type = type
@@ -69,6 +96,12 @@ public struct Listing: Identifiable, Codable, Sendable {
         completedAt != nil
     }
 
+    /// Parsed listing type from the underlying string value
+    public var listingType: ListingType? {
+        guard let type else { return nil }
+        return ListingType(rawValue: type.uppercased())
+    }
+
     // MARK: - CodingKeys
 
     enum CodingKeys: String, CodingKey {
@@ -76,7 +109,7 @@ public struct Listing: Identifiable, Codable, Sendable {
         case addressString = "address_string"
         case status
         case assignee
-        case agentId = "agent_id"
+        case realtorId = "realtor_id"
         case dueDate = "due_date"
         case progress
         case type
@@ -101,7 +134,7 @@ extension Listing {
             addressString: "123 Main St, San Francisco, CA 94102",
             status: "ACTIVE",
             assignee: "staff_001",
-            agentId: "realtor_001",
+            realtorId: "realtor_001",
             dueDate: Date().addingTimeInterval(86400 * 7), // 7 days from now
             progress: 0.45,
             type: "SALE",
@@ -119,7 +152,7 @@ extension Listing {
             addressString: "456 Oak Ave, Palo Alto, CA 94301",
             status: "PENDING",
             assignee: "staff_002",
-            agentId: "realtor_002",
+            realtorId: "realtor_002",
             dueDate: Date().addingTimeInterval(86400 * 14), // 14 days from now
             progress: 0.20,
             type: "RENTAL",
@@ -137,7 +170,7 @@ extension Listing {
             addressString: "789 Market St, San Jose, CA 95113",
             status: "COMPLETED",
             assignee: "staff_001",
-            agentId: "realtor_001",
+            realtorId: "realtor_001",
             dueDate: Date().addingTimeInterval(-86400 * 3), // 3 days ago
             progress: 1.0,
             type: "SALE",

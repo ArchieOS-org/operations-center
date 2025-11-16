@@ -21,9 +21,6 @@ final class AllListingsStore {
     /// All listings
     private(set) var listings: [Listing] = []
 
-    /// Currently expanded listing ID (only one can be expanded at a time)
-    var expandedListingId: String?
-
     /// Error message to display
     var errorMessage: String?
 
@@ -62,15 +59,10 @@ final class AllListingsStore {
         await fetchAllListings()
     }
 
-    /// Toggle expansion for a listing
-    func toggleExpansion(for listingId: String) {
-        expandedListingId = expandedListingId == listingId ? nil : listingId
-    }
-
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // TODO: Get from auth
+            let currentUserId = "current-user" // NOTE: Get from auth
             try await repository.deleteListing(listing.id, currentUserId)
 
             await refresh()

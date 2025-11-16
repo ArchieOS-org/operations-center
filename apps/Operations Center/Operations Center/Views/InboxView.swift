@@ -25,31 +25,35 @@ struct InboxView: View {
                 InboxErrorView(message: error) {
                     Task { await store.refresh() }
                 }
-            } else if store.tasks.isEmpty && store.activities.isEmpty {
+            } else if store.tasks.isEmpty && store.listings.isEmpty {
                 EmptyInboxView()
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16) {
-                        // Listing Tasks Section
-                        if !store.activities.isEmpty {
-                            sectionHeader(title: "Listings", count: store.activities.count)
+                        // Listings Section
+                        if !store.listings.isEmpty {
+                            sectionHeader(title: "Listings", count: store.listings.count)
 
-                            ForEach(store.activities, id: \.task.id) { item in
-                                ActivityCard(
-                                    task: item.task,
+                            ForEach(store.listings) { item in
+                                ListingCard(
                                     listing: item.listing,
-                                    subtasks: item.subtasks,
-                                    isExpanded: store.isExpanded(item.task.id),
+                                    realtor: item.realtor,
+                                    tasks: item.activities,
+                                    notes: item.notes,
+                                    isExpanded: store.isExpanded(item.listing.id),
                                     onTap: {
                                         withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
-                                            store.toggleExpansion(for: item.task.id)
+                                            store.toggleExpansion(for: item.listing.id)
                                         }
                                     },
-                                    onSubtaskToggle: { subtask in
-                                        Task { await store.toggleSubtask(subtask) }
+                                    onTaskTap: { _ in
+                                        // Activity tap - could navigate to detail or expand inline
+                                    },
+                                    onAddNote: { content in
+                                        Task { await store.addNote(to: item.listing.id, content: content) }
                                     }
                                 )
-                                .id(item.task.id)
+                                .id(item.listing.id)
                             }
                         }
 
@@ -78,7 +82,7 @@ struct InboxView: View {
         }
         .floatingActionButton(isHidden: store.expandedTaskId != nil) {
             // Per TASK_MANAGEMENT_SPEC.md line 453: "Opens new Task modal"
-            // TODO: Implement new task modal
+            // NOTE: Implement new task modal
         }
         .overlay(alignment: .bottom) {
             // Floating context menu - appears at screen bottom when card is expanded
@@ -86,8 +90,8 @@ struct InboxView: View {
                 Group {
                     if let task = findExpandedTask(id: expandedId) {
                         DSContextMenu(actions: buildTaskActions(for: task))
-                    } else if let activity = findExpandedActivity(id: expandedId) {
-                        DSContextMenu(actions: buildActivityActions(for: activity))
+                    } else if let listing = findExpandedListing(id: expandedId) {
+                        DSContextMenu(actions: buildListingActions(for: listing))
                     }
                 }
                 .padding(.bottom, Spacing.lg)
@@ -111,8 +115,8 @@ struct InboxView: View {
         store.tasks.first(where: { $0.task.id == id })?.task
     }
 
-    private func findExpandedActivity(id: String) -> Activity? {
-        store.activities.first(where: { $0.task.id == id })?.task
+    private func findExpandedListing(id: String) -> ListingWithDetails? {
+        store.listings.first(where: { $0.listing.id == id })
     }
 
     private func buildTaskActions(for task: AgentTask) -> [DSContextAction] {
@@ -126,15 +130,30 @@ struct InboxView: View {
         )
     }
 
-    private func buildActivityActions(for activity: Activity) -> [DSContextAction] {
-        DSContextAction.standardTaskActions(
-            onClaim: {
-                Task { await store.claimActivity(activity) }
-            },
-            onDelete: {
-                Task { await store.deleteActivity(activity) }
-            }
-        )
+    private func buildListingActions(for listingWithDetails: ListingWithDetails) -> [DSContextAction] {
+        [
+            DSContextAction(
+                title: "Acknowledge",
+                systemImage: "checkmark.circle",
+                action: {
+                    // Mark all activities as acknowledged/claimed
+                    for activity in listingWithDetails.activities {
+                        Task { await store.claimActivity(activity) }
+                    }
+                }
+            ),
+            DSContextAction(
+                title: "Delete",
+                systemImage: "trash",
+                role: .destructive,
+                action: {
+                    // Delete all activities in this listing
+                    for activity in listingWithDetails.activities {
+                        Task { await store.deleteActivity(activity) }
+                    }
+                }
+            )
+        ]
     }
 
     // MARK: - Subviews
@@ -202,14 +221,26 @@ struct InboxErrorView: View {
 
 #Preview("With Mock Data") {
     let store = InboxStore(
-        repository: .preview,
+        taskRepository: .preview,
+        noteRepository: .preview,
+        realtorRepository: .preview,
         initialTasks: [
             TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
             TaskWithMessages(task: AgentTask.mock2, messages: [])
         ],
-        initialActivities: [
-            ActivityWithDetails(task: Activity.mock1, listing: Listing.mock1, subtasks: [Subtask.mock1]),
-            ActivityWithDetails(task: Activity.mock2, listing: Listing.mock2, subtasks: [])
+        initialListings: [
+            ListingWithDetails(
+                listing: Listing.mock1,
+                realtor: Realtor.mock1,
+                activities: [Activity.mock1, Activity.mock2],
+                notes: [ListingNote.mock1, ListingNote.mock2]
+            ),
+            ListingWithDetails(
+                listing: Listing.mock2,
+                realtor: Realtor.mock2,
+                activities: [Activity.mock3],
+                notes: [ListingNote.mock3]
+            )
         ]
     )
 
@@ -219,8 +250,11 @@ struct InboxErrorView: View {
 }
 
 #Preview("Empty State") {
-    let store = InboxStore(repository: .preview)
-    // Empty arrays via default parameters
+    let store = InboxStore(
+        taskRepository: .preview,
+        noteRepository: .preview,
+        realtorRepository: .preview
+    )
 
     NavigationStack {
         InboxView(store: store)
@@ -228,7 +262,11 @@ struct InboxErrorView: View {
 }
 
 #Preview("Loading State") {
-    @Previewable @State var store = InboxStore(repository: .preview)
+    @Previewable @State var store = InboxStore(
+        taskRepository: .preview,
+        noteRepository: .preview,
+        realtorRepository: .preview
+    )
     store.isLoading = true
 
     return NavigationStack {
@@ -237,7 +275,11 @@ struct InboxErrorView: View {
 }
 
 #Preview("Error State") {
-    @Previewable @State var store = InboxStore(repository: .preview)
+    @Previewable @State var store = InboxStore(
+        taskRepository: .preview,
+        noteRepository: .preview,
+        realtorRepository: .preview
+    )
     store.errorMessage = "Failed to connect to server"
 
     return NavigationStack {

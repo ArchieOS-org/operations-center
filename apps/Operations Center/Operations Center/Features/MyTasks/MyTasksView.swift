@@ -106,7 +106,7 @@ struct MyTasksView: View {
 
         TaskCard(
             task: task,
-            messages: [], // TODO: Load Slack messages
+            messages: [], // NOTE: Load Slack messages
             isExpanded: isExpanded,
             onTap: {
                 store.toggleExpansion(for: task.id)
@@ -136,7 +136,7 @@ struct MyTasksView: View {
                 Spacer()
 
                 Button("Create") {
-                    // TODO: Create task logic
+                    // NOTE: Create task logic
                     showingNewTask = false
                     newTaskTitle = ""
                 }
@@ -145,7 +145,7 @@ struct MyTasksView: View {
             }
         }
         .padding()
-        .background(Colors.cardBackground)
+        .background(Colors.surfaceSecondary)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -176,7 +176,7 @@ struct MyTasksView: View {
 
             VStack(spacing: Spacing.xs) {
                 Text("No Tasks")
-                    .font(Typography.title1)
+                    .font(Typography.title)
 
                 Text("You haven't claimed any tasks yet")
                     .font(Typography.body)

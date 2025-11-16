@@ -31,7 +31,7 @@ struct TaskToolbar: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Colors.claimAction)
+                .background(Colors.accentPrimary)
                 .cornerRadius(CornerRadius.sm)
             }
             .buttonStyle(.plain)
@@ -42,7 +42,7 @@ struct TaskToolbar: View {
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .font(.system(size: 16))
-                    .foregroundStyle(Colors.deleteAction)
+                    .foregroundStyle(Colors.actionDestructive)
                     .padding(8)
             }
             .buttonStyle(.plain)
@@ -66,7 +66,7 @@ struct TaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.cardSystemBackground)
+        .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.card)
 
         Divider()
@@ -86,7 +86,7 @@ struct TaskToolbar: View {
             )
         }
         .padding()
-        .background(Colors.cardSystemBackground)
+        .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.card)
     }
     .padding()

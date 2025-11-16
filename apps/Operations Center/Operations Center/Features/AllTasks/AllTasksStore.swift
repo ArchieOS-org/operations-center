@@ -39,6 +39,12 @@ final class AllTasksStore {
     /// Repository for data access
     private let repository: TaskRepositoryClient
 
+    /// Current authenticated user ID
+    /// NOTE: Replace with actual authenticated user ID from auth service
+    private var currentUserId: String {
+        "current-user"
+    }
+
     // MARK: - Initialization
 
     init(repository: TaskRepositoryClient) {
@@ -86,8 +92,6 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
-            // swiftlint:disable:next todo
-            let currentUserId = "current-user" // TODO: Get from auth
             _ = try await repository.claimTask(task.id, currentUserId)
 
             await refresh()
@@ -100,8 +104,6 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
-            // swiftlint:disable:next todo
-            let currentUserId = "current-user" // TODO: Get from auth
             _ = try await repository.claimActivity(task.id, currentUserId)
 
             await refresh()
@@ -114,8 +116,6 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
-            // swiftlint:disable:next todo
-            let currentUserId = "current-user" // TODO: Get from auth
             try await repository.deleteTask(task.id, currentUserId)
 
             await refresh()
@@ -128,7 +128,6 @@ final class AllTasksStore {
     /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
-            let currentUserId = "current-user" // TODO: Get from auth
             try await repository.deleteActivity(task.id, currentUserId)
 
             await refresh()

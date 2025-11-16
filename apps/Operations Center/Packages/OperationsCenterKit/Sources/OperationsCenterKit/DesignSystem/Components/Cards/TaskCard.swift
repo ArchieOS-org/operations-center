@@ -35,7 +35,7 @@ public struct TaskCard: View {
 
     public var body: some View {
         ExpandableCardWrapper(
-            tintColor: Colors.strayCardTint,
+            tintColor: Colors.surfaceAgentTaskTinted,
             isExpanded: isExpanded,
             onTap: onTap
         ) {
@@ -64,7 +64,7 @@ public struct TaskCard: View {
 
         // Assigned agent chip
         if let staffId = task.assignedStaffId {
-            chips.append(.agent(name: staffId, style: .stray))
+            chips.append(.agent(name: staffId, style: .agentTask))
         }
 
         // Category chip

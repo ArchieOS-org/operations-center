@@ -37,10 +37,10 @@ struct CardHeader: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             // Title and date
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(title)
                         .font(Typography.cardTitle)
                         .foregroundStyle(.primary)
@@ -65,12 +65,11 @@ struct CardHeader: View {
 
             // Chips
             if !chips.isEmpty {
-                HStack(spacing: 6) {
+                HStack(spacing: Spacing.xs) {
                     ForEach(chips) { chip in
                         chipView(for: chip)
                     }
                 }
-                .padding(.top, 2)
             }
         }
     }
@@ -129,12 +128,12 @@ enum ChipData: Identifiable {
 
 // MARK: - Preview
 
-#Preview("Stray Task Header") {
+#Preview("Agent Task Header") {
     CardHeader(
         title: "Update CRM with Q4 contacts",
         subtitle: nil,
         chips: [
-            .agent(name: "Sarah Chen", style: .stray),
+            .agent(name: "Sarah Chen", style: .agentTask),
             .dueDate(Date().addingTimeInterval(-2 * 24 * 3600)) // Overdue
         ]
     )

@@ -31,7 +31,7 @@ struct ActivityToolbar: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Colors.claimAction)
+                .background(Colors.accentPrimary)
                 .cornerRadius(CornerRadius.sm)
             }
             .buttonStyle(.plain)
@@ -42,7 +42,7 @@ struct ActivityToolbar: View {
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .font(.system(size: 16))
-                    .foregroundStyle(Colors.deleteAction)
+                    .foregroundStyle(Colors.actionDestructive)
                     .padding(8)
             }
             .buttonStyle(.plain)
@@ -70,7 +70,7 @@ struct ActivityToolbar: View {
             )
         }
         .padding()
-        .background(Colors.cardSystemBackground)
+        .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.card)
 
         Divider()
@@ -87,12 +87,12 @@ struct ActivityToolbar: View {
             // Mock subtasks section
             VStack(alignment: .leading, spacing: 8) {
                 Text("SUBTASKS")
-                    .font(Typography.caption1)
+                    .font(Typography.cardMeta)
                     .foregroundStyle(.secondary)
 
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Colors.completeAction)
+                        .foregroundStyle(Colors.actionPositive)
                     Text("Create social media posts")
                         .font(Typography.callout)
                 }
@@ -111,7 +111,7 @@ struct ActivityToolbar: View {
             )
         }
         .padding()
-        .background(Colors.cardSystemBackground)
+        .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.card)
     }
     .padding()

@@ -58,7 +58,7 @@ extension SlackMessage {
     public static var mock1: SlackMessage {
         SlackMessage(
             id: "msg_001",
-            taskId: "stray_001",
+            taskId: "agent-task-001",
             channelId: "C123ABC456",
             threadTs: "1234567890.123456",
             messageTs: "1234567890.123456",
@@ -71,7 +71,7 @@ extension SlackMessage {
     public static var mock2: SlackMessage {
         SlackMessage(
             id: "msg_002",
-            taskId: "stray_003",
+            taskId: "agent-task-003",
             channelId: "C789DEF012",
             threadTs: "1234567891.654321",
             messageTs: "1234567891.654321",

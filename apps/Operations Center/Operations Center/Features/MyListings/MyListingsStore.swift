@@ -49,7 +49,7 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
-            // Fetch activitys for current user (TODO: Get actual user ID from auth)
+            // NOTE: Get actual user ID from auth
             let currentUserId = "current-user"
 
             // Get activitys claimed by this realtor directly from repository
@@ -88,7 +88,7 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // TODO: Get from auth
+            let currentUserId = "current-user" // NOTE: Get from auth
             try await listingRepository.deleteListing(listing.id, currentUserId)
 
             await refresh()

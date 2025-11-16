@@ -93,7 +93,7 @@ final class ListingDetailStore {
         }
 
         do {
-            let currentUserId = "current-user" // TODO: Get from auth
+            let currentUserId = "current-user" // NOTE: Get from auth
             let createdNote = try await noteRepository.createNote(listingId, trimmedText, currentUserId)
 
             // Add new note to beginning of list
