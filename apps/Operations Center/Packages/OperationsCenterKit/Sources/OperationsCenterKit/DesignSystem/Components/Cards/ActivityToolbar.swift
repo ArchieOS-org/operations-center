@@ -1,15 +1,15 @@
 //
-//  ListingTaskToolbar.swift
+//  ActivityToolbar.swift
 //  OperationsCenterKit
 //
-//  Simple toolbar for listing tasks: Claim + Delete
+//  Simple toolbar for activities: Claim + Delete
 //  No menus on first ship
 //
 
 import SwiftUI
 
-/// Toolbar for listing task cards with primary actions
-struct ListingTaskToolbar: View {
+/// Toolbar for activity cards with primary actions
+struct ActivityToolbar: View {
     // MARK: - Properties
 
     let onClaim: () -> Void
@@ -64,7 +64,7 @@ struct ListingTaskToolbar: View {
                 .font(Typography.cardSubtitle)
                 .foregroundStyle(.secondary)
 
-            ListingTaskToolbar(
+            ActivityToolbar(
                 onClaim: {},
                 onDelete: {}
             )
@@ -105,7 +105,7 @@ struct ListingTaskToolbar: View {
                 }
             }
 
-            ListingTaskToolbar(
+            ActivityToolbar(
                 onClaim: {},
                 onDelete: {}
             )

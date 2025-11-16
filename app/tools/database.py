@@ -80,7 +80,7 @@ async def create_task(
 
         # Determine which table based on task type
         if listing_id:
-            table_name = "listing_tasks"
+            table_name = "activities"
             task_data = {
                 "title": title,
                 "description": description,
@@ -90,7 +90,7 @@ async def create_task(
                 "status": "pending"
             }
         elif task_type == "stray":
-            table_name = "stray_tasks"
+            table_name = "agent_tasks"
             task_data = {
                 "title": title,
                 "description": description,
@@ -99,7 +99,7 @@ async def create_task(
                 "status": "pending"
             }
         else:
-            table_name = "tasks"
+            table_name = "agent_tasks"
             task_data = {
                 "title": title,
                 "description": description,

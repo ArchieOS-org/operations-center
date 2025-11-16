@@ -2,20 +2,20 @@
 //  TaskListStore.swift
 //  Operations Center
 //
-//  Store managing the list of listing tasks
+//  Store managing the list of activities
 //
 
 import Foundation
 import OperationsCenterKit
 import OSLog
 
-/// Store managing the list of listing tasks using repository pattern
+/// Store managing the list of activities using repository pattern
 @Observable
 @MainActor
 final class TaskListStore {
     // MARK: - Observable State
 
-    var listingTasks: [ListingTaskWithDetails] = []
+    var activities: [ActivityWithDetails] = []
     var isLoading = false
     var errorMessage: String?
 
@@ -33,57 +33,57 @@ final class TaskListStore {
 
     // MARK: - Actions
 
-    /// Fetch all listing tasks from repository
+    /// Fetch all activities from repository
     func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
         do {
-            listingTasks = try await repository.fetchListingTasks()
-            Logger.tasks.info("Fetched listing tasks: \(self.listingTasks.count)")
+            activities = try await repository.fetchActivities()
+            Logger.tasks.info("Fetched activities: \(self.activities.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to fetch listing tasks: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to fetch activities: \(error.localizedDescription)")
         }
 
         isLoading = false
     }
 
     /// Claim a task by assigning it to current staff member
-    func claimTask(_ task: ListingTask) async {
+    func claimTask(_ task: Activity) async {
         do {
             // Get current user ID - for now use a placeholder
             // swiftlint:disable:next todo
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimListingTask(task.id, currentUserId)
+            _ = try await repository.claimActivity(task.id, currentUserId)
 
-            Logger.tasks.info("Claimed listing task: \(task.id) - \(task.name)")
+            Logger.tasks.info("Claimed activity: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
         }
     }
 
-    /// Delete a listing task (soft delete)
-    func deleteTask(_ task: ListingTask) async {
+    /// Delete a activity (soft delete)
+    func deleteTask(_ task: Activity) async {
         do {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteListingTask(task.id, currentUserId)
+            try await repository.deleteActivity(task.id, currentUserId)
 
-            Logger.tasks.info("Deleted listing task: \(task.id) - \(task.name)")
+            Logger.tasks.info("Deleted activity: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
         }
     }
 

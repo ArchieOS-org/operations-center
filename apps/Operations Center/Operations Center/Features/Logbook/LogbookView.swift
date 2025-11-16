@@ -16,7 +16,6 @@ struct LogbookView: View {
     // MARK: - Properties
 
     @State private var store: LogbookStore
-    @State private var navigationPath: [Route] = []
 
     // MARK: - Initialization
 
@@ -33,13 +32,7 @@ struct LogbookView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            archiveList
-                .navigationDestination(for: Route.self) { _ in
-                    // Route to detail views (listings only for now)
-                    EmptyView()
-                }
-        }
+        archiveList
     }
 
     // MARK: - Subviews
@@ -83,13 +76,12 @@ struct LogbookView: View {
         Section {
             if !store.completedListings.isEmpty {
                 ForEach(store.completedListings) { listing in
-                    ListingBrowseCard(
-                        listing: listing,
-                        onTap: {
-                            // Navigate to listing detail (not yet wired up)
-                            navigationPath.append(.listing(id: listing.id))
-                        }
-                    )
+                    NavigationLink(value: Route.listing(id: listing.id)) {
+                        ListingBrowseCard(
+                            listing: listing,
+                            onTap: {}
+                        )
+                    }
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparator(.hidden)
                 }
@@ -186,7 +178,7 @@ struct LogbookView: View {
 
     // MARK: - Helper Methods
 
-    private func categoryIcon(for category: StrayTask.TaskCategory) -> String {
+    private func categoryIcon(for category: AgentTask.TaskCategory) -> String {
         switch category {
         case .admin: return "gearshape"
         case .marketing: return "megaphone"

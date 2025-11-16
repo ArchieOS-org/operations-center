@@ -1,18 +1,18 @@
 //
-//  StrayTaskCard.swift
+//  TaskCard.swift
 //  OperationsCenterKit
 //
 //  Orange accent, no border, Slack messages first
-//  First-class citizen for orphaned tasks
+//  First-class citizen for general tasks
 //
 
 import SwiftUI
 
-/// Card for displaying stray tasks (orphaned, untethered tasks)
-public struct StrayTaskCard: View {
+/// Card for displaying tasks (general agent tasks)
+public struct TaskCard: View {
     // MARK: - Properties
 
-    let task: StrayTask
+    let task: AgentTask
     let messages: [SlackMessage]
     let isExpanded: Bool
     let onTap: () -> Void
@@ -22,7 +22,7 @@ public struct StrayTaskCard: View {
     // MARK: - Initialization
 
     public init(
-        task: StrayTask,
+        task: AgentTask,
         messages: [SlackMessage],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
@@ -87,7 +87,7 @@ public struct StrayTaskCard: View {
         return chips
     }
 
-    private func categoryColor(for category: StrayTask.TaskCategory) -> Color {
+    private func categoryColor(for category: AgentTask.TaskCategory) -> Color {
         switch category {
         case .admin: return .blue
         case .marketing: return .purple
@@ -102,26 +102,8 @@ public struct StrayTaskCard: View {
 // MARK: - Preview
 
 #Preview("Collapsed") {
-    let task = StrayTask(
-        id: "1",
-        realtorId: "realtor-1",
-        name: "Update CRM with Q4 contacts",
-        description: "Need to import all new contacts from networking events into CRM",
-        taskCategory: .admin,
-        status: .open,
-        priority: 2,
-        assignedStaffId: "Sarah Chen",
-        dueDate: Date().addingTimeInterval(-2 * 24 * 3600),
-        claimedAt: nil,
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-5 * 24 * 3600),
-        updatedAt: Date().addingTimeInterval(-5 * 24 * 3600),
-        deletedAt: nil,
-        deletedBy: nil
-    )
-
-    StrayTaskCard(
-        task: task,
+    TaskCard(
+        task: AgentTask.mock1,
         messages: [],
         isExpanded: false,
         onTap: {},
@@ -132,49 +114,13 @@ public struct StrayTaskCard: View {
 }
 
 #Preview("Expanded with Messages") {
-    let task = StrayTask(
-        id: "1",
-        realtorId: "realtor-1",
-        name: "Create Instagram reels from open house",
-        description: "Edit video clips from last weekend's open house",
-        taskCategory: .marketing,
-        status: .open,
-        priority: 3,
-        assignedStaffId: nil,
-        dueDate: Date().addingTimeInterval(1 * 24 * 3600),
-        claimedAt: nil,
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-6 * 3600),
-        updatedAt: Date().addingTimeInterval(-6 * 3600),
-        deletedAt: nil,
-        deletedBy: nil
-    )
-
     let messages = [
-        SlackMessage(
-            id: "1",
-            taskId: "1",
-            channelId: "C789",
-            threadTs: "1699887600.901234",
-            messageTs: "1699887600.901234",
-            authorName: "David Kim",
-            text: "Got some great clips from the open house yesterday. Lots of buyer engagement!",
-            timestamp: Date().addingTimeInterval(-6 * 3600)
-        ),
-        SlackMessage(
-            id: "2",
-            taskId: "1",
-            channelId: "C789",
-            threadTs: "1699887600.901234",
-            messageTs: "1699891200.567890",
-            authorName: "Jessica Liu",
-            text: "I can edit these into 3-4 short reels. Need them by end of week?",
-            timestamp: Date().addingTimeInterval(-5 * 3600)
-        )
+        SlackMessage.mock1,
+        SlackMessage.mock2
     ]
 
-    StrayTaskCard(
-        task: task,
+    TaskCard(
+        task: AgentTask.mock2,
         messages: messages,
         isExpanded: true,
         onTap: {},

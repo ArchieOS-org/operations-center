@@ -36,8 +36,8 @@ struct AllTasksView: View {
 
     private var tasksList: some View {
         List {
-            strayTasksSection
-            listingTasksSection
+            tasksSection
+            activitiesSection
             emptyStateSection
         }
         .listStyle(.plain)
@@ -65,11 +65,11 @@ struct AllTasksView: View {
     }
 
     @ViewBuilder
-    private var strayTasksSection: some View {
-        if !store.filteredStrayTasks.isEmpty {
+    private var tasksSection: some View {
+        if !store.filteredTasks.isEmpty {
             Section("Standalone Tasks") {
-                ForEach(store.filteredStrayTasks, id: \.task.id) { taskWithMessages in
-                    StrayTaskCard(
+                ForEach(store.filteredTasks, id: \.task.id) { taskWithMessages in
+                    TaskCard(
                         task: taskWithMessages.task,
                         messages: taskWithMessages.messages,
                         isExpanded: store.expandedTaskId == taskWithMessages.task.id,
@@ -78,12 +78,12 @@ struct AllTasksView: View {
                         },
                         onClaim: {
                             Task {
-                                await store.claimStrayTask(taskWithMessages.task)
+                                await store.claimTask(taskWithMessages.task)
                             }
                         },
                         onDelete: {
                             Task {
-                                await store.deleteStrayTask(taskWithMessages.task)
+                                await store.deleteTask(taskWithMessages.task)
                             }
                         }
                     )
@@ -95,11 +95,11 @@ struct AllTasksView: View {
     }
 
     @ViewBuilder
-    private var listingTasksSection: some View {
-        if !store.filteredListingTasks.isEmpty {
+    private var activitiesSection: some View {
+        if !store.filteredActivities.isEmpty {
             Section("Property Tasks") {
-                ForEach(store.filteredListingTasks, id: \.task.id) { taskWithDetails in
-                    ListingTaskCard(
+                ForEach(store.filteredActivities, id: \.task.id) { taskWithDetails in
+                    ActivityCard(
                         task: taskWithDetails.task,
                         listing: taskWithDetails.listing,
                         subtasks: taskWithDetails.subtasks,
@@ -112,12 +112,12 @@ struct AllTasksView: View {
                         },
                         onClaim: {
                             Task {
-                                await store.claimListingTask(taskWithDetails.task)
+                                await store.claimActivity(taskWithDetails.task)
                             }
                         },
                         onDelete: {
                             Task {
-                                await store.deleteListingTask(taskWithDetails.task)
+                                await store.deleteActivity(taskWithDetails.task)
                             }
                         }
                     )
@@ -130,7 +130,7 @@ struct AllTasksView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.filteredStrayTasks.isEmpty && store.filteredListingTasks.isEmpty {
+        if store.filteredTasks.isEmpty && store.filteredActivities.isEmpty {
             VStack(spacing: 16) {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 60))

@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Operations Center
 //
-//  Main view - displays listing tasks from Supabase
+//  Main view - displays activitys from Supabase
 //
 
 import OperationsCenterKit
@@ -32,7 +32,7 @@ struct ContentView: View {
 }
 
 struct TaskRow: View {
-    let task: ListingTask
+    let task: Activity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -71,7 +71,7 @@ struct TaskRow: View {
 }
 
 struct StatusBadge: View {
-    let status: ListingTask.TaskStatus
+    let status: Activity.TaskStatus
 
     var body: some View {
         Text(status.rawValue)
@@ -95,7 +95,7 @@ struct StatusBadge: View {
 }
 
 struct CategoryBadge: View {
-    let category: ListingTask.TaskCategory
+    let category: Activity.TaskCategory
 
     var body: some View {
         Label(category.rawValue, systemImage: icon)
@@ -168,20 +168,20 @@ struct EmptyStateView: View {
 }
 
 #Preview("With Mock Data") {
-    @Previewable @State var appState = AppState(
+    let appState = AppState(
         supabase: supabase,
         taskRepository: .preview
     )
 
     // Preload with mock data
-    appState.allTasks = [.mock1, .mock2, .mock3]
+    appState.allTasks = [Activity.mock1, Activity.mock2, Activity.mock3]
 
     return ContentView()
         .environment(appState)
 }
 
 #Preview("Empty State") {
-    @Previewable @State var appState = AppState(
+    let appState = AppState(
         supabase: supabase,
         taskRepository: .preview
     )
@@ -193,7 +193,7 @@ struct EmptyStateView: View {
 }
 
 #Preview("Loading State") {
-    @Previewable @State var appState = AppState(
+    let appState = AppState(
         supabase: supabase,
         taskRepository: .preview
     )

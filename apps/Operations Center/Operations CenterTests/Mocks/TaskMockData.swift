@@ -11,8 +11,8 @@ import OperationsCenterKit
 
 /// Collection of realistic mock task data
 struct TaskMockData {
-    let strayTasks: [StrayTask]
-    let listingTasks: [ListingTask]
+    let tasks: [AgentTask]
+    let activities: [Activity]
     let listings: [String: Listing] // listingId -> Listing
     let slackMessages: [String: [SlackMessage]]
     let subtasks: [String: [Subtask]]
@@ -20,9 +20,9 @@ struct TaskMockData {
     init() {
         let now = Date()
 
-        // MARK: - Stray Tasks (5 diverse examples)
+        // MARK: - Agent Tasks (5 diverse examples)
 
-        let strayTask1 = StrayTask(
+        let strayTask1 = AgentTask(
             id: "stray-1",
             realtorId: "realtor-001",
             name: "Update CRM with Q4 contacts",
@@ -40,7 +40,7 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask2 = StrayTask(
+        let strayTask2 = AgentTask(
             id: "stray-2",
             realtorId: "realtor-001",
             name: "Schedule photoshoot for portfolio",
@@ -58,7 +58,7 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask3 = StrayTask(
+        let strayTask3 = AgentTask(
             id: "stray-3",
             realtorId: "realtor-002",
             name: "Create Instagram reels from open house",
@@ -76,7 +76,7 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask4 = StrayTask(
+        let strayTask4 = AgentTask(
             id: "stray-4",
             realtorId: "realtor-001",
             name: "Review inspection report formatting",
@@ -94,7 +94,7 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask5 = StrayTask(
+        let strayTask5 = AgentTask(
             id: "stray-5",
             realtorId: "realtor-003",
             name: "Coordinate furniture rental for staging",
@@ -112,11 +112,11 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        strayTasks = [strayTask1, strayTask2, strayTask3, strayTask4, strayTask5]
+        tasks = [strayTask1, strayTask2, strayTask3, strayTask4, strayTask5]
 
-        // MARK: - Listing Tasks (4 diverse examples)
+        // MARK: - Activities (4 diverse examples)
 
-        let listingTask1 = ListingTask(
+        let listingTask1 = Activity(
             id: "listing-1",
             listingId: "listing-001",
             realtorId: "realtor-001",
@@ -138,7 +138,7 @@ struct TaskMockData {
             outputs: nil
         )
 
-        let listingTask2 = ListingTask(
+        let listingTask2 = Activity(
             id: "listing-2",
             listingId: "listing-002",
             realtorId: "realtor-002",
@@ -160,7 +160,7 @@ struct TaskMockData {
             outputs: nil
         )
 
-        let listingTask3 = ListingTask(
+        let listingTask3 = Activity(
             id: "listing-3",
             listingId: "listing-003",
             realtorId: "realtor-001",
@@ -182,7 +182,7 @@ struct TaskMockData {
             outputs: nil
         )
 
-        let listingTask4 = ListingTask(
+        let listingTask4 = Activity(
             id: "listing-4",
             listingId: "listing-004",
             realtorId: "realtor-003",
@@ -204,7 +204,7 @@ struct TaskMockData {
             outputs: nil
         )
 
-        listingTasks = [listingTask1, listingTask2, listingTask3, listingTask4]
+        activities = [listingTask1, listingTask2, listingTask3, listingTask4]
 
         // MARK: - Listings (property data)
 

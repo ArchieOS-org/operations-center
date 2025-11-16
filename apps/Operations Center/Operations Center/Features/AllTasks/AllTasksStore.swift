@@ -18,11 +18,11 @@ import SwiftUI
 final class AllTasksStore {
     // MARK: - Properties
 
-    /// All stray tasks (standalone tasks)
-    private(set) var strayTasks: [StrayTaskWithMessages] = []
+    /// All agent tasks (standalone tasks)
+    private(set) var tasks: [TaskWithMessages] = []
 
-    /// All listing tasks (property-linked tasks)
-    private(set) var listingTasks: [ListingTaskWithDetails] = []
+    /// All activities (property-linked tasks)
+    private(set) var activities: [ActivityWithDetails] = []
 
     /// Currently expanded task ID (only one can be expanded at a time)
     var expandedTaskId: String?
@@ -53,17 +53,17 @@ final class AllTasksStore {
         errorMessage = nil
 
         do {
-            async let strayFetch = repository.fetchStrayTasks()
-            async let listingFetch = repository.fetchListingTasks()
+            async let tasksFetch = repository.fetchTasks()
+            async let activitiesFetch = repository.fetchActivities()
 
-            let (stray, listing) = try await (strayFetch, listingFetch)
+            let (stray, listing) = try await (tasksFetch, activitiesFetch)
 
             // Filter only claimed tasks
-            strayTasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
-            listingTasks = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
+            tasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
+            activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
             Logger.tasks.info(
-                "Fetched \(self.strayTasks.count) stray tasks and \(self.listingTasks.count) listing tasks"
+                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activities"
             )
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
@@ -83,81 +83,84 @@ final class AllTasksStore {
         expandedTaskId = expandedTaskId == taskId ? nil : taskId
     }
 
-    /// Claim a stray task
-    func claimStrayTask(_ task: StrayTask) async {
+    /// Claim a agent task
+    func claimTask(_ task: AgentTask) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
-            _ = try await repository.claimStrayTask(task.id, currentUserId)
+            _ = try await repository.claimTask(task.id, currentUserId)
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to claim stray task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim agent task: \(error.localizedDescription)")
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
         }
     }
 
-    /// Claim a listing task
-    func claimListingTask(_ task: ListingTask) async {
+    /// Claim a activity
+    func claimActivity(_ task: Activity) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
-            _ = try await repository.claimListingTask(task.id, currentUserId)
+            _ = try await repository.claimActivity(task.id, currentUserId)
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
         }
     }
 
-    /// Delete a stray task
-    func deleteStrayTask(_ task: StrayTask) async {
+    /// Delete a agent task
+    func deleteTask(_ task: AgentTask) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
-            try await repository.deleteStrayTask(task.id, currentUserId)
+            try await repository.deleteTask(task.id, currentUserId)
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to delete stray task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete agent task: \(error.localizedDescription)")
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
         }
     }
 
-    /// Delete a listing task
-    func deleteListingTask(_ task: ListingTask) async {
+    /// Delete a activity
+    func deleteActivity(_ task: Activity) async {
         do {
             let currentUserId = "current-user" // TODO: Get from auth
-            try await repository.deleteListingTask(task.id, currentUserId)
+            try await repository.deleteActivity(task.id, currentUserId)
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
         }
     }
 
     // MARK: - Computed Properties
 
-    /// Filtered stray tasks based on team filter
-    var filteredStrayTasks: [StrayTaskWithMessages] {
+    /// Filtered agent tasks based on team filter
+    var filteredTasks: [TaskWithMessages] {
         switch teamFilter {
         case .all:
-            return strayTasks
+            return tasks
         case .marketing:
-            return strayTasks.filter { $0.task.taskCategory == .marketing }
+            return tasks.filter { $0.task.taskCategory == .marketing }
         case .admin:
-            return strayTasks.filter { $0.task.taskCategory == .admin }
+            return tasks.filter { $0.task.taskCategory == .admin }
         }
     }
 
-    /// Filtered listing tasks based on team filter
-    var filteredListingTasks: [ListingTaskWithDetails] {
+    /// Filtered activities based on team filter
+    var filteredActivities: [ActivityWithDetails] {
         switch teamFilter {
         case .all:
-            return listingTasks
+            return activities
         case .marketing:
-            return listingTasks.filter { $0.task.visibilityGroup == .marketing || $0.task.visibilityGroup == .both }
+            return activities.filter { $0.task.visibilityGroup == .marketing || $0.task.visibilityGroup == .both }
         case .admin:
-            return listingTasks.filter { $0.task.visibilityGroup == .agent || $0.task.visibilityGroup == .both }
+            return activities.filter { $0.task.visibilityGroup == .agent || $0.task.visibilityGroup == .both }
         }
     }
 }

@@ -2,7 +2,7 @@
 //  InboxStore.swift
 //  Operations Center
 //
-//  Store for inbox view - manages both stray and listing tasks
+//  Store for inbox view - manages both agent tasks and activities
 //
 
 import Foundation
@@ -14,8 +14,8 @@ import OperationsCenterKit
 final class InboxStore {
     // MARK: - State
 
-    var strayTasks: [StrayTaskWithMessages] = []
-    var listingTasks: [ListingTaskWithDetails] = []
+    var tasks: [TaskWithMessages] = []
+    var activities: [ActivityWithDetails] = []
     var expandedTaskId: String?
     var isLoading = false
     var errorMessage: String?
@@ -29,12 +29,12 @@ final class InboxStore {
     /// Full initializer with optional initial data for previews
     init(
         repository: TaskRepositoryClient,
-        initialStrayTasks: [StrayTaskWithMessages] = [],
-        initialListingTasks: [ListingTaskWithDetails] = []
+        initialTasks: [TaskWithMessages] = [],
+        initialActivities: [ActivityWithDetails] = []
     ) {
         self.repository = repository
-        self.strayTasks = initialStrayTasks
-        self.listingTasks = initialListingTasks
+        self.tasks = initialTasks
+        self.activities = initialActivities
     }
 
     // MARK: - Public Methods
@@ -44,12 +44,12 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Fetch both stray and listing tasks concurrently
-            async let stray = repository.fetchStrayTasks()
-            async let listing = repository.fetchListingTasks()
+            // Fetch both agent tasks and activities concurrently
+            async let stray = repository.fetchTasks()
+            async let listing = repository.fetchActivities()
 
-            strayTasks = try await stray
-            listingTasks = try await listing
+            tasks = try await stray
+            activities = try await listing
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -75,9 +75,9 @@ final class InboxStore {
         expandedTaskId == taskId
     }
 
-    // MARK: - Stray Task Actions
+    // MARK: - Agent Task Actions
 
-    func claimStrayTask(_ task: StrayTask) async {
+    func claimTask(_ task: AgentTask) async {
         errorMessage = nil
 
         do {
@@ -86,7 +86,7 @@ final class InboxStore {
             // TODO: Replace with actual authenticated user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimStrayTask(task.id, currentUserId)
+            _ = try await repository.claimTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -95,14 +95,14 @@ final class InboxStore {
         }
     }
 
-    func deleteStrayTask(_ task: StrayTask) async {
+    func deleteTask(_ task: AgentTask) async {
         errorMessage = nil
 
         do {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteStrayTask(task.id, currentUserId)
+            try await repository.deleteTask(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -111,16 +111,16 @@ final class InboxStore {
         }
     }
 
-    // MARK: - Listing Task Actions
+    // MARK: - Activity Actions
 
-    func claimListingTask(_ task: ListingTask) async {
+    func claimActivity(_ task: Activity) async {
         errorMessage = nil
 
         do {
             // Get current user ID
             let currentUserId = "current-staff-id"
 
-            _ = try await repository.claimListingTask(task.id, currentUserId)
+            _ = try await repository.claimActivity(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()
@@ -129,14 +129,14 @@ final class InboxStore {
         }
     }
 
-    func deleteListingTask(_ task: ListingTask) async {
+    func deleteActivity(_ task: Activity) async {
         errorMessage = nil
 
         do {
             // Get current user ID for audit trail
             let currentUserId = "current-staff-id"
 
-            try await repository.deleteListingTask(task.id, currentUserId)
+            try await repository.deleteActivity(task.id, currentUserId)
 
             // Refresh the list
             await fetchTasks()

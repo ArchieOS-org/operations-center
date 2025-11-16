@@ -18,7 +18,7 @@ final class LogbookStore {
     // MARK: - Properties
 
     private(set) var completedListings: [Listing] = []
-    private(set) var completedTasks: [StrayTask] = []
+    private(set) var completedTasks: [AgentTask] = []
     var errorMessage: String?
     private(set) var isLoading = false
 
@@ -47,7 +47,7 @@ final class LogbookStore {
         do {
             // Fetch in parallel per Context7 pattern
             async let listingsFetch = listingRepository.fetchCompletedListings()
-            async let tasksFetch = taskRepository.fetchCompletedStrayTasks()
+            async let tasksFetch = taskRepository.fetchCompletedTasks()
 
             let (listings, tasks) = try await (listingsFetch, tasksFetch)
 

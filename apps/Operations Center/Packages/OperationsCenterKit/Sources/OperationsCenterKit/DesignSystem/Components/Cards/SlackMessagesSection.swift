@@ -2,7 +2,7 @@
 //  SlackMessagesSection.swift
 //  OperationsCenterKit
 //
-//  Displays Slack messages for stray tasks in expanded state
+//  Displays Slack messages for agent tasks in expanded state
 //
 
 import SwiftUI

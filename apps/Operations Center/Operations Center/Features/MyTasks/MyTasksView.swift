@@ -89,10 +89,10 @@ struct MyTasksView: View {
     // MARK: - Task Card
 
     @ViewBuilder
-    private func taskCard(for task: StrayTask) -> some View {
+    private func taskCard(for task: AgentTask) -> some View {
         let isExpanded = store.expandedTaskId == task.id
 
-        StrayTaskCard(
+        TaskCard(
             task: task,
             messages: [], // TODO: Load Slack messages
             isExpanded: isExpanded,

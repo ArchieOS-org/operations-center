@@ -32,11 +32,11 @@ public enum Colors {
 
     // MARK: - Card Accents
 
-    /// Accent color for stray tasks (orphaned, untethered)
+    /// Accent color for agent tasks (orphaned, untethered)
     public static let strayAccent = Color.orange
 
-    /// Accent color for listing tasks (property-linked, has a home)
-    public static let listingAccent = Color.blue
+    /// Accent color for activities (property-linked, has a home)
+    public static let activityAccent = Color.blue
 
     // MARK: - Card Backgrounds
 
@@ -49,10 +49,10 @@ public enum Colors {
         #endif
     }()
 
-    /// Subtle tint overlay for stray task cards (imperceptible but effective)
+    /// Subtle tint overlay for agent task cards (imperceptible but effective)
     public static let strayCardTint = Color.orange.opacity(0.03)
 
-    /// Subtle tint overlay for listing task cards (imperceptible but effective)
+    /// Subtle tint overlay for activity cards (imperceptible but effective)
     public static let listingCardTint = Color.blue.opacity(0.02)
 
     // MARK: - Actions

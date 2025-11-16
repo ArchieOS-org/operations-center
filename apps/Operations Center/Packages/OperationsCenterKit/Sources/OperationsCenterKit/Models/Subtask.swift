@@ -2,7 +2,7 @@
 //  Subtask.swift
 //  OperationsCenterKit
 //
-//  Represents a subtask within a listing task
+//  Represents a subtask within a activity
 //
 
 import Foundation

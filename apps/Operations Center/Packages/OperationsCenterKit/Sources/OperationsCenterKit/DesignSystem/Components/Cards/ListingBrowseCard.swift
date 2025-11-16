@@ -20,7 +20,7 @@ public struct ListingBrowseCard: View {
 
     public init(
         listing: Listing,
-        onTap: @escaping () -> Void
+        onTap: @escaping () -> Void = {}
     ) {
         self.listing = listing
         self.onTap = onTap
@@ -55,7 +55,7 @@ public struct ListingBrowseCard: View {
 
         // Agent chip
         if let agentId = listing.agentId {
-            chips.append(.agent(name: agentId, style: .listing))
+            chips.append(.agent(name: agentId, style: .activity))
         }
 
         // Listing type chip

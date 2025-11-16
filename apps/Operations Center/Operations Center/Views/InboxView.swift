@@ -2,8 +2,8 @@
 //  InboxView.swift
 //  Operations Center
 //
-//  Inbox view showing both stray and listing tasks
-//  Uses explicit StrayTaskCard and ListingTaskCard components
+//  Inbox view showing both agent tasks and activities
+//  Uses explicit TaskCard and ActivityCard components
 //
 
 import OperationsCenterKit
@@ -25,17 +25,17 @@ struct InboxView: View {
                 InboxErrorView(message: error) {
                     Task { await store.refresh() }
                 }
-            } else if store.strayTasks.isEmpty && store.listingTasks.isEmpty {
+            } else if store.tasks.isEmpty && store.activities.isEmpty {
                 EmptyInboxView()
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         // Listing Tasks Section
-                        if !store.listingTasks.isEmpty {
-                            sectionHeader(title: "Listings", count: store.listingTasks.count)
+                        if !store.activities.isEmpty {
+                            sectionHeader(title: "Listings", count: store.activities.count)
 
-                            ForEach(store.listingTasks, id: \.task.id) { item in
-                                ListingTaskCard(
+                            ForEach(store.activities, id: \.task.id) { item in
+                                ActivityCard(
                                     task: item.task,
                                     listing: item.listing,
                                     subtasks: item.subtasks,
@@ -49,22 +49,22 @@ struct InboxView: View {
                                         Task { await store.toggleSubtask(subtask) }
                                     },
                                     onClaim: {
-                                        Task { await store.claimListingTask(item.task) }
+                                        Task { await store.claimActivity(item.task) }
                                     },
                                     onDelete: {
-                                        Task { await store.deleteListingTask(item.task) }
+                                        Task { await store.deleteActivity(item.task) }
                                     }
                                 )
                                 .id(item.task.id)
                             }
                         }
 
-                        // Stray Tasks Section
-                        if !store.strayTasks.isEmpty {
-                            sectionHeader(title: "Stray Tasks", count: store.strayTasks.count)
+                        // Tasks Section
+                        if !store.tasks.isEmpty {
+                            sectionHeader(title: "Tasks", count: store.tasks.count)
 
-                            ForEach(store.strayTasks, id: \.task.id) { item in
-                                StrayTaskCard(
+                            ForEach(store.tasks, id: \.task.id) { item in
+                                TaskCard(
                                     task: item.task,
                                     messages: item.messages,
                                     isExpanded: store.isExpanded(item.task.id),
@@ -74,10 +74,10 @@ struct InboxView: View {
                                         }
                                     },
                                     onClaim: {
-                                        Task { await store.claimStrayTask(item.task) }
+                                        Task { await store.claimTask(item.task) }
                                     },
                                     onDelete: {
-                                        Task { await store.deleteStrayTask(item.task) }
+                                        Task { await store.deleteTask(item.task) }
                                     }
                                 )
                                 .id(item.task.id)
@@ -167,13 +167,13 @@ struct InboxErrorView: View {
 #Preview("With Mock Data") {
     let store = InboxStore(
         repository: .preview,
-        initialStrayTasks: [
-            StrayTaskWithMessages(task: StrayTask.mock1, messages: [SlackMessage.mock1]),
-            StrayTaskWithMessages(task: StrayTask.mock2, messages: [])
+        initialTasks: [
+            TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
+            TaskWithMessages(task: AgentTask.mock2, messages: [])
         ],
-        initialListingTasks: [
-            ListingTaskWithDetails(task: ListingTask.mock1, listing: Listing.mock1, subtasks: [Subtask.mock1]),
-            ListingTaskWithDetails(task: ListingTask.mock2, listing: Listing.mock2, subtasks: [])
+        initialActivities: [
+            ActivityWithDetails(task: Activity.mock1, listing: Listing.mock1, subtasks: [Subtask.mock1]),
+            ActivityWithDetails(task: Activity.mock2, listing: Listing.mock2, subtasks: [])
         ]
     )
 
@@ -192,7 +192,7 @@ struct InboxErrorView: View {
 }
 
 #Preview("Loading State") {
-    let store = InboxStore(repository: .preview)
+    @Previewable @State var store = InboxStore(repository: .preview)
     store.isLoading = true
 
     return NavigationStack {
@@ -201,7 +201,7 @@ struct InboxErrorView: View {
 }
 
 #Preview("Error State") {
-    let store = InboxStore(repository: .preview)
+    @Previewable @State var store = InboxStore(repository: .preview)
     store.errorMessage = "Failed to connect to server"
 
     return NavigationStack {

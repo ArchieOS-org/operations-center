@@ -81,7 +81,7 @@ This database restructuring properly separates **staff** (internal operations te
 
 ---
 
-### 3. **listing_tasks** - Property-Specific Tasks
+### 3. **activities** - Property-Specific Tasks
 
 **Purpose**: Tasks tied to specific listings
 
@@ -113,17 +113,17 @@ This database restructuring properly separates **staff** (internal operations te
 - `assigned_staff_id` → `staff(staff_id)` ON DELETE SET NULL
 
 **Indexes**:
-- `idx_listing_tasks_listing` ON `(listing_id)` WHERE `deleted_at IS NULL`
-- `idx_listing_tasks_realtor` ON `(realtor_id)` WHERE `deleted_at IS NULL`
-- `idx_listing_tasks_assigned_staff` ON `(assigned_staff_id, due_date)` WHERE `deleted_at IS NULL`
-- `idx_listing_tasks_status` ON `(status, priority DESC)` WHERE `deleted_at IS NULL`
-- `idx_listing_tasks_category` ON `(task_category)` WHERE `deleted_at IS NULL`
-- `idx_listing_tasks_due_date` ON `(due_date)` WHERE `deleted_at IS NULL AND status != 'DONE'`
-- `idx_listing_tasks_listing_status` ON `(listing_id, status, priority DESC)` WHERE `deleted_at IS NULL`
+- `idx_activities_listing` ON `(listing_id)` WHERE `deleted_at IS NULL`
+- `idx_activities_realtor` ON `(realtor_id)` WHERE `deleted_at IS NULL`
+- `idx_activities_assigned_staff` ON `(assigned_staff_id, due_date)` WHERE `deleted_at IS NULL`
+- `idx_activities_status` ON `(status, priority DESC)` WHERE `deleted_at IS NULL`
+- `idx_activities_category` ON `(task_category)` WHERE `deleted_at IS NULL`
+- `idx_activities_due_date` ON `(due_date)` WHERE `deleted_at IS NULL AND status != 'DONE'`
+- `idx_activities_listing_status` ON `(listing_id, status, priority DESC)` WHERE `deleted_at IS NULL`
 
 ---
 
-### 4. **stray_tasks** - Realtor-Specific Tasks
+### 4. **agent_tasks** - Realtor-Specific Tasks
 
 **Purpose**: Tasks for realtors NOT tied to a specific listing
 
@@ -152,12 +152,12 @@ This database restructuring properly separates **staff** (internal operations te
 - `assigned_staff_id` → `staff(staff_id)` ON DELETE SET NULL
 
 **Indexes**:
-- `idx_stray_tasks_realtor` ON `(realtor_id, created_at DESC)` WHERE `deleted_at IS NULL`
-- `idx_stray_tasks_assigned_staff` ON `(assigned_staff_id, due_date)` WHERE `deleted_at IS NULL`
-- `idx_stray_tasks_status` ON `(status, priority DESC)` WHERE `deleted_at IS NULL`
-- `idx_stray_tasks_task_key` ON `(task_key)` WHERE `deleted_at IS NULL`
-- `idx_stray_tasks_due_date` ON `(due_date)` WHERE `deleted_at IS NULL AND status != 'DONE'`
-- `idx_stray_tasks_realtor_status` ON `(realtor_id, status, priority DESC)` WHERE `deleted_at IS NULL`
+- `idx_agent_tasks_realtor` ON `(realtor_id, created_at DESC)` WHERE `deleted_at IS NULL`
+- `idx_agent_tasks_assigned_staff` ON `(assigned_staff_id, due_date)` WHERE `deleted_at IS NULL`
+- `idx_agent_tasks_status` ON `(status, priority DESC)` WHERE `deleted_at IS NULL`
+- `idx_agent_tasks_task_key` ON `(task_key)` WHERE `deleted_at IS NULL`
+- `idx_agent_tasks_due_date` ON `(due_date)` WHERE `deleted_at IS NULL AND status != 'DONE'`
+- `idx_agent_tasks_realtor_status` ON `(realtor_id, status, priority DESC)` WHERE `deleted_at IS NULL`
 
 ---
 
@@ -229,7 +229,7 @@ CREATE INDEX idx_listings_realtor ON listings(realtor_id) WHERE deleted_at IS NU
        │             │
        ▼             ▼
 ┌──────────────┐  ┌──────────────┐
-│listing_tasks │  │ stray_tasks  │
+│activities │  │ agent_tasks  │
 └──────┬───────┘  └──────┬───────┘
        │                  │
        │ (for)            │ (for)
@@ -248,7 +248,7 @@ CREATE INDEX idx_listings_realtor ON listings(realtor_id) WHERE deleted_at IS NU
 
 **Key Relationships**:
 
-1. **Staff → Tasks**: Staff can be assigned to both listing_tasks and stray_tasks
+1. **Staff → Tasks**: Staff can be assigned to both activities and agent_tasks
 2. **Realtors → Listings**: Each listing has one realtor
 3. **Realtors → Stray Tasks**: Stray tasks are always for a specific realtor
 4. **Listings → Listing Tasks**: Listing tasks are tied to a specific listing (CASCADE delete)
@@ -261,13 +261,13 @@ CREATE INDEX idx_listings_realtor ON listings(realtor_id) WHERE deleted_at IS NU
 ### Get all tasks for a staff member
 ```sql
 -- Listing tasks
-SELECT * FROM listing_tasks
+SELECT * FROM activities
 WHERE assigned_staff_id = 'staff_id_here'
   AND deleted_at IS NULL
 ORDER BY due_date;
 
 -- Stray tasks
-SELECT * FROM stray_tasks
+SELECT * FROM agent_tasks
 WHERE assigned_staff_id = 'staff_id_here'
   AND deleted_at IS NULL
 ORDER BY due_date;
@@ -277,14 +277,14 @@ ORDER BY due_date;
 ```sql
 -- Tasks for realtor's listings
 SELECT lt.*, l.address_string
-FROM listing_tasks lt
+FROM activities lt
 JOIN listings l ON lt.listing_id = l.listing_id
 WHERE l.realtor_id = 'realtor_id_here'
   AND lt.deleted_at IS NULL
 ORDER BY lt.priority DESC, lt.due_date;
 
 -- Stray tasks for realtor
-SELECT * FROM stray_tasks
+SELECT * FROM agent_tasks
 WHERE realtor_id = 'realtor_id_here'
   AND deleted_at IS NULL
 ORDER BY priority DESC, due_date;
@@ -293,7 +293,7 @@ ORDER BY priority DESC, due_date;
 ### Get all tasks for a listing
 ```sql
 SELECT lt.*, s.name AS assigned_staff_name
-FROM listing_tasks lt
+FROM activities lt
 LEFT JOIN staff s ON lt.assigned_staff_id = s.staff_id
 WHERE lt.listing_id = 'listing_id_here'
   AND lt.deleted_at IS NULL

@@ -2,7 +2,7 @@
 //  SlackMessage.swift
 //  OperationsCenterKit
 //
-//  Represents a Slack message associated with a stray task
+//  Represents a Slack message associated with a agent task
 //
 
 import Foundation

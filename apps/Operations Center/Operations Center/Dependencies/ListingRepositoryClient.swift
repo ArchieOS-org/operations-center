@@ -112,29 +112,19 @@ extension ListingRepositoryClient {
     /// Preview implementation with mock data for Xcode previews
     public static let preview = Self(
         fetchListings: {
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [Listing.mock1, Listing.mock2, Listing.mock3]
         },
         fetchListing: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
             return Listing.mock1
         },
         fetchListingsByRealtor: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [Listing.mock1, Listing.mock2]
         },
         fetchCompletedListings: {
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             // Return mock3 which is marked as completed
             return [Listing.mock3]
         },
         deleteListing: { _, _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
         }
     )
 }

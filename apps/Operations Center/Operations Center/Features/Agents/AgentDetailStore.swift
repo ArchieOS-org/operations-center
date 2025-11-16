@@ -24,8 +24,8 @@ final class AgentDetailStore {
 
     private(set) var realtor: Realtor?
     private(set) var listings: [ListingWithActivities] = []
-    private(set) var listingTasks: [ListingTaskWithDetails] = []
-    private(set) var strayTasks: [StrayTaskWithMessages] = []
+    private(set) var activities: [ActivityWithDetails] = []
+    private(set) var tasks: [TaskWithMessages] = []
 
     private(set) var isLoading = false
     var errorMessage: String?
@@ -55,24 +55,24 @@ final class AgentDetailStore {
             // Fetch all data in parallel
             async let realtorFetch = realtorRepository.fetchRealtor(realtorId)
             async let listingsFetch = fetchListingsForAgent()
-            async let listingTasksFetch = fetchListingTasksForAgent()
-            async let strayTasksFetch = fetchStrayTasksForAgent()
+            async let activitiesFetch = fetchActivitiesForAgent()
+            async let tasksFetch = fetchTasksForAgent()
 
             // Await all results
-            let (fetchedRealtor, fetchedListings, fetchedListingTasks, fetchedStrayTasks) = try await (
+            let (fetchedRealtor, fetchedListings, fetchedActivities, fetchedTasks) = try await (
                 realtorFetch,
                 listingsFetch,
-                listingTasksFetch,
-                strayTasksFetch
+                activitiesFetch,
+                tasksFetch
             )
 
             self.realtor = fetchedRealtor
             self.listings = fetchedListings
-            self.listingTasks = fetchedListingTasks
-            self.strayTasks = fetchedStrayTasks
+            self.activities = fetchedActivities
+            self.tasks = fetchedTasks
 
             Logger.database.info(
-                "Fetched agent data: \(fetchedListings.count) listings, \(fetchedListingTasks.count) listing tasks, \(fetchedStrayTasks.count) stray tasks"
+                "Fetched agent data: \(fetchedListings.count) listings, \(fetchedActivities.count) activities, \(fetchedTasks.count) agent tasks"
             )
         } catch {
             Logger.database.error("Failed to fetch agent data: \(error.localizedDescription)")
@@ -89,21 +89,21 @@ final class AgentDetailStore {
     // MARK: - Private Helpers
 
     private func fetchListingsForAgent() async throws -> [ListingWithActivities] {
-        // TODO: Implement when ListingRepositoryClient is available
-        // For now return empty array
+        // NOTE: Placeholder until ListingRepositoryClient is available.
+        // For now, return an empty array.
         Logger.database.info("Fetching listings for agent \(self.realtorId)")
         return []
     }
 
-    private func fetchListingTasksForAgent() async throws -> [ListingTaskWithDetails] {
-        Logger.database.info("Fetching listing tasks for agent \(self.realtorId)")
-        let tasks = try await taskRepository.fetchListingTasksByRealtor(realtorId)
+    private func fetchActivitiesForAgent() async throws -> [ActivityWithDetails] {
+        Logger.database.info("Fetching activities for agent \(self.realtorId)")
+        let tasks = try await taskRepository.fetchActivitiesByRealtor(realtorId)
         return tasks
     }
 
-    private func fetchStrayTasksForAgent() async throws -> [StrayTaskWithMessages] {
-        Logger.database.info("Fetching stray tasks for agent \(self.realtorId)")
-        let tasks = try await taskRepository.fetchStrayTasksByRealtor(realtorId)
+    private func fetchTasksForAgent() async throws -> [TaskWithMessages] {
+        Logger.database.info("Fetching agent tasks for agent \(self.realtorId)")
+        let tasks = try await taskRepository.fetchTasksByRealtor(realtorId)
         return tasks
     }
 
@@ -129,23 +129,71 @@ final class AgentDetailStore {
 
     // MARK: - Task Actions
 
-    func claimStrayTask(_ task: StrayTask) async {
-        Logger.tasks.info("Claiming stray task: \(task.id)")
-        // TODO: Implement claim functionality
+    func claimTask(_ task: AgentTask) async {
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            _ = try await taskRepository.claimTask(task.id, currentUserId)
+
+            Logger.tasks.info("Claimed agent task: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to claim agent task: \(error.localizedDescription)")
+            errorMessage = "Failed to claim task: \(error.localizedDescription)"
+        }
     }
 
-    func deleteStrayTask(_ task: StrayTask) async {
-        Logger.tasks.info("Deleting stray task: \(task.id)")
-        // TODO: Implement delete functionality
+    func deleteTask(_ task: AgentTask) async {
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            try await taskRepository.deleteTask(task.id, currentUserId)
+
+            Logger.tasks.info("Deleted agent task: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to delete agent task: \(error.localizedDescription)")
+            errorMessage = "Failed to delete task: \(error.localizedDescription)"
+        }
     }
 
-    func claimListingTask(_ task: ListingTask) async {
-        Logger.tasks.info("Claiming listing task: \(task.id)")
-        // TODO: Implement claim functionality
+    func claimActivity(_ task: Activity) async {
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            _ = try await taskRepository.claimActivity(task.id, currentUserId)
+
+            Logger.tasks.info("Claimed activity: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
+            errorMessage = "Failed to claim activity: \(error.localizedDescription)"
+        }
     }
 
-    func deleteListingTask(_ task: ListingTask) async {
-        Logger.tasks.info("Deleting listing task: \(task.id)")
-        // TODO: Implement delete functionality
+    func deleteActivity(_ task: Activity) async {
+        errorMessage = nil
+
+        do {
+            let currentUserId = "current-staff-id"
+            try await taskRepository.deleteActivity(task.id, currentUserId)
+
+            Logger.tasks.info("Deleted activity: \(task.id)")
+
+            // Refresh to get updated data
+            await fetchAgentData()
+        } catch {
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
+            errorMessage = "Failed to delete activity: \(error.localizedDescription)"
+        }
     }
 }
