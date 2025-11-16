@@ -99,7 +99,7 @@ public enum RealtorStatus: String, Codable, Sendable, CaseIterable {
 // MARK: - Mock Data
 
 public extension Realtor {
-    // Fixed dates for deterministic mock data (maintains Hashable/Equatable contracts)
+    // Fixed epoch date for deterministic, repeatable test data
     private static let baseDate = Date(timeIntervalSince1970: 1704067200) // 2024-01-01 00:00:00 UTC
 
     static let mock1 = Realtor(
