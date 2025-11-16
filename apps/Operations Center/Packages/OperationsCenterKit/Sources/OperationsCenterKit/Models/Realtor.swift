@@ -9,7 +9,8 @@
 import Foundation
 
 /// Real estate agent or broker (external client)
-public struct Realtor: Identifiable, Codable, Hashable, Sendable {
+/// Note: Not Hashable due to flexible metadata field supporting arbitrary JSON
+public struct Realtor: Identifiable, Codable, Sendable {
     // MARK: - Properties
 
     public let id: String
@@ -24,7 +25,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
     public let createdAt: Date
     public let updatedAt: Date
     public let deletedAt: Date?
-    public let metadata: [String: String]?
+    public let metadata: [String: AnyCodable]?
 
     // MARK: - Initialization
 
@@ -41,7 +42,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         deletedAt: Date? = nil,
-        metadata: [String: String]? = nil
+        metadata: [String: AnyCodable]? = nil
     ) {
         self.id = id
         self.email = email
@@ -79,7 +80,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
 
 // MARK: - Realtor Status
 
-public enum RealtorStatus: String, Codable, Hashable, Sendable, CaseIterable {
+public enum RealtorStatus: String, Codable, Sendable, CaseIterable {
     case active
     case inactive
     case suspended
@@ -98,54 +99,49 @@ public enum RealtorStatus: String, Codable, Hashable, Sendable, CaseIterable {
 // MARK: - Mock Data
 
 public extension Realtor {
-    static var mock1: Realtor {
-        Realtor(
-            id: "realtor_001",
-            email: "sarah.johnson@example.com",
-            name: "Sarah Johnson",
-            phone: "+1-555-0123",
-            licenseNumber: "CA-DRE-12345678",
-            brokerage: "Prestige Realty Group",
-            slackUserId: "U01ABC123",
-            territories: ["San Francisco", "Oakland", "Berkeley"],
-            status: .active,
-            createdAt: Date().addingTimeInterval(-86400 * 90),
-            updatedAt: Date().addingTimeInterval(-86400 * 5)
-        )
-    }
+    // Fixed epoch date for deterministic, repeatable test data
+    private static let baseDate = Date(timeIntervalSince1970: 1704067200) // 2024-01-01 00:00:00 UTC
 
-    static var mock2: Realtor {
-        Realtor(
-            id: "realtor_002",
-            email: "michael.chen@example.com",
-            name: "Michael Chen",
-            phone: "+1-555-0456",
-            licenseNumber: "CA-DRE-87654321",
-            brokerage: "Bay Area Properties",
-            slackUserId: "U01DEF456",
-            territories: ["San Jose", "Palo Alto", "Mountain View"],
-            status: .active,
-            createdAt: Date().addingTimeInterval(-86400 * 120),
-            updatedAt: Date().addingTimeInterval(-86400 * 2)
-        )
-    }
+    static let mock1 = Realtor(
+        id: "realtor_001",
+        email: "sarah.johnson@example.com",
+        name: "Sarah Johnson",
+        phone: "+1-555-0123",
+        licenseNumber: "CA-DRE-12345678",
+        brokerage: "Prestige Realty Group",
+        slackUserId: "U01ABC123",
+        territories: ["San Francisco", "Oakland", "Berkeley"],
+        status: .active,
+        createdAt: baseDate.addingTimeInterval(-86400 * 90),  // 90 days before base
+        updatedAt: baseDate.addingTimeInterval(-86400 * 5)    // 5 days before base
+    )
 
-    static var mock3: Realtor {
-        Realtor(
-            id: "realtor_003",
-            email: "jessica.martinez@example.com",
-            name: "Jessica Martinez",
-            phone: "+1-555-0789",
-            licenseNumber: "CA-DRE-11223344",
-            brokerage: "Golden Gate Realty",
-            territories: ["San Rafael", "Sausalito", "Mill Valley"],
-            status: .inactive,
-            createdAt: Date().addingTimeInterval(-86400 * 60),
-            updatedAt: Date().addingTimeInterval(-86400 * 30)
-        )
-    }
+    static let mock2 = Realtor(
+        id: "realtor_002",
+        email: "michael.chen@example.com",
+        name: "Michael Chen",
+        phone: "+1-555-0456",
+        licenseNumber: "CA-DRE-87654321",
+        brokerage: "Bay Area Properties",
+        slackUserId: "U01DEF456",
+        territories: ["San Jose", "Palo Alto", "Mountain View"],
+        status: .active,
+        createdAt: baseDate.addingTimeInterval(-86400 * 120), // 120 days before base
+        updatedAt: baseDate.addingTimeInterval(-86400 * 2)    // 2 days before base
+    )
 
-    static var mockList: [Realtor] {
-        [mock1, mock2, mock3]
-    }
+    static let mock3 = Realtor(
+        id: "realtor_003",
+        email: "jessica.martinez@example.com",
+        name: "Jessica Martinez",
+        phone: "+1-555-0789",
+        licenseNumber: "CA-DRE-11223344",
+        brokerage: "Golden Gate Realty",
+        territories: ["San Rafael", "Sausalito", "Mill Valley"],
+        status: .inactive,
+        createdAt: baseDate.addingTimeInterval(-86400 * 60),  // 60 days before base
+        updatedAt: baseDate.addingTimeInterval(-86400 * 30)   // 30 days before base
+    )
+
+    static let mockList: [Realtor] = [mock1, mock2, mock3]
 }
