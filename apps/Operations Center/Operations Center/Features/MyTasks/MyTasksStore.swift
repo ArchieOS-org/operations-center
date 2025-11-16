@@ -76,8 +76,7 @@ final class MyTasksStore {
     /// Per spec line 428: "Press: Claim for yourself"
     func claimTask(_ task: StrayTask) async {
         do {
-            // TODO: Use actual user ID when auth is implemented
-            _ = try await repository.claimStrayTask(task.id, "current-user")
+            _ = try await repository.claimStrayTask(task.id, currentUserId)
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
@@ -87,8 +86,7 @@ final class MyTasksStore {
     /// Delete a task
     func deleteTask(_ task: StrayTask) async {
         do {
-            // TODO: Use actual user ID when auth is implemented
-            try await repository.deleteStrayTask(task.id, "current-user")
+            try await repository.deleteStrayTask(task.id, currentUserId)
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
