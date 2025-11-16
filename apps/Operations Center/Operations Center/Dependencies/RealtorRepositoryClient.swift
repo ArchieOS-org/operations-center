@@ -16,7 +16,7 @@ import Supabase
 public struct RealtorRepositoryClient {
     /// Fetch all active realtors/agents
     public var fetchRealtors: @Sendable () async throws -> [Realtor]
-    
+
     /// Fetch a specific realtor by ID
     public var fetchRealtor: @Sendable (_ realtorId: String) async throws -> Realtor?
 }
@@ -28,7 +28,7 @@ extension RealtorRepositoryClient {
     public static let live = Self(
         fetchRealtors: {
             Logger.database.info("Fetching all active realtors")
-            
+
             let realtors: [Realtor] = try await supabase
                 .from("realtors")
                 .select()
@@ -37,13 +37,13 @@ extension RealtorRepositoryClient {
                 .order("name", ascending: true)
                 .execute()
                 .value
-            
+
             Logger.database.info("Fetched \(realtors.count) active realtors")
             return realtors
         },
         fetchRealtor: { realtorId in
             Logger.database.info("Fetching realtor: \(realtorId)")
-            
+
             let realtors: [Realtor] = try await supabase
                 .from("realtors")
                 .select()
@@ -51,7 +51,7 @@ extension RealtorRepositoryClient {
                 .is("deleted_at", value: nil)
                 .execute()
                 .value
-            
+
             return realtors.first
         }
     )

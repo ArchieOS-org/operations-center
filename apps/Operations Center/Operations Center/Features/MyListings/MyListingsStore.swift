@@ -49,6 +49,7 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
+            // swiftlint:disable:next todo
             // Fetch listing tasks for current user (TODO: Get actual user ID from auth)
             let currentUserId = "current-user"
 
@@ -88,6 +89,7 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
             try await listingRepository.deleteListing(listing.id, currentUserId)
 

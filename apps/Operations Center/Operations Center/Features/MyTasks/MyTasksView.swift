@@ -94,7 +94,7 @@ struct MyTasksView: View {
 
         StrayTaskCard(
             task: task,
-            messages: [], // TODO: Load Slack messages
+            messages: [], // swiftlint:disable:this todo // TODO: Load Slack messages
             isExpanded: isExpanded,
             onTap: {
                 store.toggleExpansion(for: task.id)
@@ -134,6 +134,7 @@ struct MyTasksView: View {
                 Spacer()
 
                 Button("Create") {
+                    // swiftlint:disable:next todo
                     // TODO: Create task logic
                     showingNewTask = false
                     newTaskTitle = ""

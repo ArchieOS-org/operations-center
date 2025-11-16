@@ -14,7 +14,11 @@ import Supabase
 /// Repository client for listing notes operations
 public struct ListingNoteRepositoryClient {
     public var fetchNotes: @Sendable (_ listingId: String) async throws -> [ListingNote]
-    public var createNote: @Sendable (_ listingId: String, _ content: String, _ createdBy: String) async throws -> ListingNote
+    public var createNote: @Sendable (
+        _ listingId: String,
+        _ content: String,
+        _ createdBy: String
+    ) async throws -> ListingNote
     public var deleteNote: @Sendable (_ noteId: String) async throws -> Void
 }
 

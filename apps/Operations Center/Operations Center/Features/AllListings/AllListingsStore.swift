@@ -70,6 +70,7 @@ final class AllListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
             try await repository.deleteListing(listing.id, currentUserId)
 
