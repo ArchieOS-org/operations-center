@@ -18,10 +18,10 @@ import SwiftUI
 final class AllTasksStore {
     // MARK: - Properties
 
-    /// All stray tasks (standalone tasks)
+    /// All agent tasks (standalone tasks)
     private(set) var tasks: [TaskWithMessages] = []
 
-    /// All listing tasks (property-linked tasks)
+    /// All activitys (property-linked tasks)
     private(set) var activities: [ActivityWithDetails] = []
 
     /// Currently expanded task ID (only one can be expanded at a time)
@@ -63,7 +63,7 @@ final class AllTasksStore {
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
             Logger.tasks.info(
-                "Fetched \(self.tasks.count) stray tasks and \(self.activities.count) listing tasks"
+                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activitys"
             )
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
@@ -83,7 +83,7 @@ final class AllTasksStore {
         expandedTaskId = expandedTaskId == taskId ? nil : taskId
     }
 
-    /// Claim a stray task
+    /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
             let currentUserId = "current-user" // TODO: Get from auth
@@ -91,12 +91,12 @@ final class AllTasksStore {
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to claim stray task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim agent task: \(error.localizedDescription)")
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
         }
     }
 
-    /// Claim a listing task
+    /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
             let currentUserId = "current-user" // TODO: Get from auth
@@ -104,12 +104,12 @@ final class AllTasksStore {
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
         }
     }
 
-    /// Delete a stray task
+    /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
             let currentUserId = "current-user" // TODO: Get from auth
@@ -117,12 +117,12 @@ final class AllTasksStore {
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to delete stray task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete agent task: \(error.localizedDescription)")
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
         }
     }
 
-    /// Delete a listing task
+    /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
             let currentUserId = "current-user" // TODO: Get from auth
@@ -130,14 +130,14 @@ final class AllTasksStore {
 
             await refresh()
         } catch {
-            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
         }
     }
 
     // MARK: - Computed Properties
 
-    /// Filtered stray tasks based on team filter
+    /// Filtered agent tasks based on team filter
     var filteredTasks: [TaskWithMessages] {
         switch teamFilter {
         case .all:
@@ -149,7 +149,7 @@ final class AllTasksStore {
         }
     }
 
-    /// Filtered listing tasks based on team filter
+    /// Filtered activitys based on team filter
     var filteredActivities: [ActivityWithDetails] {
         switch teamFilter {
         case .all:

@@ -59,7 +59,7 @@ final class AgentDetailStore {
             async let tasksFetch = fetchTasksForAgent()
 
             // Await all results
-            let (fetchedRealtor, fetchedListings, fetchedListingTasks, fetchedStrayTasks) = try await (
+            let (fetchedRealtor, fetchedListings, fetchedActivities, fetchedTasks) = try await (
                 realtorFetch,
                 listingsFetch,
                 activitiesFetch,
@@ -68,11 +68,11 @@ final class AgentDetailStore {
 
             self.realtor = fetchedRealtor
             self.listings = fetchedListings
-            self.activities = fetchedListingTasks
-            self.tasks = fetchedStrayTasks
+            self.activities = fetchedActivities
+            self.tasks = fetchedTasks
 
             Logger.database.info(
-                "Fetched agent data: \(fetchedListings.count) listings, \(fetchedListingTasks.count) listing tasks, \(fetchedStrayTasks.count) stray tasks"
+                "Fetched agent data: \(fetchedListings.count) listings, \(fetchedActivities.count) activities, \(fetchedTasks.count) agent tasks"
             )
         } catch {
             Logger.database.error("Failed to fetch agent data: \(error.localizedDescription)")
@@ -96,13 +96,13 @@ final class AgentDetailStore {
     }
 
     private func fetchActivitiesForAgent() async throws -> [ActivityWithDetails] {
-        Logger.database.info("Fetching listing tasks for agent \(self.realtorId)")
+        Logger.database.info("Fetching activities for agent \(self.realtorId)")
         let tasks = try await taskRepository.fetchActivitiesByRealtor(realtorId)
         return tasks
     }
 
     private func fetchTasksForAgent() async throws -> [TaskWithMessages] {
-        Logger.database.info("Fetching stray tasks for agent \(self.realtorId)")
+        Logger.database.info("Fetching agent tasks for agent \(self.realtorId)")
         let tasks = try await taskRepository.fetchTasksByRealtor(realtorId)
         return tasks
     }
@@ -130,22 +130,22 @@ final class AgentDetailStore {
     // MARK: - Task Actions
 
     func claimTask(_ task: AgentTask) async {
-        Logger.tasks.info("Claiming stray task: \(task.id)")
+        Logger.tasks.info("Claiming agent task: \(task.id)")
         // TODO: Implement claim functionality
     }
 
     func deleteTask(_ task: AgentTask) async {
-        Logger.tasks.info("Deleting stray task: \(task.id)")
+        Logger.tasks.info("Deleting agent task: \(task.id)")
         // TODO: Implement delete functionality
     }
 
     func claimActivity(_ task: Activity) async {
-        Logger.tasks.info("Claiming listing task: \(task.id)")
+        Logger.tasks.info("Claiming activity: \(task.id)")
         // TODO: Implement claim functionality
     }
 
     func deleteActivity(_ task: Activity) async {
-        Logger.tasks.info("Deleting listing task: \(task.id)")
+        Logger.tasks.info("Deleting activity: \(task.id)")
         // TODO: Implement delete functionality
     }
 }

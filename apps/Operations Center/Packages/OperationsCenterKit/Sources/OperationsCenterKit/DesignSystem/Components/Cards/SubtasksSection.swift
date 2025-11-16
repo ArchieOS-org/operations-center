@@ -2,7 +2,7 @@
 //  SubtasksSection.swift
 //  OperationsCenterKit
 //
-//  Displays subtasks for listing tasks in expanded state
+//  Displays subtasks for activities in expanded state
 //
 
 import SwiftUI

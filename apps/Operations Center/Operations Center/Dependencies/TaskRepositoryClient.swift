@@ -280,7 +280,7 @@ extension TaskRepositoryClient {
                     .execute()
                     .value
 
-                Logger.database.info("Fetched \(tasks.count) completed stray tasks")
+                Logger.database.info("Fetched \(tasks.count) completed agent tasks")
                 return tasks
             }
         )
