@@ -110,16 +110,6 @@ struct MyTasksView: View {
             isExpanded: isExpanded,
             onTap: {
                 store.toggleExpansion(for: task.id)
-            },
-            onClaim: {
-                Task {
-                    await store.claimTask(task)
-                }
-            },
-            onDelete: {
-                Task {
-                    await store.deleteTask(task)
-                }
             }
         )
         .animation(.spring(duration: 0.3, bounce: 0.1), value: isExpanded)

@@ -47,12 +47,6 @@ struct InboxView: View {
                                     },
                                     onSubtaskToggle: { subtask in
                                         Task { await store.toggleSubtask(subtask) }
-                                    },
-                                    onClaim: {
-                                        Task { await store.claimActivity(item.task) }
-                                    },
-                                    onDelete: {
-                                        Task { await store.deleteActivity(item.task) }
                                     }
                                 )
                                 .id(item.task.id)
@@ -72,12 +66,6 @@ struct InboxView: View {
                                         withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
                                             store.toggleExpansion(for: item.task.id)
                                         }
-                                    },
-                                    onClaim: {
-                                        Task { await store.claimTask(item.task) }
-                                    },
-                                    onDelete: {
-                                        Task { await store.deleteTask(item.task) }
                                     }
                                 )
                                 .id(item.task.id)

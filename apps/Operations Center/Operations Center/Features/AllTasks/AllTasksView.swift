@@ -123,16 +123,6 @@ struct AllTasksView: View {
                         isExpanded: store.expandedTaskId == taskWithMessages.task.id,
                         onTap: {
                             store.toggleExpansion(for: taskWithMessages.task.id)
-                        },
-                        onClaim: {
-                            Task {
-                                await store.claimTask(taskWithMessages.task)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await store.deleteTask(taskWithMessages.task)
-                            }
                         }
                     )
                     .listRowSeparator(.hidden)
@@ -157,16 +147,6 @@ struct AllTasksView: View {
                         },
                         onSubtaskToggle: { _ in
                             // TODO: Implement subtask toggle
-                        },
-                        onClaim: {
-                            Task {
-                                await store.claimActivity(taskWithDetails.task)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await store.deleteActivity(taskWithDetails.task)
-                            }
                         }
                     )
                     .listRowSeparator(.hidden)

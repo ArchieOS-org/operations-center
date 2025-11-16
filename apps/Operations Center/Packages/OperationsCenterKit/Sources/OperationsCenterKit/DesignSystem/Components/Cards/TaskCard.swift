@@ -16,8 +16,6 @@ public struct TaskCard: View {
     let messages: [SlackMessage]
     let isExpanded: Bool
     let onTap: () -> Void
-    let onClaim: () -> Void
-    let onDelete: () -> Void
 
     // MARK: - Initialization
 
@@ -25,16 +23,12 @@ public struct TaskCard: View {
         task: AgentTask,
         messages: [SlackMessage],
         isExpanded: Bool,
-        onTap: @escaping () -> Void,
-        onClaim: @escaping () -> Void,
-        onDelete: @escaping () -> Void
+        onTap: @escaping () -> Void
     ) {
         self.task = task
         self.messages = messages
         self.isExpanded = isExpanded
         self.onTap = onTap
-        self.onClaim = onClaim
-        self.onDelete = onDelete
     }
 
     // MARK: - Body
@@ -101,9 +95,7 @@ public struct TaskCard: View {
         task: AgentTask.mock1,
         messages: [],
         isExpanded: false,
-        onTap: {},
-        onClaim: {},
-        onDelete: {}
+        onTap: {}
     )
     .padding()
 }
@@ -118,9 +110,7 @@ public struct TaskCard: View {
         task: AgentTask.mock2,
         messages: messages,
         isExpanded: true,
-        onTap: {},
-        onClaim: {},
-        onDelete: {}
+        onTap: {}
     )
     .padding()
 }

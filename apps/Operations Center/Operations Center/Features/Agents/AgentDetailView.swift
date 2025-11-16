@@ -202,16 +202,6 @@ struct AgentDetailView: View {
                         },
                         onSubtaskToggle: { _ in
                             // TODO: Implement subtask toggle
-                        },
-                        onClaim: {
-                            Task {
-                                await store.claimActivity(taskWithDetails.task)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await store.deleteActivity(taskWithDetails.task)
-                            }
                         }
                     )
                     .listRowSeparator(.hidden)
@@ -232,16 +222,6 @@ struct AgentDetailView: View {
                         isExpanded: store.expandedTaskId == taskWithMessages.task.id,
                         onTap: {
                             store.toggleTaskExpansion(for: taskWithMessages.task.id)
-                        },
-                        onClaim: {
-                            Task {
-                                await store.claimTask(taskWithMessages.task)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await store.deleteTask(taskWithMessages.task)
-                            }
                         }
                     )
                     .listRowSeparator(.hidden)

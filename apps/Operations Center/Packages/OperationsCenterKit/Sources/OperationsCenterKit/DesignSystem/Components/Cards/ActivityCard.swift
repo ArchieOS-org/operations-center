@@ -18,8 +18,6 @@ public struct ActivityCard: View {
     let isExpanded: Bool
     let onTap: () -> Void
     let onSubtaskToggle: (Subtask) -> Void
-    let onClaim: () -> Void
-    let onDelete: () -> Void
 
     // MARK: - Initialization
 
@@ -29,9 +27,7 @@ public struct ActivityCard: View {
         subtasks: [Subtask],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
-        onSubtaskToggle: @escaping (Subtask) -> Void,
-        onClaim: @escaping () -> Void,
-        onDelete: @escaping () -> Void
+        onSubtaskToggle: @escaping (Subtask) -> Void
     ) {
         self.task = task
         self.listing = listing
@@ -39,8 +35,6 @@ public struct ActivityCard: View {
         self.isExpanded = isExpanded
         self.onTap = onTap
         self.onSubtaskToggle = onSubtaskToggle
-        self.onClaim = onClaim
-        self.onDelete = onDelete
     }
 
     // MARK: - Body
@@ -163,9 +157,7 @@ public struct ActivityCard: View {
         subtasks: [],
         isExpanded: false,
         onTap: {},
-        onSubtaskToggle: { _ in },
-        onClaim: {},
-        onDelete: {}
+        onSubtaskToggle: { _ in }
     )
     .padding()
 }
@@ -248,9 +240,7 @@ public struct ActivityCard: View {
         subtasks: subtasks,
         isExpanded: true,
         onTap: {},
-        onSubtaskToggle: { _ in },
-        onClaim: {},
-        onDelete: {}
+        onSubtaskToggle: { _ in }
     )
     .padding()
 }
