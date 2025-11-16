@@ -55,8 +55,8 @@ final class MyTasksStore {
             let tasksResults = try await repository.fetchTasks()
 
             // Filter for agent tasks claimed by me - break up for type-checker
-            let allStrayTasks = tasksResults.map(\.task)
-            tasks = allStrayTasks.filter { task in
+            let allAgentTasks = tasksResults.map(\.task)
+            tasks = allAgentTasks.filter { task in
                 task.assignedStaffId == currentUserId &&
                 (task.status == .claimed || task.status == .inProgress)
             }

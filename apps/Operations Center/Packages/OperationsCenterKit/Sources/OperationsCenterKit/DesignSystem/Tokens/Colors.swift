@@ -32,10 +32,10 @@ public enum Colors {
 
     // MARK: - Card Accents
 
-    /// Accent color for agent tasks (orphaned, untethered)
-    public static let strayAccent = Color.orange
+    /// Accent color for agent tasks
+    public static let agentTaskAccent = Color.orange
 
-    /// Accent color for activities (property-linked, has a home)
+    /// Accent color for activities (property-linked)
     public static let activityAccent = Color.blue
 
     // MARK: - Card Backgrounds
@@ -49,10 +49,10 @@ public enum Colors {
         #endif
     }()
 
-    /// Subtle tint overlay for agent task cards (imperceptible but effective)
-    public static let strayCardTint = Color.orange.opacity(0.03)
+    /// Subtle tint overlay for agent task cards
+    public static let agentTaskCardTint = Color.orange.opacity(0.03)
 
-    /// Subtle tint overlay for activity cards (imperceptible but effective)
+    /// Subtle tint overlay for activity cards
     public static let listingCardTint = Color.blue.opacity(0.02)
 
     // MARK: - Actions
@@ -83,7 +83,9 @@ public enum Colors {
 
     // MARK: - Input & Notes
 
-    /// Background for text input fields
+    /// Background for text input fields (active input areas)
+    /// Kept separate from noteRowBackground despite identical implementation
+    /// to allow independent evolution (e.g., input might use tertiary system background)
     public static let textFieldBackground: Color = {
         #if canImport(UIKit)
         return Color(uiColor: .secondarySystemBackground)
@@ -92,7 +94,8 @@ public enum Colors {
         #endif
     }()
 
-    /// Background for note rows
+    /// Background for note rows (read-only display containers)
+    /// Kept separate from textFieldBackground for semantic clarity
     public static let noteRowBackground: Color = {
         #if canImport(UIKit)
         return Color(uiColor: .secondarySystemBackground)

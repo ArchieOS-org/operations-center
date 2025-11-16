@@ -46,7 +46,7 @@ public struct NotesSection: View {
                 .cornerRadius(CornerRadius.sm)
                 .focused($isInputFocused)
                 .submitLabel(.done)
-                .onChange(of: newNoteText) { _, newValue in
+                .onChange(of: newNoteText) { newValue in
                     guard isInputFocused else { return }
                     guard newValue.last == "\n" else { return }
 
@@ -73,7 +73,7 @@ public struct NotesSection: View {
                             proxy.scrollTo(lastNote.id, anchor: .bottom)
                         }
                     }
-                    .onChange(of: notes.count) { _, _ in
+                    .onChange(of: notes.count) { _ in
                         // Auto-scroll to newest note (at bottom)
                         if let lastNote = notes.last {
                             withAnimation {

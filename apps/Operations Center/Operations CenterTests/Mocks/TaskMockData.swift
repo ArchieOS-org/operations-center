@@ -22,8 +22,8 @@ struct TaskMockData {
 
         // MARK: - Agent Tasks (5 diverse examples)
 
-        let strayTask1 = AgentTask(
-            id: "stray-1",
+        let agentTask1 = AgentTask(
+            id: "agent-task-1",
             realtorId: "realtor-001",
             name: "Update CRM with Q4 contacts",
             description: "Need to import all new contacts from networking events into CRM",
@@ -40,8 +40,8 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask2 = AgentTask(
-            id: "stray-2",
+        let agentTask2 = AgentTask(
+            id: "agent-task-2",
             realtorId: "realtor-001",
             name: "Schedule photoshoot for portfolio",
             description: "Need professional photos of recent staging work",
@@ -58,8 +58,8 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask3 = AgentTask(
-            id: "stray-3",
+        let agentTask3 = AgentTask(
+            id: "agent-task-3",
             realtorId: "realtor-002",
             name: "Create Instagram reels from open house",
             description: "Edit video clips from last weekend's open house",
@@ -76,8 +76,8 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask4 = AgentTask(
-            id: "stray-4",
+        let agentTask4 = AgentTask(
+            id: "agent-task-4",
             realtorId: "realtor-001",
             name: "Review inspection report formatting",
             description: "New inspector using different template format",
@@ -94,8 +94,8 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        let strayTask5 = AgentTask(
-            id: "stray-5",
+        let agentTask5 = AgentTask(
+            id: "agent-task-5",
             realtorId: "realtor-003",
             name: "Coordinate furniture rental for staging",
             description: "Client wants modern farmhouse aesthetic",
@@ -112,7 +112,7 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        tasks = [strayTask1, strayTask2, strayTask3, strayTask4, strayTask5]
+        tasks = [agentTask1, agentTask2, agentTask3, agentTask4, agentTask5]
 
         // MARK: - Activities (4 diverse examples)
 
@@ -274,10 +274,10 @@ struct TaskMockData {
         // MARK: - Slack Messages
 
         slackMessages = [
-            "stray-1": [
+            "agent-task-1": [
                 SlackMessage(
                     id: "msg-1",
-                    taskId: "stray-1",
+                    taskId: "agent-task-1",
                     channelId: "C123ABC",
                     threadTs: "1699564800.123456",
                     messageTs: "1699564800.123456",
@@ -287,7 +287,7 @@ struct TaskMockData {
                 ),
                 SlackMessage(
                     id: "msg-2",
-                    taskId: "stray-1",
+                    taskId: "agent-task-1",
                     channelId: "C123ABC",
                     threadTs: "1699564800.123456",
                     messageTs: "1699651200.789012",
@@ -296,10 +296,10 @@ struct TaskMockData {
                     timestamp: now.addingTimeInterval(-4 * 24 * 3600)
                 )
             ],
-            "stray-2": [
+            "agent-task-2": [
                 SlackMessage(
                     id: "msg-3",
-                    taskId: "stray-2",
+                    taskId: "agent-task-2",
                     channelId: "C456DEF",
                     threadTs: "1699824000.345678",
                     messageTs: "1699824000.345678",
@@ -308,10 +308,10 @@ struct TaskMockData {
                     timestamp: now.addingTimeInterval(-1 * 24 * 3600)
                 )
             ],
-            "stray-3": [
+            "agent-task-3": [
                 SlackMessage(
                     id: "msg-4",
-                    taskId: "stray-3",
+                    taskId: "agent-task-3",
                     channelId: "C789GHI",
                     threadTs: "1699887600.901234",
                     messageTs: "1699887600.901234",
@@ -321,7 +321,7 @@ struct TaskMockData {
                 ),
                 SlackMessage(
                     id: "msg-5",
-                    taskId: "stray-3",
+                    taskId: "agent-task-3",
                     channelId: "C789GHI",
                     threadTs: "1699887600.901234",
                     messageTs: "1699891200.567890",
@@ -330,10 +330,10 @@ struct TaskMockData {
                     timestamp: now.addingTimeInterval(-5 * 3600)
                 )
             ],
-            "stray-4": [
+            "agent-task-4": [
                 SlackMessage(
                     id: "msg-6",
-                    taskId: "stray-4",
+                    taskId: "agent-task-4",
                     channelId: "C101JKL",
                     threadTs: "1699898400.123789",
                     messageTs: "1699898400.123789",

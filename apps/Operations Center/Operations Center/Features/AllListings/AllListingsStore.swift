@@ -21,9 +21,6 @@ final class AllListingsStore {
     /// All listings
     private(set) var listings: [Listing] = []
 
-    /// Currently expanded listing ID (only one can be expanded at a time)
-    var expandedListingId: String?
-
     /// Error message to display
     var errorMessage: String?
 
@@ -60,11 +57,6 @@ final class AllListingsStore {
     /// Refresh data
     func refresh() async {
         await fetchAllListings()
-    }
-
-    /// Toggle expansion for a listing
-    func toggleExpansion(for listingId: String) {
-        expandedListingId = expandedListingId == listingId ? nil : listingId
     }
 
     /// Delete a listing

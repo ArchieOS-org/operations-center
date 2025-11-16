@@ -129,12 +129,12 @@ enum ChipData: Identifiable {
 
 // MARK: - Preview
 
-#Preview("Stray Task Header") {
+#Preview("Agent Task Header") {
     CardHeader(
         title: "Update CRM with Q4 contacts",
         subtitle: nil,
         chips: [
-            .agent(name: "Sarah Chen", style: .stray),
+            .agent(name: "Sarah Chen", style: .agentTask),
             .dueDate(Date().addingTimeInterval(-2 * 24 * 3600)) // Overdue
         ]
     )

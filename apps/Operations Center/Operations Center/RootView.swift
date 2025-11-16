@@ -74,7 +74,11 @@ struct RootView: View {
 
         switch route {
         case .inbox:
-            InboxView(store: InboxStore(repository: taskRepo))
+            InboxView(store: InboxStore(
+                taskRepository: taskRepo,
+                noteRepository: noteRepo,
+                realtorRepository: realtorRepo
+            ))
         case .myTasks:
             MyTasksView(repository: taskRepo)
         case .myListings:

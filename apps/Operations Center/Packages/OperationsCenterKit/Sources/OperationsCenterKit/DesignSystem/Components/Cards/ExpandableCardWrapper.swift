@@ -90,7 +90,7 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
 
 #Preview("Collapsed") {
     ExpandableCardWrapper(
-        tintColor: Colors.strayCardTint,
+        tintColor: Colors.agentTaskCardTint,
         isExpanded: false,
         onTap: {}
     ) {
@@ -113,7 +113,7 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
 
 #Preview("Expanded") {
     ExpandableCardWrapper(
-        tintColor: Colors.strayCardTint,
+        tintColor: Colors.agentTaskCardTint,
         isExpanded: true,
         onTap: {}
     ) {

@@ -89,9 +89,9 @@ struct CardBase<Content: View>: View {
 
 // MARK: - Preview
 
-#Preview("Stray Card Base") {
+#Preview("Agent Task Card Base") {
     CardBase(
-        tintColor: Colors.strayCardTint,
+        tintColor: Colors.agentTaskCardTint,
         isExpanded: false,
         onTap: {}
     ) {
