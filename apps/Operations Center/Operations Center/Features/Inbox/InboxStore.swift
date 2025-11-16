@@ -2,7 +2,7 @@
 //  InboxStore.swift
 //  Operations Center
 //
-//  Store for inbox view - manages both stray and listing tasks
+//  Store for inbox view - manages both agent tasks and activities
 //
 
 import Foundation
@@ -44,7 +44,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Fetch both stray and listing tasks concurrently
+            // Fetch both agent tasks and activities concurrently
             async let stray = repository.fetchTasks()
             async let listing = repository.fetchActivities()
 

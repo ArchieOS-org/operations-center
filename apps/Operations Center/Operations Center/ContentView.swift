@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Operations Center
 //
-//  Main view - displays listing tasks from Supabase
+//  Main view - displays activitys from Supabase
 //
 
 import OperationsCenterKit

@@ -2,7 +2,7 @@
 //  InboxView.swift
 //  Operations Center
 //
-//  Inbox view showing both stray and listing tasks
+//  Inbox view showing both agent tasks and activities
 //  Uses explicit TaskCard and ActivityCard components
 //
 

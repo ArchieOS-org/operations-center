@@ -45,16 +45,16 @@ final class MyTasksStore {
 
     /// Fetch tasks claimed by current user
     /// Per spec line 173, 176: "See all Tasks I've claimed"
-    /// Shows standalone stray tasks only (listing-backed tasks shown in My Listings)
+    /// Shows standalone agent tasks only (listing-backed tasks shown in My Listings)
     func fetchMyTasks() async {
         isLoading = true
         defer { isLoading = false }
 
         do {
-            // Fetch stray tasks and filter for current user
+            // Fetch agent tasks and filter for current user
             let tasksResults = try await repository.fetchTasks()
 
-            // Filter for stray tasks claimed by me - break up for type-checker
+            // Filter for agent tasks claimed by me - break up for type-checker
             let allStrayTasks = tasksResults.map(\.task)
             tasks = allStrayTasks.filter { task in
                 task.assignedStaffId == currentUserId &&

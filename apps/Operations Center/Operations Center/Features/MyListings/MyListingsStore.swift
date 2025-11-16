@@ -49,10 +49,10 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
-            // Fetch listing tasks for current user (TODO: Get actual user ID from auth)
+            // Fetch activitys for current user (TODO: Get actual user ID from auth)
             let currentUserId = "current-user"
 
-            // Get listing tasks claimed by this realtor directly from repository
+            // Get activitys claimed by this realtor directly from repository
             let userListingTasks = try await taskRepository.fetchActivitiesByRealtor(currentUserId)
 
             // Extract unique listing IDs

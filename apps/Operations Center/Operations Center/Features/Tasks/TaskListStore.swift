@@ -2,14 +2,14 @@
 //  TaskListStore.swift
 //  Operations Center
 //
-//  Store managing the list of listing tasks
+//  Store managing the list of activitys
 //
 
 import Foundation
 import OperationsCenterKit
 import OSLog
 
-/// Store managing the list of listing tasks using repository pattern
+/// Store managing the list of activitys using repository pattern
 @Observable
 @MainActor
 final class TaskListStore {
@@ -33,17 +33,17 @@ final class TaskListStore {
 
     // MARK: - Actions
 
-    /// Fetch all listing tasks from repository
+    /// Fetch all activitys from repository
     func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
         do {
             activities = try await repository.fetchActivities()
-            Logger.tasks.info("Fetched listing tasks: \(self.activities.count)")
+            Logger.tasks.info("Fetched activitys: \(self.activities.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to fetch listing tasks: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to fetch activitys: \(error.localizedDescription)")
         }
 
         isLoading = false
@@ -59,17 +59,17 @@ final class TaskListStore {
 
             _ = try await repository.claimActivity(task.id, currentUserId)
 
-            Logger.tasks.info("Claimed listing task: \(task.id) - \(task.name)")
+            Logger.tasks.info("Claimed activity: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to claim listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
         }
     }
 
-    /// Delete a listing task (soft delete)
+    /// Delete a activity (soft delete)
     func deleteTask(_ task: Activity) async {
         do {
             // Get current user ID for audit trail
@@ -77,13 +77,13 @@ final class TaskListStore {
 
             try await repository.deleteActivity(task.id, currentUserId)
 
-            Logger.tasks.info("Deleted listing task: \(task.id) - \(task.name)")
+            Logger.tasks.info("Deleted activity: \(task.id) - \(task.name)")
 
             // Refresh to get updated data
             await fetchTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to delete listing task: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
         }
     }
 
