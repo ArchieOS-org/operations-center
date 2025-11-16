@@ -72,7 +72,10 @@ struct RootView: View {
         case .myTasks:
             MyTasksView(repository: usePreviewData ? .preview : .live)
         case .myListings:
-            PlaceholderView(title: "My Listings", icon: "house.fill")
+            MyListingsView(
+                listingRepository: usePreviewData ? .preview : .live,
+                taskRepository: usePreviewData ? .preview : .live
+            )
         case .logbook:
             PlaceholderView(title: "Logbook", icon: "clock.fill")
         case .agents:

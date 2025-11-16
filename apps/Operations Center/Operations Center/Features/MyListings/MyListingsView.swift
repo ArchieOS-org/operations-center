@@ -1,0 +1,125 @@
+//
+//  MyListingsView.swift
+//  Operations Center
+//
+//  My Listings screen - shows listings where user has claimed activities
+//  Per TASK_MANAGEMENT_SPEC.md lines 197-213
+//
+
+import SwiftUI
+import OperationsCenterKit
+
+/// My Listings screen - see all listings where I've claimed activities
+/// Per spec: "Listings where user has claimed at least one Activity"
+/// Features: Collapsed cards only, click-to-navigate, Marketing/Admin/All toggle
+struct MyListingsView: View {
+    // MARK: - Properties
+
+    @State private var store: MyListingsStore
+    @State private var navigationPath: [Route] = []
+
+    // MARK: - Initialization
+
+    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+        _store = State(initialValue: MyListingsStore(
+            listingRepository: listingRepository,
+            taskRepository: taskRepository
+        ))
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
+            ZStack(alignment: .bottomLeading) {
+                listingsList
+                teamToggle
+            }
+        }
+    }
+
+    // MARK: - Subviews
+
+    private var listingsList: some View {
+        List {
+            listingsSection
+            emptyStateSection
+        }
+        .listStyle(.plain)
+        .navigationTitle("My Listings")
+        .refreshable {
+            await store.refresh()
+        }
+        .task {
+            await store.fetchMyListings()
+        }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+            }
+        }
+        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
+            Button("OK") {
+                store.errorMessage = nil
+            }
+        } message: {
+            if let errorMessage = store.errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var listingsSection: some View {
+        if !store.filteredListings.isEmpty {
+            Section {
+                ForEach(store.filteredListings, id: \.id) { listing in
+                    ListingBrowseCard(
+                        listing: listing,
+                        onTap: {
+                            navigationPath.append(.listing(id: listing.id))
+                        }
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var emptyStateSection: some View {
+        if store.filteredListings.isEmpty && !store.isLoading {
+            VStack(spacing: 16) {
+                Image(systemName: "house.circle")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.secondary)
+                Text("No listings with claimed activities")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                Text("Listings will appear here when you claim activities")
+                    .font(.body)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
+            .listRowSeparator(.hidden)
+        }
+    }
+
+    private var teamToggle: some View {
+        TeamToggle(selection: $store.teamFilter)
+            .padding(.leading, 16)
+            .padding(.bottom, 16)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    MyListingsView(
+        listingRepository: .preview,
+        taskRepository: .preview
+    )
+}
