@@ -46,8 +46,8 @@ Migrating from card-based layouts to white row-based lists with a reusable Rows 
 - [x] ListingDetailView - Replace note rows with OCMessageRow
 - [x] MyTasksView - Task management with OCTaskRow
 
-### ⏳ Phase 6: Migrate Complex Screens
-- [ ] InboxView - Mixed content with OCListingRow and OCTaskRow
+### ✅ Phase 6: Migrate Complex Screens
+- [x] InboxView - Mixed content with OCListingRow and OCTaskRow
 
 ### ⏳ Phase 7: Clean Up
 - [ ] Remove deprecated card components
@@ -136,7 +136,7 @@ Migrating from card-based layouts to white row-based lists with a reusable Rows 
 ---
 
 *Last Updated: 2025-11-16*
-*Status: Phase 5 Mostly Complete (6/7 screens migrated)*
+*Status: Phase 6 Complete (7/8 screens migrated)*
 
 ## Migration Summary
 
@@ -147,15 +147,17 @@ Migrating from card-based layouts to white row-based lists with a reusable Rows 
   - MyListingsView: Using OCListingRow + OCListScaffold
   - AgentsView: Using OCAgentRow + OCListScaffold
   - LogbookView: Using mixed rows + OCListScaffold
-- ✅ **Phase 5 (partial)**: Additional screen migrations
+- ✅ **Phase 5**: Task and detail screen migrations
   - ListingDetailView: Using OCMessageRow for notes + OCListScaffold
   - MyTasksView: Using OCTaskRow + OCListScaffold
+- ✅ **Phase 6**: Complex mixed content screen
+  - InboxView: Using mixed OCListingRow and OCTaskRow + OCListScaffold
 
 ### Known Issues
 - AllTasksView migration blocked due to @Observable ForEach binding issues
 - Complex expandable sections may need special handling
 
 ### Next Steps
-- Migrate InboxView (complex mixed content)
-- Consider alternative approach for AllTasksView
+- Consider alternative approach for AllTasksView (final remaining screen)
 - Begin card component deprecation
+- Update documentation
