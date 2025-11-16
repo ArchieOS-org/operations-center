@@ -7,11 +7,17 @@ import AppKit
 #endif
 
 /// Semantic color system with automatic dark mode support
+///
+/// Design Philosophy:
+/// - All colors backed by system colors for perfect light/dark adaptation
+/// - Semantic naming describes role, not appearance
+/// - No raw color literals - every color has meaning
+/// - Sufficient contrast for WCAG AA compliance
 public enum Colors {
-    public static let primary = Color.accentColor
-    public static let secondary = Color.secondary
+    // MARK: - Surfaces
 
-    public static let background: Color = {
+    /// Primary background (screen-level)
+    public static let surfacePrimary: Color = {
         #if canImport(UIKit)
         return Color(uiColor: .systemBackground)
         #elseif canImport(AppKit)
@@ -19,7 +25,8 @@ public enum Colors {
         #endif
     }()
 
-    public static let cardBackground: Color = {
+    /// Secondary background (cards, elevated content)
+    public static let surfaceSecondary: Color = {
         #if canImport(UIKit)
         return Color(uiColor: .secondarySystemBackground)
         #elseif canImport(AppKit)
@@ -27,80 +34,161 @@ public enum Colors {
         #endif
     }()
 
-    public static let shadowLight = Color.black.opacity(0.05)
-    public static let shadowMedium = Color.black.opacity(0.1)
-
-    // MARK: - Card Accents
-
-    /// Accent color for agent tasks
-    public static let agentTaskAccent = Color.orange
-
-    /// Accent color for activities (property-linked)
-    public static let activityAccent = Color.blue
-
-    // MARK: - Card Backgrounds
-
-    /// Background for all cards - uses system color for automatic dark mode
-    public static let cardSystemBackground: Color = {
+    /// Tertiary background (inputs, nested elements)
+    public static let surfaceTertiary: Color = {
         #if canImport(UIKit)
-        return Color(uiColor: .secondarySystemBackground)
+        return Color(uiColor: .tertiarySystemBackground)
         #elseif canImport(AppKit)
         return Color(nsColor: .controlBackgroundColor)
         #endif
     }()
 
-    /// Subtle tint overlay for agent task cards
-    public static let agentTaskCardTint = Color.orange.opacity(0.03)
+    /// Subtle tinted background for listing cards
+    public static let surfaceListingTinted: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue).opacity(0.04)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue).opacity(0.04)
+        #endif
+    }()
 
-    /// Subtle tint overlay for activity cards
-    public static let listingCardTint = Color.blue.opacity(0.02)
+    /// Subtle tinted background for agent task cards
+    public static let surfaceAgentTaskTinted: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemOrange).opacity(0.04)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemOrange).opacity(0.04)
+        #endif
+    }()
+
+    // MARK: - Accents
+
+    /// Primary accent (interactive elements, links)
+    public static let accentPrimary = Color.accentColor
+
+    /// Listing-related accent
+    public static let accentListing: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue)
+        #endif
+    }()
+
+    /// Agent task accent
+    public static let accentAgentTask: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemOrange)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemOrange)
+        #endif
+    }()
 
     // MARK: - Actions
 
-    /// Color for claim/primary actions
-    public static let claimAction = Color.blue
-
-    /// Color for destructive actions (delete)
-    public static let deleteAction = Color.red
-
-    /// Color for complete actions
-    public static let completeAction = Color.green
-
-    // MARK: - Activity Row
-
-    /// Background for activity rows in cards
-    public static let activityRowBackground = Color.gray.opacity(0.05)
-
-    // MARK: - Activity Status
-
-    /// Status indicator colors
-    public static let activityStatusOpen = Color.gray
-    public static let activityStatusClaimed = Color.orange
-    public static let activityStatusInProgress = Color.blue
-    public static let activityStatusDone = Color.green
-    public static let activityStatusFailed = Color.red
-    public static let activityStatusCancelled = Color.secondary
-
-    // MARK: - Input & Notes
-
-    /// Background for text input fields (active input areas)
-    /// Kept separate from noteRowBackground despite identical implementation
-    /// to allow independent evolution (e.g., input might use tertiary system background)
-    public static let textFieldBackground: Color = {
+    /// Positive action (complete, confirm)
+    public static let actionPositive: Color = {
         #if canImport(UIKit)
-        return Color(uiColor: .secondarySystemBackground)
+        return Color(uiColor: .systemGreen)
         #elseif canImport(AppKit)
-        return Color(nsColor: .controlBackgroundColor)
+        return Color(nsColor: .systemGreen)
         #endif
     }()
 
-    /// Background for note rows (read-only display containers)
-    /// Kept separate from textFieldBackground for semantic clarity
-    public static let noteRowBackground: Color = {
+    /// Destructive action (delete, cancel permanently)
+    public static let actionDestructive: Color = {
         #if canImport(UIKit)
-        return Color(uiColor: .secondarySystemBackground)
+        return Color(uiColor: .systemRed)
         #elseif canImport(AppKit)
-        return Color(nsColor: .controlBackgroundColor)
+        return Color(nsColor: .systemRed)
+        #endif
+    }()
+
+    // MARK: - Status Indicators
+
+    /// Open/unassigned status
+    public static let statusOpen: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray)
+        #endif
+    }()
+
+    /// Claimed status
+    public static let statusClaimed: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemOrange)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemOrange)
+        #endif
+    }()
+
+    /// In progress status
+    public static let statusInProgress: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue)
+        #endif
+    }()
+
+    /// Completed status
+    public static let statusCompleted: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGreen)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGreen)
+        #endif
+    }()
+
+    /// Failed status
+    public static let statusFailed: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemRed)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemRed)
+        #endif
+    }()
+
+    /// Cancelled status
+    public static let statusCancelled = Color.secondary
+
+    // MARK: - Listing Type Badges
+
+    /// Residential listing type
+    public static let badgeResidential: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue)
+        #endif
+    }()
+
+    /// Commercial listing type
+    public static let badgeCommercial: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemPurple)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemPurple)
+        #endif
+    }()
+
+    /// Luxury listing type
+    public static let badgeLuxury: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemOrange)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemOrange)
+        #endif
+    }()
+
+    /// Default listing type (fallback)
+    public static let badgeDefault: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray)
         #endif
     }()
 }

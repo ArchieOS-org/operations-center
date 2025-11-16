@@ -72,10 +72,10 @@ struct AllListingsView: View {
                         ListingCollapsedContent(listing: listing)
                     }
                     .listRowInsets(EdgeInsets(
-                        top: Layout.listRowVerticalPadding,
-                        leading: Layout.horizontalScreenPadding,
-                        bottom: Layout.listRowVerticalPadding,
-                        trailing: Layout.horizontalScreenPadding
+                        top: Spacing.listRowVertical,
+                        leading: Spacing.listRowHorizontal,
+                        bottom: Spacing.listRowVertical,
+                        trailing: Spacing.listRowHorizontal
                     ))
                 }
             }

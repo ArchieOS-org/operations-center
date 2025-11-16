@@ -26,16 +26,16 @@ public struct NoteRow: View {
             // Author and timestamp
             HStack(spacing: Spacing.xs) {
                 Text(note.createdBy ?? "Unknown")
-                    .font(Typography.caption1)
+                    .font(Typography.cardMeta)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
 
                 Text("·")
-                    .font(Typography.caption1)
+                    .font(Typography.cardMeta)
                     .foregroundStyle(.tertiary)
 
                 Text(note.createdAt, style: .relative)
-                    .font(Typography.caption2)
+                    .font(Typography.chipLabel)
                     .foregroundStyle(.secondary)
             }
 
@@ -45,7 +45,7 @@ public struct NoteRow: View {
                 .foregroundStyle(.primary)
         }
         .padding(Spacing.sm)
-        .background(Colors.noteRowBackground)
+        .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.sm)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)

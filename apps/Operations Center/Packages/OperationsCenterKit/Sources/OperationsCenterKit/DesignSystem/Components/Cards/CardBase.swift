@@ -45,15 +45,15 @@ struct CardBase<Content: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 ZStack {
                     // System background (automatic dark mode)
-                    Colors.cardSystemBackground
+                    Colors.surfaceSecondary
 
-                    // Subtle tint overlay (imperceptible but effective)
+                    // Subtle tint overlay
                     tintColor
                 }
             )
@@ -91,11 +91,11 @@ struct CardBase<Content: View>: View {
 
 #Preview("Agent Task Card Base") {
     CardBase(
-        tintColor: Colors.agentTaskCardTint,
+        tintColor: Colors.surfaceAgentTaskTinted,
         isExpanded: false,
         onTap: {}
     ) {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Sample Stray Task")
                 .font(Typography.cardTitle)
             Text("This is a preview of the card base")
@@ -108,11 +108,11 @@ struct CardBase<Content: View>: View {
 
 #Preview("Listing Card Base") {
     CardBase(
-        tintColor: Colors.listingCardTint,
+        tintColor: Colors.surfaceListingTinted,
         isExpanded: false,
         onTap: {}
     ) {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("123 Maple Street")
                 .font(Typography.cardTitle)
             Text("This is a preview of the card base")

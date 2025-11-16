@@ -19,8 +19,8 @@ public struct DSChip: View {
     public var body: some View {
         Text(text)
             .font(Typography.chipLabel)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
             .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(Capsule())
@@ -34,12 +34,12 @@ extension DSChip {
     public init(date: Date) {
         let isOverdue = date < Date()
         self.text = date.formatted(.relative(presentation: .named))
-        self.color = isOverdue ? .red : .orange
+        self.color = isOverdue ? Colors.statusFailed : Colors.statusClaimed
     }
 
     /// Create a chip for displaying an agent name with card-style color
     public init(agentName: String, style: CardStyle) {
         self.text = agentName
-        self.color = style == .agentTask ? Colors.agentTaskAccent : Colors.activityAccent
+        self.color = style == .agentTask ? Colors.accentAgentTask : Colors.accentListing
     }
 }

@@ -53,11 +53,10 @@ public struct ListingCollapsedContent: View {
 
     private func typeColor(for type: String) -> Color {
         switch type.uppercased() {
-        case "SALE": return .blue
-        case "RENTAL": return .purple
-        case "COMMERCIAL": return .orange
-        case "RESIDENTIAL": return .green
-        default: return .gray
+        case "RESIDENTIAL": return Colors.badgeResidential
+        case "COMMERCIAL": return Colors.badgeCommercial
+        case "LUXURY": return Colors.badgeLuxury
+        default: return Colors.badgeDefault
         }
     }
 }

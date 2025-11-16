@@ -46,11 +46,11 @@ public struct ListingCard: View {
 
     public var body: some View {
         CardBase(
-            tintColor: Colors.listingCardTint,
+            tintColor: Colors.surfaceListingTinted,
             isExpanded: isExpanded,
             onTap: onTap
         ) {
-            VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
                 // Header
                 CardHeader(
                     title: listing.title,
@@ -111,10 +111,10 @@ public struct ListingCard: View {
 
     private func typeColor(for type: String) -> Color {
         switch type.uppercased() {
-        case "RESIDENTIAL": return .blue
-        case "COMMERCIAL": return .purple
-        case "LUXURY": return .orange
-        default: return .gray
+        case "RESIDENTIAL": return Colors.badgeResidential
+        case "COMMERCIAL": return Colors.badgeCommercial
+        case "LUXURY": return Colors.badgeLuxury
+        default: return Colors.badgeDefault
         }
     }
 
@@ -144,7 +144,7 @@ public struct ListingCard: View {
             }
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal, Spacing.sm)
-            .background(Colors.activityRowBackground)
+            .background(Colors.surfaceTertiary)
             .cornerRadius(CornerRadius.sm)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(activityAccessibilityLabel(for: task))
@@ -154,12 +154,12 @@ public struct ListingCard: View {
 
     private func statusColor(for status: Activity.TaskStatus) -> Color {
         switch status {
-        case .open: return Colors.activityStatusOpen
-        case .claimed: return Colors.activityStatusClaimed
-        case .inProgress: return Colors.activityStatusInProgress
-        case .done: return Colors.activityStatusDone
-        case .failed: return Colors.activityStatusFailed
-        case .cancelled: return Colors.activityStatusCancelled
+        case .open: return Colors.statusOpen
+        case .claimed: return Colors.statusClaimed
+        case .inProgress: return Colors.statusInProgress
+        case .done: return Colors.statusCompleted
+        case .failed: return Colors.statusFailed
+        case .cancelled: return Colors.statusCancelled
         }
     }
 

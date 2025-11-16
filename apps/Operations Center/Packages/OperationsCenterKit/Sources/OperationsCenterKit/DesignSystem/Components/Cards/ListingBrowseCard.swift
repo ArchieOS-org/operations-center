@@ -27,13 +27,13 @@ public struct ListingBrowseCard: View {
 
     public var body: some View {
         ListingCollapsedContent(listing: listing, realtor: realtor)
-            .padding(Spacing.md)
-            .background(Colors.listingCardTint.opacity(0.05))
+            .padding(Spacing.lg)
+            .background(Colors.surfaceListingTinted)
             .overlay(
-                RoundedRectangle(cornerRadius: Layout.cardCornerRadius)
-                    .stroke(Colors.listingCardTint, lineWidth: 1)
+                RoundedRectangle(cornerRadius: CornerRadius.card)
+                    .stroke(Colors.accentListing.opacity(0.1), lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: Layout.cardCornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
     }
 }
 

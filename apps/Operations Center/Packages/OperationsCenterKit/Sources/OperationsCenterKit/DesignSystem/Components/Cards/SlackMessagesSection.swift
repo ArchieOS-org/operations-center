@@ -20,7 +20,7 @@ struct SlackMessagesSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Section header
                 Text("Slack Messages")
-                    .font(Typography.caption1)
+                    .font(Typography.cardMeta)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
                     .padding(.top, 4)
@@ -42,12 +42,12 @@ struct SlackMessagesSection: View {
             // Author and timestamp
             HStack(spacing: 8) {
                 Text(message.authorName)
-                    .font(Typography.caption1)
+                    .font(Typography.cardMeta)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
 
                 Text(message.timestamp.formatted(.relative(presentation: .named)))
-                    .font(Typography.caption2)
+                    .font(Typography.chipLabel)
                     .foregroundStyle(.tertiary)
             }
 

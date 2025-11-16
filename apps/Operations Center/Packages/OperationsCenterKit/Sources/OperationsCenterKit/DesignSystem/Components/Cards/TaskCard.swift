@@ -35,7 +35,7 @@ public struct TaskCard: View {
 
     public var body: some View {
         ExpandableCardWrapper(
-            tintColor: Colors.agentTaskCardTint,
+            tintColor: Colors.surfaceAgentTaskTinted,
             isExpanded: isExpanded,
             onTap: onTap
         ) {

@@ -41,7 +41,7 @@ public struct ActivityCard: View {
 
     public var body: some View {
         ExpandableCardWrapper(
-            tintColor: Colors.listingCardTint,
+            tintColor: Colors.surfaceListingTinted,
             isExpanded: isExpanded,
             onTap: onTap
         ) {

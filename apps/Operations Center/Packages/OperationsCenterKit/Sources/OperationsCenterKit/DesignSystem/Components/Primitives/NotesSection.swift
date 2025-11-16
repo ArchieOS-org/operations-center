@@ -43,7 +43,7 @@ public struct NotesSection: View {
                 .font(Typography.body)
                 .lineLimit(1...3)
                 .padding(Spacing.sm)
-                .background(Colors.textFieldBackground)
+                .background(Colors.surfaceTertiary)
                 .cornerRadius(CornerRadius.sm)
                 .focused($isInputFocused)
                 .submitLabel(.done)
@@ -67,7 +67,7 @@ public struct NotesSection: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 200)
+                    .frame(maxHeight: Spacing.maxContentHeight)
                     .task {
                         // First render - scroll to bottom if needed
                         lastNoteIdToScroll = notes.last?.id
