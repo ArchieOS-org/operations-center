@@ -86,9 +86,6 @@ extension ListingNoteRepositoryClient {
 extension ListingNoteRepositoryClient {
     public static let preview = Self(
         fetchNotes: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
             // Return mock notes for all listings
             return [
                 ListingNote.mock1,
@@ -97,9 +94,6 @@ extension ListingNoteRepositoryClient {
             ]
         },
         createNote: { listingId, content, createdBy in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
-
             // Return a new mock note
             return ListingNote(
                 id: UUID().uuidString,
@@ -112,8 +106,6 @@ extension ListingNoteRepositoryClient {
             )
         },
         deleteNote: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
             // No-op for preview
         }
     )

@@ -344,16 +344,12 @@ extension TaskRepositoryClient {
             return subtask
         },
         fetchTasksByRealtor: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [
                 TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
                 TaskWithMessages(task: AgentTask.mock2, messages: [])
             ]
         },
         fetchActivitiesByRealtor: { _ in
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             return [
                 ActivityWithDetails(
                     task: Activity.mock1,
@@ -368,8 +364,6 @@ extension TaskRepositoryClient {
             ]
         },
         fetchCompletedTasks: {
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
             // Return empty array - no completed tasks in mock data yet
             return []
         }

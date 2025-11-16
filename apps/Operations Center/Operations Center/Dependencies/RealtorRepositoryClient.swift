@@ -64,14 +64,10 @@ extension RealtorRepositoryClient {
     public static let preview = Self(
         fetchRealtors: {
             Logger.database.info("Using preview data for realtors")
-            // Simulate network delay
-            try? await Task.sleep(for: .milliseconds(500))
             return Realtor.mockList
         },
         fetchRealtor: { realtorId in
             Logger.database.info("Using preview data for realtor: \(realtorId)")
-            // Simulate network delay
-            try? await Task.sleep(for: .milliseconds(300))
             return Realtor.mockList.first { $0.id == realtorId }
         }
     )
