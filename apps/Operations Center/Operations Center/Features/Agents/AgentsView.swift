@@ -27,20 +27,15 @@ struct AgentsView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
-            ForEach(store.realtors) { realtor in
-                NavigationLink(value: Route.agent(id: realtor.id)) {
-                    RealtorRow(realtor: realtor)
-                }
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
             }
+        ) {
+            agentsSection
+            emptyStateSection
         }
-        .listStyle(.plain)
         .navigationTitle("Agents")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchRealtors()
         }
@@ -59,50 +54,29 @@ struct AgentsView: View {
             }
         }
     }
-}
 
-// MARK: - Realtor Row
+    // MARK: - Subviews
 
-private struct RealtorRow: View {
-    let realtor: Realtor
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(realtor.name)
-                    .font(.headline)
-
-                Spacer()
-
-                if realtor.status != .active {
-                    Text(realtor.status.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.secondary.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-            }
-
-            if let brokerage = realtor.brokerage {
-                Text(brokerage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            if !realtor.territories.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "map")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(realtor.territories.joined(separator: ", "))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    @ViewBuilder
+    private var agentsSection: some View {
+        if !store.realtors.isEmpty {
+            Section {
+                ForEach(store.realtors) { realtor in
+                    NavigationLink(value: Route.agent(id: realtor.id)) {
+                        OCAgentRow(realtor: realtor)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
-        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var emptyStateSection: some View {
+        if store.realtors.isEmpty && !store.isLoading {
+            OCEmptyState.noAgents
+                .listRowSeparator(.hidden)
+        }
     }
 }
 
