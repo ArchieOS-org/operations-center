@@ -56,7 +56,7 @@ struct MyTasksView: View {
                let task = store.tasks.first(where: { $0.id == expandedId }) {
                 DSContextMenu(actions: buildContextActions(for: task))
                     .padding(.bottom, Spacing.lg)
-                    .padding(.horizontal)
+                    .padding(.horizontal, Spacing.lg)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

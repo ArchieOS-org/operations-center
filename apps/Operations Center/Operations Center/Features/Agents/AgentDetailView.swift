@@ -64,7 +64,7 @@ struct AgentDetailView: View {
                     }
                 }
                 .padding(.bottom, Spacing.lg)
-                .padding(.horizontal)
+                .padding(.horizontal, Spacing.lg)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
