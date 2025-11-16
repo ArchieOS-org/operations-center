@@ -75,6 +75,7 @@ struct LogbookView: View {
                         OCListingRow(listing: listing)
                     }
                     .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             } header: {
                 OCSectionHeader(
@@ -91,6 +92,7 @@ struct LogbookView: View {
             Section {
                 ForEach(store.completedTasks) { task in
                     OCTaskRow(task: task)
+                        .listRowSeparator(.hidden)
                 }
             } header: {
                 OCSectionHeader(

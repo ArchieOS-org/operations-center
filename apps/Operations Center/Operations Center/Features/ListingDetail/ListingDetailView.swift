@@ -80,6 +80,7 @@ struct ListingDetailView: View {
                     }
                 }
                 .submitLabel(.done)
+                .listRowSeparator(.hidden)
 
             // Existing notes
             // Per spec: "Shows author name per note. Unlimited notes" (lines 354-355)
@@ -95,12 +96,14 @@ struct ListingDetailView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                        .listRowSeparator(.hidden)
                 }
             } else {
                 Text("No notes yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
             }
         } header: {
             OCSectionHeader(
@@ -118,9 +121,11 @@ struct ListingDetailView: View {
         Section {
             Text("Marketing Activities")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
             OCSectionHeader(title: "Marketing Activities")
         }
@@ -128,9 +133,11 @@ struct ListingDetailView: View {
         Section {
             Text("Admin Activities")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
             OCSectionHeader(title: "Admin Activities")
         }
@@ -138,9 +145,11 @@ struct ListingDetailView: View {
         Section {
             Text("Tasks")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
             OCSectionHeader(title: "Tasks")
         }

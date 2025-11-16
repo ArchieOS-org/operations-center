@@ -66,6 +66,7 @@ struct AgentsView: View {
                         OCAgentRow(realtor: realtor)
                     }
                     .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             }
         }

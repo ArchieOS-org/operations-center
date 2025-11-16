@@ -101,6 +101,7 @@ struct MyTasksView: View {
                         .onTapGesture {
                             store.toggleExpansion(for: task.id)
                         }
+                        .listRowSeparator(.hidden)
                 }
             } header: {
                 OCSectionHeader(

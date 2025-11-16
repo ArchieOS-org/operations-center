@@ -71,6 +71,7 @@ struct MyListingsView: View {
                         OCListingRow(listing: listing)
                     }
                     .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             }
         }

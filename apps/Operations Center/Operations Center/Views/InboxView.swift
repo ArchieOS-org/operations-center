@@ -130,6 +130,7 @@ struct InboxView: View {
                                 store.toggleExpansion(for: item.listing.id)
                             }
                         }
+                        .listRowSeparator(.hidden)
                 }
             } header: {
                 OCSectionHeader(
@@ -151,6 +152,7 @@ struct InboxView: View {
                                 store.toggleExpansion(for: item.task.id)
                             }
                         }
+                        .listRowSeparator(.hidden)
                 }
             } header: {
                 OCSectionHeader(
