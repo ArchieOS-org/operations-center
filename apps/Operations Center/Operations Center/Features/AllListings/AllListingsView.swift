@@ -69,10 +69,7 @@ struct AllListingsView: View {
             Section {
                 ForEach(store.listings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
-                        ListingBrowseCard(
-                            listing: listing,
-                            onTap: {}
-                        )
+                        ListingBrowseCard(listing: listing)
                     }
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))

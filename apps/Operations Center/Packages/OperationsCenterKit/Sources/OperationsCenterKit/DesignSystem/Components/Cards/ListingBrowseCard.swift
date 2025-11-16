@@ -20,7 +20,7 @@ public struct ListingBrowseCard: View {
 
     public init(
         listing: Listing,
-        onTap: @escaping () -> Void
+        onTap: @escaping () -> Void = {}
     ) {
         self.listing = listing
         self.onTap = onTap

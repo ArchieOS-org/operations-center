@@ -129,12 +129,9 @@ struct AgentDetailView: View {
         if !store.listings.isEmpty {
             Section("Listings") {
                 ForEach(store.listings, id: \.listing.id) { listingWithActivities in
-                    ListingBrowseCard(
-                        listing: listingWithActivities.listing,
-                        onTap: {
-                            // TODO: Navigate to listing detail
-                        }
-                    )
+                    NavigationLink(value: Route.listing(id: listingWithActivities.listing.id)) {
+                        ListingBrowseCard(listing: listingWithActivities.listing)
+                    }
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
