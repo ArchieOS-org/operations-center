@@ -21,7 +21,6 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
 
     let tintColor: Color
     let isExpanded: Bool
-    let actions: [DSContextAction]
     let onTap: () -> Void
 
     @ViewBuilder let collapsedContent: () -> CollapsedContent
@@ -32,14 +31,12 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
     init(
         tintColor: Color,
         isExpanded: Bool,
-        actions: [DSContextAction] = [],
         onTap: @escaping () -> Void,
         @ViewBuilder collapsedContent: @escaping () -> CollapsedContent,
         @ViewBuilder expandedContent: @escaping () -> ExpandedContent
     ) {
         self.tintColor = tintColor
         self.isExpanded = isExpanded
-        self.actions = actions
         self.onTap = onTap
         self.collapsedContent = collapsedContent
         self.expandedContent = expandedContent
@@ -48,32 +45,21 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            // The card itself using existing CardBase system
-            CardBase(
-                tintColor: tintColor,
-                isExpanded: isExpanded,
-                onTap: onTap
-            ) {
-                VStack(alignment: .leading, spacing: Spacing.md) {
-                    // Always show collapsed content
-                    collapsedContent()
+        // The card itself using existing CardBase system
+        // Action bar is now rendered at screen-level via .overlay() in parent views
+        CardBase(
+            tintColor: tintColor,
+            isExpanded: isExpanded,
+            onTap: onTap
+        ) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Always show collapsed content
+                collapsedContent()
 
-                    // Show expanded content when expanded
-                    if isExpanded {
-                        expandedContent()
-                    }
+                // Show expanded content when expanded
+                if isExpanded {
+                    expandedContent()
                 }
-            }
-
-            // Action bar floats at bottom when expanded
-            // Per spec line 470: "Floats at bottom middle of screen, only when a card is expanded"
-            if isExpanded && !actions.isEmpty {
-                VStack {
-                    Spacer()
-                    DSContextMenu(actions: actions)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: isExpanded)
@@ -87,14 +73,12 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     init(
         tintColor: Color,
         isExpanded: Bool,
-        actions: [DSContextAction] = [],
         onTap: @escaping () -> Void,
         @ViewBuilder content: @escaping () -> CollapsedContent
     ) {
         self.init(
             tintColor: tintColor,
             isExpanded: isExpanded,
-            actions: actions,
             onTap: onTap,
             collapsedContent: content,
             expandedContent: content
@@ -108,10 +92,6 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     ExpandableCardWrapper(
         tintColor: Colors.strayCardTint,
         isExpanded: false,
-        actions: [
-            DSContextAction(title: "Claim", systemImage: "hand.raised") {},
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
-        ],
         onTap: {}
     ) {
         VStack(alignment: .leading, spacing: 8) {
@@ -135,10 +115,6 @@ extension ExpandableCardWrapper where CollapsedContent == ExpandedContent {
     ExpandableCardWrapper(
         tintColor: Colors.strayCardTint,
         isExpanded: true,
-        actions: [
-            DSContextAction(title: "Claim", systemImage: "hand.raised") {},
-            DSContextAction(title: "Delete", systemImage: "trash", role: .destructive) {}
-        ],
         onTap: {}
     ) {
         VStack(alignment: .leading, spacing: 8) {

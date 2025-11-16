@@ -45,10 +45,22 @@ struct MyTasksView: View {
                 taskList
             }
         }
-        .floatingActionButton {
+        .floatingActionButton(isHidden: store.expandedTaskId != nil) {
             // Per spec line 185: "Creates new Task inline at bottom"
             showingNewTask = true
         }
+        .overlay(alignment: .bottom) {
+            // Floating context menu - appears at screen bottom when card is expanded
+            // Per spec line 470: "Floats at bottom middle of screen, only when a card is expanded"
+            if let expandedId = store.expandedTaskId,
+               let task = store.tasks.first(where: { $0.id == expandedId }) {
+                DSContextMenu(actions: buildContextActions(for: task))
+                    .padding(.bottom, Spacing.lg)
+                    .padding(.horizontal, Spacing.lg)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
         .navigationTitle("My Tasks")
         .alert("Error", isPresented: Binding(
             get: { store.errorMessage != nil },
@@ -98,16 +110,6 @@ struct MyTasksView: View {
             isExpanded: isExpanded,
             onTap: {
                 store.toggleExpansion(for: task.id)
-            },
-            onClaim: {
-                Task {
-                    await store.claimTask(task)
-                }
-            },
-            onDelete: {
-                Task {
-                    await store.deleteTask(task)
-                }
             }
         )
         .animation(.spring(duration: 0.3, bounce: 0.1), value: isExpanded)
@@ -145,6 +147,23 @@ struct MyTasksView: View {
         .padding()
         .background(Colors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Context Actions
+
+    private func buildContextActions(for task: AgentTask) -> [DSContextAction] {
+        DSContextAction.standardTaskActions(
+            onClaim: {
+                Task {
+                    await store.claimTask(task)
+                }
+            },
+            onDelete: {
+                Task {
+                    await store.deleteTask(task)
+                }
+            }
+        )
     }
 
     // MARK: - Empty State

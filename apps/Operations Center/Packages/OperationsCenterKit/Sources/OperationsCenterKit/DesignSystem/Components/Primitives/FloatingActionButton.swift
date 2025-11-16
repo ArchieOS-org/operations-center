@@ -71,14 +71,17 @@ private struct FloatingActionButtonStyle: ButtonStyle {
 public extension View {
     /// Adds a floating action button overlay to the view
     /// Positioned at bottom trailing with padding
+    /// Slides down off-screen when hidden (context menu appears)
     ///
     /// - Parameters:
     ///   - systemImage: SF Symbol name (default: "plus")
     ///   - accessibilityLabel: VoiceOver label (default: "Add")
+    ///   - isHidden: Whether to slide FAB off-screen (default: false)
     ///   - action: Action to perform when tapped
     func floatingActionButton(
         systemImage: String = "plus",
         accessibilityLabel: String = "Add",
+        isHidden: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         overlay(alignment: .bottomTrailing) {
@@ -88,6 +91,9 @@ public extension View {
                 action: action
             )
             .padding(Spacing.lg)
+            .offset(y: isHidden ? 100 : 0)
+            .opacity(isHidden ? 0 : 1)
+            .animation(.spring(duration: 0.3, bounce: 0.1), value: isHidden)
         }
     }
 }

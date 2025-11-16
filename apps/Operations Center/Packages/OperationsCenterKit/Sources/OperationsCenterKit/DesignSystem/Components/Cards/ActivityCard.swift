@@ -18,8 +18,6 @@ public struct ActivityCard: View {
     let isExpanded: Bool
     let onTap: () -> Void
     let onSubtaskToggle: (Subtask) -> Void
-    let onClaim: () -> Void
-    let onDelete: () -> Void
 
     // MARK: - Initialization
 
@@ -29,9 +27,7 @@ public struct ActivityCard: View {
         subtasks: [Subtask],
         isExpanded: Bool,
         onTap: @escaping () -> Void,
-        onSubtaskToggle: @escaping (Subtask) -> Void,
-        onClaim: @escaping () -> Void,
-        onDelete: @escaping () -> Void
+        onSubtaskToggle: @escaping (Subtask) -> Void
     ) {
         self.task = task
         self.listing = listing
@@ -39,8 +35,6 @@ public struct ActivityCard: View {
         self.isExpanded = isExpanded
         self.onTap = onTap
         self.onSubtaskToggle = onSubtaskToggle
-        self.onClaim = onClaim
-        self.onDelete = onDelete
     }
 
     // MARK: - Body
@@ -49,7 +43,6 @@ public struct ActivityCard: View {
         ExpandableCardWrapper(
             tintColor: Colors.listingCardTint,
             isExpanded: isExpanded,
-            actions: buildActions(),
             onTap: onTap
         ) {
             // Collapsed content (always shown)
@@ -62,7 +55,7 @@ public struct ActivityCard: View {
             )
         } expandedContent: {
             // Expanded content (only when expanded)
-            SubtasksSection(subtasks: subtasks, onToggle: onSubtaskToggle)
+            ActivitiesSection(subtasks: subtasks, onToggle: onSubtaskToggle)
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .move(edge: .top)),
                     removal: .opacity
@@ -71,10 +64,6 @@ public struct ActivityCard: View {
     }
 
     // MARK: - Helper Methods
-
-    private func buildActions() -> [DSContextAction] {
-        DSContextAction.standardTaskActions(onClaim: onClaim, onDelete: onDelete)
-    }
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []
@@ -168,9 +157,7 @@ public struct ActivityCard: View {
         subtasks: [],
         isExpanded: false,
         onTap: {},
-        onSubtaskToggle: { _ in },
-        onClaim: {},
-        onDelete: {}
+        onSubtaskToggle: { _ in }
     )
     .padding()
 }
@@ -253,9 +240,7 @@ public struct ActivityCard: View {
         subtasks: subtasks,
         isExpanded: true,
         onTap: {},
-        onSubtaskToggle: { _ in },
-        onClaim: {},
-        onDelete: {}
+        onSubtaskToggle: { _ in }
     )
     .padding()
 }
