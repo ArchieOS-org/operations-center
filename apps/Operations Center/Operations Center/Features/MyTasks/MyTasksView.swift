@@ -139,6 +139,7 @@ struct MyTasksView: View {
                     newTaskTitle = ""
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(newTaskTitle.isEmpty)
             }
         }
         .padding()

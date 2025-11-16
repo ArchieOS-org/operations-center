@@ -24,6 +24,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
     public let createdAt: Date
     public let updatedAt: Date
     public let deletedAt: Date?
+    public let metadata: [String: String]?
 
     // MARK: - Initialization
 
@@ -39,7 +40,8 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
         status: RealtorStatus = .active,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        deletedAt: Date? = nil
+        deletedAt: Date? = nil,
+        metadata: [String: String]? = nil
     ) {
         self.id = id
         self.email = email
@@ -53,6 +55,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
+        self.metadata = metadata
     }
 
     // MARK: - Coding Keys
@@ -70,6 +73,7 @@ public struct Realtor: Identifiable, Codable, Hashable, Sendable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
+        case metadata
     }
 }
 

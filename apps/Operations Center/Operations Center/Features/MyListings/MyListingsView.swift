@@ -32,6 +32,10 @@ struct MyListingsView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             listingsList
+                .navigationDestination(for: Route.self) { route in
+                    // Route to detail views
+                    EmptyView()
+                }
         }
     }
 
