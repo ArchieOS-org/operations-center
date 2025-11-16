@@ -2,14 +2,14 @@
 //  TaskListStore.swift
 //  Operations Center
 //
-//  Store managing the list of activitys
+//  Store managing the list of activities
 //
 
 import Foundation
 import OperationsCenterKit
 import OSLog
 
-/// Store managing the list of activitys using repository pattern
+/// Store managing the list of activities using repository pattern
 @Observable
 @MainActor
 final class TaskListStore {
@@ -33,17 +33,17 @@ final class TaskListStore {
 
     // MARK: - Actions
 
-    /// Fetch all activitys from repository
+    /// Fetch all activities from repository
     func fetchTasks() async {
         isLoading = true
         errorMessage = nil
 
         do {
             activities = try await repository.fetchActivities()
-            Logger.tasks.info("Fetched activitys: \(self.activities.count)")
+            Logger.tasks.info("Fetched activities: \(self.activities.count)")
         } catch {
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-            Logger.tasks.error("Failed to fetch activitys: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to fetch activities: \(error.localizedDescription)")
         }
 
         isLoading = false

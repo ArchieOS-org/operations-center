@@ -11,8 +11,8 @@ import OperationsCenterKit
 
 /// Collection of realistic mock task data
 struct TaskMockData {
-    let strayTasks: [AgentTask]
-    let listingTasks: [Activity]
+    let tasks: [AgentTask]
+    let activities: [Activity]
     let listings: [String: Listing] // listingId -> Listing
     let slackMessages: [String: [SlackMessage]]
     let subtasks: [String: [Subtask]]
@@ -20,7 +20,7 @@ struct TaskMockData {
     init() {
         let now = Date()
 
-        // MARK: - Stray Tasks (5 diverse examples)
+        // MARK: - Agent Tasks (5 diverse examples)
 
         let strayTask1 = AgentTask(
             id: "stray-1",
@@ -112,9 +112,9 @@ struct TaskMockData {
             deletedBy: nil
         )
 
-        strayTasks = [strayTask1, strayTask2, strayTask3, strayTask4, strayTask5]
+        tasks = [strayTask1, strayTask2, strayTask3, strayTask4, strayTask5]
 
-        // MARK: - Listing Tasks (4 diverse examples)
+        // MARK: - Activities (4 diverse examples)
 
         let listingTask1 = Activity(
             id: "listing-1",
@@ -204,7 +204,7 @@ struct TaskMockData {
             outputs: nil
         )
 
-        listingTasks = [listingTask1, listingTask2, listingTask3, listingTask4]
+        activities = [listingTask1, listingTask2, listingTask3, listingTask4]
 
         // MARK: - Listings (property data)
 

@@ -29,12 +29,12 @@ final class InboxStore {
     /// Full initializer with optional initial data for previews
     init(
         repository: TaskRepositoryClient,
-        initialStrayTasks: [TaskWithMessages] = [],
-        initialListingTasks: [ActivityWithDetails] = []
+        initialTasks: [TaskWithMessages] = [],
+        initialActivities: [ActivityWithDetails] = []
     ) {
         self.repository = repository
-        self.tasks = initialStrayTasks
-        self.activities = initialListingTasks
+        self.tasks = initialTasks
+        self.activities = initialActivities
     }
 
     // MARK: - Public Methods
@@ -75,7 +75,7 @@ final class InboxStore {
         expandedTaskId == taskId
     }
 
-    // MARK: - Stray Task Actions
+    // MARK: - Agent Task Actions
 
     func claimTask(_ task: AgentTask) async {
         errorMessage = nil
@@ -111,7 +111,7 @@ final class InboxStore {
         }
     }
 
-    // MARK: - Listing Task Actions
+    // MARK: - Activity Actions
 
     func claimActivity(_ task: Activity) async {
         errorMessage = nil

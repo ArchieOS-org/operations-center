@@ -59,9 +59,9 @@ struct InboxView: View {
                             }
                         }
 
-                        // Stray Tasks Section
+                        // Tasks Section
                         if !store.tasks.isEmpty {
-                            sectionHeader(title: "Stray Tasks", count: store.tasks.count)
+                            sectionHeader(title: "Tasks", count: store.tasks.count)
 
                             ForEach(store.tasks, id: \.task.id) { item in
                                 TaskCard(
@@ -167,11 +167,11 @@ struct InboxErrorView: View {
 #Preview("With Mock Data") {
     let store = InboxStore(
         repository: .preview,
-        initialStrayTasks: [
+        initialTasks: [
             TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
             TaskWithMessages(task: AgentTask.mock2, messages: [])
         ],
-        initialListingTasks: [
+        initialActivities: [
             ActivityWithDetails(task: Activity.mock1, listing: Listing.mock1, subtasks: [Subtask.mock1]),
             ActivityWithDetails(task: Activity.mock2, listing: Listing.mock2, subtasks: [])
         ]
