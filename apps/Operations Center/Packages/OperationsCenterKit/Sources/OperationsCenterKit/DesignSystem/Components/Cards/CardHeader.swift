@@ -146,7 +146,7 @@ enum ChipData: Identifiable {
         title: "Pre-listing prep",
         subtitle: "123 Maple Street",
         chips: [
-            .agent(name: "Mike Torres", style: .listing),
+            .agent(name: "Mike Torres", style: .activity),
             .dueDate(Date().addingTimeInterval(7 * 24 * 3600)), // Future
             .custom(text: "MARKETING", color: .purple)
         ]

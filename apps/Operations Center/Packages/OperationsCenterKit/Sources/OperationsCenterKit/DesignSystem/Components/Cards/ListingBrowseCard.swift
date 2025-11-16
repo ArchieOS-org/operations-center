@@ -55,7 +55,7 @@ public struct ListingBrowseCard: View {
 
         // Agent chip
         if let agentId = listing.agentId {
-            chips.append(.agent(name: agentId, style: .listing))
+            chips.append(.agent(name: agentId, style: .activity))
         }
 
         // Listing type chip

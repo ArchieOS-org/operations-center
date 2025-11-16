@@ -3,7 +3,7 @@ import SwiftUI
 /// Card style enum for chip color differentiation
 public enum CardStyle {
     case stray
-    case listing
+    case activity
 }
 
 /// A chip/badge component for displaying labels with colored backgrounds

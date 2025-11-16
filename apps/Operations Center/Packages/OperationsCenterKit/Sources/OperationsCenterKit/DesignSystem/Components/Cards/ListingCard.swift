@@ -138,7 +138,7 @@ public struct ListingCard: View {
 
         // Agent chip (if present)
         if let agentId = listing.agentId {
-            chips.append(.agent(name: agentId, style: .listing))
+            chips.append(.agent(name: agentId, style: .activity))
         }
 
         // Type chip (if present)

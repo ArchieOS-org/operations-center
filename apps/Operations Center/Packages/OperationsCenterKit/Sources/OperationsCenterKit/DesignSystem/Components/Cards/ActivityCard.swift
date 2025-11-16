@@ -81,7 +81,7 @@ public struct ActivityCard: View {
 
         // Assigned agent chip
         if let staffId = task.assignedStaffId {
-            chips.append(.agent(name: staffId, style: .listing))
+            chips.append(.agent(name: staffId, style: .activity))
         }
 
         // Listing type chip (if present)
