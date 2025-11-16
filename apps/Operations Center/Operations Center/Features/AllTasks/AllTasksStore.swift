@@ -86,6 +86,7 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
             _ = try await repository.claimTask(task.id, currentUserId)
 
@@ -99,6 +100,7 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
             _ = try await repository.claimActivity(task.id, currentUserId)
 
@@ -112,6 +114,7 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
+            // swiftlint:disable:next todo
             let currentUserId = "current-user" // TODO: Get from auth
             try await repository.deleteTask(task.id, currentUserId)
 

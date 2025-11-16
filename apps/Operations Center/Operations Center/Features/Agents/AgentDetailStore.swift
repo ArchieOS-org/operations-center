@@ -176,7 +176,7 @@ final class AgentDetailStore {
             await fetchAgentData()
         } catch {
             Logger.tasks.error("Failed to claim activity: \(error.localizedDescription)")
-            errorMessage = "Failed to claim task: \(error.localizedDescription)"
+            errorMessage = "Failed to claim activity: \(error.localizedDescription)"
         }
     }
 
@@ -193,7 +193,7 @@ final class AgentDetailStore {
             await fetchAgentData()
         } catch {
             Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
-            errorMessage = "Failed to delete task: \(error.localizedDescription)"
+            errorMessage = "Failed to delete activity: \(error.localizedDescription)"
         }
     }
 }

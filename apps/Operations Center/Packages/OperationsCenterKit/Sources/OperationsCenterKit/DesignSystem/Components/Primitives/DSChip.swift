@@ -40,6 +40,6 @@ extension DSChip {
     /// Create a chip for displaying an agent name with card-style color
     public init(agentName: String, style: CardStyle) {
         self.text = agentName
-        self.color = style == .stray ? Colors.strayAccent : Colors.listingAccent
+        self.color = style == .stray ? Colors.strayAccent : Colors.activityAccent
     }
 }

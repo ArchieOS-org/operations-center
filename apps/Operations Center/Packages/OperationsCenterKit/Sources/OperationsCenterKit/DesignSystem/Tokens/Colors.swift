@@ -35,8 +35,8 @@ public enum Colors {
     /// Accent color for agent tasks (orphaned, untethered)
     public static let strayAccent = Color.orange
 
-    /// Accent color for activitys (property-linked, has a home)
-    public static let listingAccent = Color.blue
+    /// Accent color for activities (property-linked, has a home)
+    public static let activityAccent = Color.blue
 
     // MARK: - Card Backgrounds
 
