@@ -1,7 +1,6 @@
 {
   "mcpServers": {
     "xcodebuildmcp": {
-      "type": "stdio",
       "command": "npx",
       "args": ["-y", "xcodebuildmcp@latest"],
       "env": {
@@ -9,8 +8,5 @@
         "XCODEBUILDMCP_SENTRY_DISABLED": "true"
       }
     }
-  },
-  "permissions": {
-    "allowedTools": ["mcp__*"]
   }
 }

@@ -120,58 +120,65 @@ extension StrayTask {
     /// Mock data for testing and previews
     /// Context7 best practice: Keep mock data with the model
     /// Reference: swift-dependencies/Articles/LivePreviewTest.md
+    /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static let mock1 = StrayTask(
-        id: "stray_001",
-        realtorId: "realtor_001",
-        name: "Update CRM Records",
-        description: "Update all client contact information in the CRM system",
-        taskCategory: .admin,
-        status: .open,
-        priority: 75,
-        assignedStaffId: nil,
-        dueDate: Date().addingTimeInterval(86400 * 1), // 1 day from now
-        claimedAt: nil,
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
-        updatedAt: Date().addingTimeInterval(-86400 * 2),
-        deletedAt: nil,
-        deletedBy: nil
-    )
+    public static var mock1: StrayTask {
+        StrayTask(
+            id: "stray_001",
+            realtorId: "realtor_001",
+            name: "Update CRM Records",
+            description: "Update all client contact information in the CRM system",
+            taskCategory: .admin,
+            status: .open,
+            priority: 75,
+            assignedStaffId: nil,
+            dueDate: Date().addingTimeInterval(86400 * 1), // 1 day from now
+            claimedAt: nil,
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+            updatedAt: Date().addingTimeInterval(-86400 * 2),
+            deletedAt: nil,
+            deletedBy: nil
+        )
+    }
 
-    public static let mock2 = StrayTask(
-        id: "stray_002",
-        realtorId: "realtor_002",
-        name: "Email Marketing Campaign",
-        description: "Design and send monthly newsletter to all subscribers",
-        taskCategory: .marketing,
-        status: .claimed,
-        priority: 60,
-        assignedStaffId: "staff_003",
-        dueDate: Date().addingTimeInterval(86400 * 5), // 5 days from now
-        claimedAt: Date().addingTimeInterval(-3600), // 1 hour ago
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
-        updatedAt: Date().addingTimeInterval(-3600),
-        deletedAt: nil,
-        deletedBy: nil
-    )
+    public static var mock2: StrayTask {
+        StrayTask(
+            id: "stray_002",
+            realtorId: "realtor_002",
+            name: "Email Marketing Campaign",
+            description: "Design and send monthly newsletter to all subscribers",
+            taskCategory: .marketing,
+            status: .claimed,
+            priority: 60,
+            assignedStaffId: "staff_003",
+            dueDate: Date().addingTimeInterval(86400 * 5), // 5 days from now
+            claimedAt: Date().addingTimeInterval(-3600), // 1 hour ago
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
+            updatedAt: Date().addingTimeInterval(-3600),
+            deletedAt: nil,
+            deletedBy: nil
+        )
+    }
 
-    public static let mock3 = StrayTask(
-        id: "stray_003",
-        realtorId: "realtor_001",
-        name: "Portfolio Photos Update",
-        description: "Update website portfolio with recent property photos",
-        taskCategory: .photo,
-        status: .inProgress,
-        priority: 50,
-        assignedStaffId: "staff_001",
-        dueDate: Date().addingTimeInterval(86400 * 2), // 2 days from now
-        claimedAt: Date().addingTimeInterval(-86400 * 1), // 1 day ago
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 4), // 4 days ago
-        updatedAt: Date().addingTimeInterval(-3600 * 2), // 2 hours ago
-        deletedAt: nil,
-        deletedBy: nil
-    )
+    public static var mock3: StrayTask {
+        StrayTask(
+            id: "stray_003",
+            realtorId: "realtor_001",
+            name: "Portfolio Photos Update",
+            description: "Update website portfolio with recent property photos",
+            taskCategory: .photo,
+            status: .inProgress,
+            priority: 50,
+            assignedStaffId: "staff_001",
+            dueDate: Date().addingTimeInterval(86400 * 2), // 2 days from now
+            claimedAt: Date().addingTimeInterval(-86400 * 1), // 1 day ago
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 4), // 4 days ago
+            updatedAt: Date().addingTimeInterval(-3600 * 2), // 2 hours ago
+            deletedAt: nil,
+            deletedBy: nil
+        )
+    }
 }

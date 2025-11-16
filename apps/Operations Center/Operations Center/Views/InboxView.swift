@@ -88,6 +88,11 @@ struct InboxView: View {
                 }
             }
         }
+        .floatingActionButton {
+            // Per TASK_MANAGEMENT_SPEC.md line 453: "Opens new Task modal"
+            // TODO: Implement new task modal
+            print("Create new task from Inbox")
+        }
         .navigationTitle("Inbox")
         .refreshable {
             await store.refresh()

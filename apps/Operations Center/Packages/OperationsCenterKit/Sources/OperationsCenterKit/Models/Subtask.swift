@@ -45,30 +45,38 @@ public struct Subtask: Identifiable, Codable, Sendable, Hashable {
 
 extension Subtask {
     /// Mock data for testing and previews
-    public static let mock1 = Subtask(
-        id: "subtask_001",
-        parentTaskId: "task_001",
-        name: "Schedule photographer",
-        isCompleted: true,
-        completedAt: Date().addingTimeInterval(-86400), // 1 day ago
-        createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
-    )
+    /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
 
-    public static let mock2 = Subtask(
-        id: "subtask_002",
-        parentTaskId: "task_001",
-        name: "Prepare property for photos",
-        isCompleted: false,
-        completedAt: nil,
-        createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
-    )
+    public static var mock1: Subtask {
+        Subtask(
+            id: "subtask_001",
+            parentTaskId: "task_001",
+            name: "Schedule photographer",
+            isCompleted: true,
+            completedAt: Date().addingTimeInterval(-86400), // 1 day ago
+            createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
+        )
+    }
 
-    public static let mock3 = Subtask(
-        id: "subtask_003",
-        parentTaskId: "task_003",
-        name: "Review inspection report",
-        isCompleted: true,
-        completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
-        createdAt: Date().addingTimeInterval(-86400 * 7) // 7 days ago
-    )
+    public static var mock2: Subtask {
+        Subtask(
+            id: "subtask_002",
+            parentTaskId: "task_001",
+            name: "Prepare property for photos",
+            isCompleted: false,
+            completedAt: nil,
+            createdAt: Date().addingTimeInterval(-86400 * 3) // 3 days ago
+        )
+    }
+
+    public static var mock3: Subtask {
+        Subtask(
+            id: "subtask_003",
+            parentTaskId: "task_003",
+            name: "Review inspection report",
+            isCompleted: true,
+            completedAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+            createdAt: Date().addingTimeInterval(-86400 * 7) // 7 days ago
+        )
+    }
 }

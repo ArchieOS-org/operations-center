@@ -13,6 +13,7 @@ enum Route: Hashable, Identifiable {
     case myTasks
     case myListings
     case logbook
+    case agents
     case agent(id: String)
     case listing(id: String)
     case allTasks
@@ -25,6 +26,7 @@ enum Route: Hashable, Identifiable {
         case .myTasks: return "myTasks"
         case .myListings: return "myListings"
         case .logbook: return "logbook"
+        case .agents: return "agents"
         case .agent(let id): return "agent-\(id)"
         case .listing(let id): return "listing-\(id)"
         case .allTasks: return "allTasks"
@@ -39,6 +41,7 @@ enum Route: Hashable, Identifiable {
         case .myTasks: return "My Tasks"
         case .myListings: return "My Listings"
         case .logbook: return "Logbook"
+        case .agents: return "Agents"
         case .agent: return "Agent"
         case .listing: return "Listing"
         case .allTasks: return "All Tasks"
@@ -53,6 +56,7 @@ enum Route: Hashable, Identifiable {
         case .myTasks: return "checkmark.circle.fill"
         case .myListings: return "house.fill"
         case .logbook: return "clock.fill"
+        case .agents: return "person.2.fill"
         case .agent: return "person.fill"
         case .listing: return "building.2.fill"
         case .allTasks: return "list.bullet"
