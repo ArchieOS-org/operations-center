@@ -211,7 +211,7 @@ struct ListingDetailView: View {
                 .clipShape(Capsule())
         }
         .padding(.vertical, Spacing.sm)
-        .background(Color(UIColor.systemBackground))
+        .background(Colors.surfacePrimary)
     }
 
     // MARK: - Helper Methods

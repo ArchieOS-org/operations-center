@@ -23,7 +23,7 @@ final class MyListingsStore {
     private(set) var listings: [Listing] = []
 
     /// Category filter selection (nil = "All")
-    var selectedCategory: TaskCategory? = nil
+    var selectedCategory: TaskCategory?
 
     /// Mapping of listing ID to categories of tasks user has claimed
     private var listingCategories: [String: Set<TaskCategory?>] = [:]
@@ -97,10 +97,8 @@ final class MyListingsStore {
             // 1. User has claimed activities AND
             // 2. User has acknowledged the listing
             var acknowledgedListingIds: Set<String> = []
-            for listingId in listingIds {
-                if try await listingRepository.hasAcknowledged(listingId, currentUserId) {
-                    acknowledgedListingIds.insert(listingId)
-                }
+            for listingId in listingIds where try await listingRepository.hasAcknowledged(listingId, currentUserId) {
+                acknowledgedListingIds.insert(listingId)
             }
 
             listings = allListings.filter { listing in

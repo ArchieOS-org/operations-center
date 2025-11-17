@@ -23,7 +23,7 @@ final class AllListingsStore {
     private(set) var listings: [Listing] = []
 
     /// Category filter selection (nil = "All")
-    var selectedCategory: TaskCategory? = nil
+    var selectedCategory: TaskCategory?
 
     /// Mapping of listing ID to categories of all tasks for that listing
     private var listingCategories: [String: Set<TaskCategory?>] = [:]

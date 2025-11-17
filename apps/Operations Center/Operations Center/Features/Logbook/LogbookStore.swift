@@ -53,7 +53,9 @@ final class LogbookStore {
             async let deletedTasksFetch = taskRepository.fetchDeletedTasks()
             async let deletedActivitiesFetch = taskRepository.fetchDeletedActivities()
 
-            let (listings, tasks, delTasks, delActivities) = try await (listingsFetch, tasksFetch, deletedTasksFetch, deletedActivitiesFetch)
+            let (listings, tasks, delTasks, delActivities) = try await (
+                listingsFetch, tasksFetch, deletedTasksFetch, deletedActivitiesFetch
+            )
 
             completedListings = listings
             completedTasks = tasks

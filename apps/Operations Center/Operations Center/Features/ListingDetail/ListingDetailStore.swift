@@ -113,7 +113,9 @@ final class ListingDetailStore {
             activities = allActivities.map { $0.task }.filter { $0.listingId == listingId }
             notes = fetchedNotes
 
-            Logger.database.info("Fetched listing \(self.listingId) with \(self.activities.count) activities and \(self.notes.count) notes")
+            Logger.database.info(
+                "Fetched listing \(self.listingId) with \(self.activities.count) activities and \(self.notes.count) notes"
+            )
         } catch {
             Logger.database.error("Failed to fetch listing data: \(error.localizedDescription)")
             errorMessage = "Failed to load listing: \(error.localizedDescription)"
