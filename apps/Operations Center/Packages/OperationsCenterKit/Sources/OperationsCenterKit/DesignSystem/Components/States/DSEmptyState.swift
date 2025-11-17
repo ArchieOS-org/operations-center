@@ -65,7 +65,7 @@ public struct DSEmptyState: View {
                     .padding(.top, Spacing.sm)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, Spacing.emptyStateVertical)
     }
 }
