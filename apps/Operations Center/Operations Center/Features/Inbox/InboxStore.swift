@@ -73,7 +73,12 @@ final class InboxStore {
             // Filter activities to only show those from unacknowledged listings
             let filteredActivities = activities.filter { unacknowledgedIds.contains($0.listing.id) }
 
-            Logger.database.info("✂️ After acknowledgment filter: \(filteredActivities.count) activities (dropped \(activities.count - filteredActivities.count))")
+            Logger.database.info(
+                """
+                ✂️ After acknowledgment filter: \(filteredActivities.count) activities \
+                (dropped \(activities.count - filteredActivities.count))
+                """
+            )
 
             // Group activities by listing
             let groupedByListing = Dictionary(grouping: filteredActivities) { $0.listing.id }

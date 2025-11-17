@@ -111,7 +111,12 @@ final class MyListingsStore {
                 }
             }
 
-            Logger.database.info("✅ User has acknowledged \(acknowledgedListingIds.count) listings: \(acknowledgedListingIds)")
+            Logger.database.info(
+                """
+                ✅ User has acknowledged \(acknowledgedListingIds.count) listings: \
+                \(acknowledgedListingIds)
+                """
+            )
 
             listings = allListings.filter { listing in
                 acknowledgedListingIds.contains(listing.id)

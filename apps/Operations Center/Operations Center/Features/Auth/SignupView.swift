@@ -10,6 +10,7 @@ import OperationsCenterKit
 
 // MARK: - Signup View
 
+// swiftlint:disable type_body_length
 struct SignupView: View {
     // MARK: - State
 
@@ -224,20 +225,23 @@ struct SignupView: View {
     }
 
     private var createAccountButton: some View {
-        Button(action: { Task { await handleSignup() } }) {
-            HStack(spacing: Spacing.sm) {
-                if store.isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: "person.crop.circle.badge.checkmark")
+        Button(
+            action: { Task { await handleSignup() } },
+            label: {
+                HStack(spacing: Spacing.sm) {
+                    if store.isLoading {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "person.crop.circle.badge.checkmark")
+                    }
+                    Text("Create Account")
+                        .font(Typography.cardTitle)
                 }
-                Text("Create Account")
-                    .font(Typography.cardTitle)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.md)
-        }
+        )
         .keyboardShortcut(.defaultAction)
         .buttonStyle(.borderedProminent)
         .disabled(store.isLoading || !isFormValid)

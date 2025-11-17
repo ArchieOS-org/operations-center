@@ -114,7 +114,10 @@ final class ListingDetailStore {
             notes = fetchedNotes
 
             Logger.database.info(
-                "Fetched listing \(self.listingId) with \(self.activities.count) activities and \(self.notes.count) notes"
+                """
+                Fetched listing \(self.listingId) with \(self.activities.count) activities \
+                and \(self.notes.count) notes
+                """
             )
         } catch {
             Logger.database.error("Failed to fetch listing data: \(error.localizedDescription)")
@@ -141,7 +144,11 @@ final class ListingDetailStore {
         }
 
         do {
-            let createdNote = try await noteRepository.createNote(listingId, trimmedText, await authClient.currentUserId())
+            let createdNote = try await noteRepository.createNote(
+                listingId,
+                trimmedText,
+                await authClient.currentUserId()
+            )
 
             // Add new note to beginning of list
             notes.insert(createdNote, at: 0)

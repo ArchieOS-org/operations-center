@@ -70,7 +70,10 @@ final class AllTasksStore {
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
             Logger.tasks.info(
-                "✂️ After filtering for claimed/in-progress: \(self.tasks.count) agent tasks and \(self.activities.count) activities"
+                """
+                ✂️ After filtering for claimed/in-progress: \(self.tasks.count) agent tasks \
+                and \(self.activities.count) activities
+                """
             )
         } catch {
             Logger.tasks.error("❌ Failed to fetch all tasks: \(error.localizedDescription)")

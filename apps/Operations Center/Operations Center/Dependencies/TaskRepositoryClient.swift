@@ -12,6 +12,7 @@ import Supabase
 
 // MARK: - Task Repository Client
 
+// swiftlint:disable file_length
 /// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
     /// Fetch all tasks with their associated Slack messages
@@ -170,7 +171,12 @@ extension TaskRepositoryClient {
                     Logger.database.info("✅ Supabase returned \(response.count) activity records")
 
                     let mapped = response.compactMap(mapActivityResponse)
-                    Logger.database.info("📊 After mapping: \(mapped.count) activities (dropped \(response.count - mapped.count) due to missing listings)")
+                    Logger.database.info(
+                        """
+                        📊 After mapping: \(mapped.count) activities \
+                        (dropped \(response.count - mapped.count) due to missing listings)
+                        """
+                    )
 
                     return mapped
                 } catch let error as URLError {

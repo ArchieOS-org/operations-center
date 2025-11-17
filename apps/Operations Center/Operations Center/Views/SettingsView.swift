@@ -97,12 +97,16 @@ struct SettingsView: View {
             // Logout Section
             if appState.currentUser != nil {
                 Section {
-                    Button(role: .destructive, action: { showingLogoutConfirmation = true }) {
-                        HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Sign Out")
+                    Button(
+                        role: .destructive,
+                        action: { showingLogoutConfirmation = true },
+                        label: {
+                            HStack {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                Text("Sign Out")
+                            }
                         }
-                    }
+                    )
                 }
             }
         }

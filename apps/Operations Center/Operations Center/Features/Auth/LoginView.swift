@@ -182,8 +182,10 @@ struct LoginView: View {
     }
 
     private var signInButton: some View {
-        Button(action: { Task { await handleSignIn() } }) {
-            HStack(spacing: Spacing.sm) {
+        Button(
+            action: { Task { await handleSignIn() } },
+            label: {
+                HStack(spacing: Spacing.sm) {
                 if store.isLoading {
                     ProgressView()
                         .tint(.white)
@@ -195,7 +197,8 @@ struct LoginView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.md)
-        }
+            }
+        )
         .focused($focusedField, equals: .signIn)
         .accessibilityFocused($a11yFocus, equals: .signIn)
         .keyboardShortcut(.defaultAction)
@@ -205,16 +208,19 @@ struct LoginView: View {
     }
 
     private var createAccountLink: some View {
-        Button(action: { showingSignup = true }) {
-            HStack(spacing: Spacing.xs) {
-                Text("Don't have an account?")
-                    .foregroundStyle(.secondary)
-                Text("Create one")
-                    .foregroundStyle(Colors.accentPrimary)
-                    .fontWeight(.semibold)
+        Button(
+            action: { showingSignup = true },
+            label: {
+                HStack(spacing: Spacing.xs) {
+                    Text("Don't have an account?")
+                        .foregroundStyle(.secondary)
+                    Text("Create one")
+                        .foregroundStyle(Colors.accentPrimary)
+                        .fontWeight(.semibold)
+                }
+                .font(Typography.body)
             }
-            .font(Typography.body)
-        }
+        )
         .buttonStyle(.plain)
     }
 

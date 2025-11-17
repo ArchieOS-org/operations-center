@@ -30,7 +30,10 @@ public struct ListingRepositoryClient {
     public var deleteListing: @Sendable (_ listingId: String, _ deletedBy: String) async throws -> Void
 
     /// Acknowledge a listing for a specific staff member
-    public var acknowledgeListing: @Sendable (_ listingId: String, _ staffId: String) async throws -> ListingAcknowledgment
+    public var acknowledgeListing: @Sendable (
+        _ listingId: String,
+        _ staffId: String
+    ) async throws -> ListingAcknowledgment
 
     /// Check if a staff member has acknowledged a listing
     public var hasAcknowledged: @Sendable (_ listingId: String, _ staffId: String) async throws -> Bool

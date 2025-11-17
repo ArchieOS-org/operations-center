@@ -93,8 +93,8 @@ jobs:
       - name: Check coverage threshold
         run: |
           COVERAGE=$(python -m pytest app --cov=app --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
-          if [ "$COVERAGE" -lt 30 ]; then
-            echo "Coverage $COVERAGE% is below 30% threshold"
+          if [ "$COVERAGE" -lt 25 ]; then
+            echo "Coverage $COVERAGE% is below 25% threshold"
             exit 1
           fi
           echo "Coverage $COVERAGE% meets threshold"

@@ -5,7 +5,7 @@ This module provides discovery and management of all agents in the system.
 Each agent is a specialist with a single, well-defined purpose.
 """
 
-from typing import Dict, Type, Optional
+from typing import Dict, Optional, Any
 from abc import ABC, abstractmethod
 from .classifier import MessageClassifier
 
@@ -33,8 +33,6 @@ class BaseAgent(ABC):
 
 # Agent Registry - Single source of truth for all agents
 # Note: MessageClassifier doesn't inherit from BaseAgent (legacy code)
-from typing import Any
-
 AGENT_REGISTRY: Dict[str, Any] = {
     "classifier": MessageClassifier,
     # "orchestrator": OrchestratorAgent,  # TODO: Create
