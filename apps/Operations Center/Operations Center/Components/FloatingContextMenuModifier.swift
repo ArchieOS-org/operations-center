@@ -23,6 +23,7 @@ struct FloatingContextMenuModifier: ViewModifier {
                         .padding(.bottom, Spacing.lg)
                         .padding(.horizontal, Spacing.lg)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .animation(Animations.standard, value: isVisible)
                 }
             }
     }

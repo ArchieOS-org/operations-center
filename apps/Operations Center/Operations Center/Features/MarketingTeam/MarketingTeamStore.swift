@@ -10,26 +10,7 @@ import OperationsCenterKit
 import Dependencies
 
 @Observable @MainActor
-final class MarketingTeamStore: TeamViewStore {
-    // MARK: - Observable State
-
-    var tasks: [TaskWithMessages] = []
-    var activities: [ActivityWithDetails] = []
-    var expandedTaskId: String?
-    var isLoading = false
-    var errorMessage: String?
-
-    // MARK: - Dependencies
-
-    private let taskRepository: TaskRepositoryClient
-    @ObservationIgnored @Dependency(\.authClient) private var authClient
-
-    // MARK: - Initialization
-
-    init(taskRepository: TaskRepositoryClient) {
-        self.taskRepository = taskRepository
-    }
-
+final class MarketingTeamStore: TeamViewStoreBase, TeamViewStore {
     // MARK: - Computed Properties
 
     /// All marketing tasks (standalone + property-linked activities)
@@ -39,7 +20,7 @@ final class MarketingTeamStore: TeamViewStore {
 
     // MARK: - Data Loading
 
-    func loadTasks() async {
+    override func loadTasks() async {
         isLoading = true
         errorMessage = nil
 
@@ -59,55 +40,5 @@ final class MarketingTeamStore: TeamViewStore {
         }
 
         isLoading = false
-    }
-
-    // MARK: - Actions
-
-    func toggleExpansion(for taskId: String) {
-        if expandedTaskId == taskId {
-            expandedTaskId = nil
-        } else {
-            expandedTaskId = taskId
-        }
-    }
-
-    func claimTask(_ task: AgentTask) async {
-        do {
-            let userId = try await authClient.currentUserId()
-            _ = try await taskRepository.claimTask(task.id, userId)
-            await loadTasks() // Refresh
-        } catch {
-            errorMessage = "Failed to claim task: \(error.localizedDescription)"
-        }
-    }
-
-    func claimActivity(_ activity: Activity) async {
-        do {
-            let userId = try await authClient.currentUserId()
-            _ = try await taskRepository.claimActivity(activity.id, userId)
-            await loadTasks() // Refresh
-        } catch {
-            errorMessage = "Failed to claim activity: \(error.localizedDescription)"
-        }
-    }
-
-    func deleteTask(_ task: AgentTask) async {
-        do {
-            let userId = try await authClient.currentUserId()
-            try await taskRepository.deleteTask(task.id, userId)
-            await loadTasks() // Refresh
-        } catch {
-            errorMessage = "Failed to delete task: \(error.localizedDescription)"
-        }
-    }
-
-    func deleteActivity(_ activity: Activity) async {
-        do {
-            let userId = try await authClient.currentUserId()
-            try await taskRepository.deleteActivity(activity.id, userId)
-            await loadTasks() // Refresh
-        } catch {
-            errorMessage = "Failed to delete activity: \(error.localizedDescription)"
-        }
     }
 }
