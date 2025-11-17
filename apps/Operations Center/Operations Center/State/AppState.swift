@@ -17,7 +17,7 @@ final class AppState {
     // MARK: - State
 
     var allTasks: [Activity] = []
-    var currentUser: User?
+    var currentUser: Supabase.User?
     var isLoading = false
     var errorMessage: String?
 
@@ -27,10 +27,10 @@ final class AppState {
     private let taskRepository: TaskRepositoryClient
 
     @ObservationIgnored
-    private var realtimeSubscription: Task<Void, Never>?
+    private var realtimeSubscription: _Concurrency.Task<Void, Never>?
 
     @ObservationIgnored
-    private var authStateTask: Task<Void, Never>?
+    private var authStateTask: _Concurrency.Task<Void, Never>?
 
     // MARK: - Computed Properties
 
@@ -41,8 +41,8 @@ final class AppState {
 
     /// Tasks assigned to the current user
     var myTasks: [Activity] {
-        guard let userId = currentUser?.id else { return [] }
-        return allTasks.filter { $0.assignedStaffId == userId.uuidString }
+        guard let userId = currentUser?.id.uuidString else { return [] }
+        return allTasks.filter { $0.assignedStaffId == userId }
     }
 
     // MARK: - Initialization
@@ -82,14 +82,17 @@ final class AppState {
 
     private func setupAuthStateListener() async {
         // Listen for auth state changes
-        authStateTask = Task {
-            for await state in supabase.auth.authStateChanges
+        authStateTask = Task.detached { [weak self] in
+            guard let self else { return }
+            for await state in await self.supabase.auth.authStateChanges
                 where [.initialSession, .signedIn, .signedOut].contains(state.event) {
-                currentUser = state.session?.user
+                await MainActor.run {
+                    self.currentUser = state.session?.user
+                }
 
                 // Refresh tasks when auth state changes
                 if state.session != nil {
-                    await fetchTasks()
+                    await self.fetchTasks()
                 }
             }
         }
@@ -101,14 +104,10 @@ final class AppState {
         isLoading = true
         errorMessage = nil
 
-        Logger.database.info("AppState.fetchTasks() starting...")
-
         do {
             // Use TaskRepositoryClient (production or preview based on init)
-            Logger.database.info("Calling taskRepository.fetchActivities()...")
+            Logger.database.info("AppState.fetchTasks() starting...")
             let taskData = try await taskRepository.fetchActivities()
-            Logger.database.info("Received \(taskData.count) activities from repository")
-
             allTasks = taskData.map(\.task)  // Extract just the activities
             Logger.database.info("AppState now has \(self.allTasks.count) tasks")
 
@@ -116,12 +115,11 @@ final class AppState {
             saveCachedData()
         } catch {
             Logger.database.error("❌ fetchTasks failed: \(error.localizedDescription)")
-            Logger.database.error("Error details: \(String(describing: error))")
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
-        Logger.database.info("AppState.fetchTasks() completed. isLoading=false")
+        Logger.database.info("AppState.fetchTasks() completed")
     }
 
     // MARK: - Real-time Sync
@@ -157,13 +155,16 @@ final class AppState {
     private func handleRealtimeChange(_ change: AnyAction) async {
         // Refresh entire list on any change
         // This ensures all views stay in sync
+        Logger.database.info("Handling realtime change...")
         do {
             let taskData = try await taskRepository.fetchActivities()
             allTasks = taskData.map(\.task)  // Extract just the activities
+            Logger.database.info("Updated \(allTasks.count) tasks from realtime change")
 
             // Save to cache
             saveCachedData()
         } catch {
+            Logger.database.error("❌ Realtime change handler failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
     }
@@ -173,7 +174,7 @@ final class AppState {
     func claimTask(_ task: Activity) async {
         errorMessage = nil
 
-        guard let userId = currentUser?.id else {
+        guard let userId = currentUser?.id.uuidString else {
             errorMessage = "Must be logged in to claim tasks"
             return
         }
@@ -182,7 +183,7 @@ final class AppState {
             let _: Activity = try await supabase
                 .from("activities")
                 .update([
-                    "assigned_staff_id": userId.uuidString,
+                    "assigned_staff_id": userId,
                     "claimed_at": ISO8601DateFormatter().string(from: Date()),
                     "status": "CLAIMED"
                 ])
