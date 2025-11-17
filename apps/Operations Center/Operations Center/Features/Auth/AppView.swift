@@ -32,6 +32,7 @@ struct AppView: View {
             } else if authStore.isAuthenticated {
                 // Main app
                 RootView()
+                    .environment(authStore)
                     .transition(.opacity)
             } else {
                 // Login screen

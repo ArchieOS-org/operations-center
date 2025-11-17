@@ -12,7 +12,7 @@ import Auth
 
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
-    @State private var authStore = AuthenticationStore(supabaseClient: supabase)
+    @Environment(AuthenticationStore.self) private var authStore
     @State private var selectedTeam: Team?
     @State private var isUpdatingTeam = false
     @State private var showingLogoutConfirmation = false
@@ -173,5 +173,6 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
             .environment(AppState(supabase: supabase, taskRepository: .preview))
+            .environment(AuthenticationStore(supabaseClient: supabase))
     }
 }
