@@ -41,6 +41,7 @@ struct LogbookView: View {
         List {
             completedListingsSection
             completedTasksSection
+            removedItemsSection
         }
         .listStyle(.plain)
         .navigationTitle("Logbook")
@@ -148,12 +149,116 @@ struct LogbookView: View {
         .padding(.vertical, Spacing.md)
     }
 
+    // MARK: - Removed Items Section
+
+    @ViewBuilder
+    private var removedItemsSection: some View {
+        Section {
+            if !store.deletedTasks.isEmpty || !store.deletedActivities.isEmpty {
+                // Deleted Tasks
+                ForEach(store.deletedTasks) { task in
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack {
+                            Image(systemName: "trash")
+                                .foregroundStyle(.red)
+                            Text(task.name)
+                                .font(.headline)
+                        }
+
+                        if let description = task.description {
+                            Text(description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        HStack {
+                            if let category = task.taskCategory {
+                                Label(category.rawValue, systemImage: categoryIcon(for: category))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            } else {
+                                Label("Uncategorized", systemImage: "ellipsis.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+
+                            if let deletedAt = task.deletedAt {
+                                Spacer()
+                                Text("Deleted \(deletedAt, style: .relative)")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, Spacing.xs)
+                }
+
+                // Deleted Activities (property-specific)
+                ForEach(store.deletedActivities, id: \.task.id) { activityWithDetails in
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack {
+                            Image(systemName: "trash")
+                                .foregroundStyle(.red)
+                            Text(activityWithDetails.task.name)
+                                .font(.headline)
+                        }
+
+                        // Show property address for activities
+                        Text(activityWithDetails.listing.addressString)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        HStack {
+                            if let category = activityWithDetails.task.taskCategory {
+                                Label(category.rawValue, systemImage: categoryIcon(for: category))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            } else {
+                                Label("Uncategorized", systemImage: "ellipsis.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+
+                            if let deletedAt = activityWithDetails.task.deletedAt {
+                                Spacer()
+                                Text("Deleted \(deletedAt, style: .relative)")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, Spacing.xs)
+                }
+            } else if !store.isLoading {
+                emptyRemovedState
+            }
+        } header: {
+            Text("Removed")
+                .font(.headline)
+        }
+    }
+
+    @ViewBuilder
+    private var emptyRemovedState: some View {
+        DSEmptyState(
+            icon: "trash",
+            title: "No removed items",
+            message: "Deleted tasks and activities will appear here"
+        )
+        .padding(.vertical, Spacing.md)
+    }
+
     // MARK: - Helper Methods
 
     private func categoryIcon(for category: TaskCategory) -> String {
         switch category {
         case .admin: return "gearshape"
         case .marketing: return "megaphone"
+        case .photo: return "camera"
+        case .staging: return "sofa"
+        case .inspection: return "checkmark.seal"
+        case .other: return "ellipsis.circle"
         }
     }
 }

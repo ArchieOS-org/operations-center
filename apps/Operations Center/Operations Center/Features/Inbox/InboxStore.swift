@@ -25,6 +25,7 @@ final class InboxStore {
     // MARK: - Dependencies
 
     private let taskRepository: TaskRepositoryClient
+    private let listingRepository: ListingRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
     private let realtorRepository: RealtorRepositoryClient
     @ObservationIgnored @Dependency(\.authClient) private var authClient
@@ -34,12 +35,14 @@ final class InboxStore {
     /// Full initializer with optional initial data for previews
     init(
         taskRepository: TaskRepositoryClient,
+        listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
         initialTasks: [TaskWithMessages] = [],
         initialListings: [ListingWithDetails] = []
     ) {
         self.taskRepository = taskRepository
+        self.listingRepository = listingRepository
         self.noteRepository = noteRepository
         self.realtorRepository = realtorRepository
         self.tasks = initialTasks
@@ -53,15 +56,22 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            // Fetch agent tasks and activities concurrently
+            let currentUserId = authClient.currentUserId()
+
+            // Fetch agent tasks, activities, and unacknowledged listings concurrently
             async let agentTasks = taskRepository.fetchTasks()
             async let activityDetails = taskRepository.fetchActivities()
+            async let unacknowledgedListingIds = listingRepository.fetchUnacknowledgedListings(currentUserId)
 
             tasks = try await agentTasks
             let activities = try await activityDetails
+            let unacknowledgedIds = Set(try await unacknowledgedListingIds.map { $0.id })
+
+            // Filter activities to only show those from unacknowledged listings
+            let filteredActivities = activities.filter { unacknowledgedIds.contains($0.listing.id) }
 
             // Group activities by listing
-            let groupedByListing = Dictionary(grouping: activities) { $0.listing.id }
+            let groupedByListing = Dictionary(grouping: filteredActivities) { $0.listing.id }
 
             // Build ListingWithDetails for each listing
             var listingDetails: [ListingWithDetails] = []
@@ -211,6 +221,21 @@ final class InboxStore {
             _ = try await noteRepository.createNote(listingId, content, authClient.currentUserId())
 
             // Refresh to get updated notes
+            await fetchTasks()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Listing Actions
+
+    func acknowledgeListing(_ listingId: String) async {
+        errorMessage = nil
+
+        do {
+            _ = try await listingRepository.acknowledgeListing(listingId, authClient.currentUserId())
+
+            // Refresh the list
             await fetchTasks()
         } catch {
             errorMessage = error.localizedDescription

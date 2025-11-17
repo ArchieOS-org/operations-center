@@ -106,6 +106,10 @@ CREATE TRIGGER listing_notes_updated_at
 -- ============================================================
 -- AUDIT LOG TABLE (for listing history)
 -- ============================================================
+-- NOTE: This table is created here for schema completeness from original migration 003,
+-- but the audit trail feature is not currently implemented. This table is intentionally
+-- removed in migration 019 during cleanup. Left here for historical consistency.
+
 -- Drop existing audit_log if it exists with wrong schema
 DROP TABLE IF EXISTS audit_log CASCADE;
 

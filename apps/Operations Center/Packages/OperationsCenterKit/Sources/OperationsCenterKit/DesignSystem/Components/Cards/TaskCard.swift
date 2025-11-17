@@ -141,6 +141,10 @@ public struct TaskCard: View {
         switch category {
         case .admin: return Colors.categoryAdmin
         case .marketing: return Colors.categoryMarketing
+        case .photo: return Colors.categoryPhoto
+        case .staging: return Colors.categoryStaging
+        case .inspection: return Colors.categoryInspection
+        case .other: return Colors.categoryOther
         }
     }
 }

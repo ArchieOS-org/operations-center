@@ -109,6 +109,10 @@ struct CategoryBadge: View {
         switch category {
         case .admin: return "doc.text"
         case .marketing: return "megaphone"
+        case .photo: return "camera"
+        case .staging: return "house"
+        case .inspection: return "checklist"
+        case .other: return "tag"
         }
     }
 }

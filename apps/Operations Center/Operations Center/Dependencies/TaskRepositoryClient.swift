@@ -20,6 +20,12 @@ public struct TaskRepositoryClient {
     /// Fetch all activities with their listing data and activity items
     public var fetchActivities: @Sendable () async throws -> [ActivityWithDetails]
 
+    /// Fetch deleted tasks (for Logbook)
+    public var fetchDeletedTasks: @Sendable () async throws -> [AgentTask]
+
+    /// Fetch deleted activities (for Logbook)
+    public var fetchDeletedActivities: @Sendable () async throws -> [ActivityWithDetails]
+
     /// Claim a task
     public var claimTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> AgentTask
 
@@ -40,6 +46,9 @@ public struct TaskRepositoryClient {
 
     /// Fetch completed tasks (for Logbook)
     public var fetchCompletedTasks: @Sendable () async throws -> [AgentTask]
+
+    /// Fetch activities by assigned staff member (for My Listings)
+    public var fetchActivitiesByStaff: @Sendable (_ staffId: String) async throws -> [ActivityWithDetails]
 }
 
 // MARK: - Response Models
@@ -157,6 +166,32 @@ extension TaskRepositoryClient {
 
                 return response.compactMap(mapActivityResponse)
             },
+            fetchDeletedTasks: {
+                Logger.database.info("Fetching deleted tasks")
+                let tasks: [AgentTask] = try await supabase
+                    .from("agent_tasks")
+                    .select()
+                    .not("deleted_at", operator: .is, value: "null")
+                    .order("deleted_at", ascending: false)
+                    .execute()
+                    .value
+
+                Logger.database.info("Fetched \(tasks.count) deleted agent tasks")
+                return tasks
+            },
+            fetchDeletedActivities: {
+                Logger.database.info("Fetching deleted activities")
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
+                    .select("*, listings(*)")
+                    .not("deleted_at", operator: .is, value: "null")
+                    .order("deleted_at", ascending: false)
+                    .execute()
+                    .value
+
+                Logger.database.info("Fetched \(response.count) deleted activities")
+                return response.compactMap(mapActivityResponse)
+            },
             claimTask: { taskId, staffId in
                 let now = Date()
 
@@ -258,6 +293,20 @@ extension TaskRepositoryClient {
 
                 Logger.database.info("Fetched \(tasks.count) completed agent tasks")
                 return tasks
+            },
+            fetchActivitiesByStaff: { staffId in
+                // Query activities with nested listings join by assigned_staff_id
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
+                    .select("*, listings(*)")
+                    .eq("assigned_staff_id", value: staffId)
+                    .is("deleted_at", value: nil)
+                    .order("priority", ascending: false)
+                    .order("created_at", ascending: false)
+                    .execute()
+                    .value
+
+                return response.compactMap(mapActivityResponse)
             }
         )
     }
@@ -289,6 +338,12 @@ extension TaskRepositoryClient {
                     listing: Listing.mock3
                 )
             ]
+        },
+        fetchDeletedTasks: {
+            return []
+        },
+        fetchDeletedActivities: {
+            return []
         },
         claimTask: { _, staffId in
             var task = AgentTask.mock1
@@ -327,6 +382,18 @@ extension TaskRepositoryClient {
         fetchCompletedTasks: {
             // Return empty array - no completed tasks in mock data yet
             return []
+        },
+        fetchActivitiesByStaff: { _ in
+            return [
+                ActivityWithDetails(
+                    task: Activity.mock1,
+                    listing: Listing.mock1
+                ),
+                ActivityWithDetails(
+                    task: Activity.mock2,
+                    listing: Listing.mock2
+                )
+            ]
         }
     )
 }

@@ -143,10 +143,7 @@ struct InboxView: View {
                 title: "Acknowledge",
                 systemImage: "checkmark.circle",
                 action: {
-                    // Mark all activities as acknowledged/claimed
-                    for activity in listingWithDetails.activities {
-                        Task { await store.claimActivity(activity) }
-                    }
+                    Task { await store.acknowledgeListing(listingWithDetails.listing.id) }
                 }
             ),
             DSContextAction(
@@ -188,6 +185,7 @@ struct InboxView: View {
 #Preview("With Mock Data") {
     let store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview,
         initialTasks: [
@@ -218,6 +216,7 @@ struct InboxView: View {
 #Preview("Empty State") {
     let store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )
@@ -230,6 +229,7 @@ struct InboxView: View {
 #Preview("Loading State") {
     @Previewable @State var store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )
@@ -243,6 +243,7 @@ struct InboxView: View {
 #Preview("Error State") {
     @Previewable @State var store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )

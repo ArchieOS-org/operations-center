@@ -28,6 +28,15 @@ public struct ListingRepositoryClient {
 
     /// Delete a listing (soft delete)
     public var deleteListing: @Sendable (_ listingId: String, _ deletedBy: String) async throws -> Void
+
+    /// Acknowledge a listing for a specific staff member
+    public var acknowledgeListing: @Sendable (_ listingId: String, _ staffId: String) async throws -> ListingAcknowledgment
+
+    /// Check if a staff member has acknowledged a listing
+    public var hasAcknowledged: @Sendable (_ listingId: String, _ staffId: String) async throws -> Bool
+
+    /// Fetch unacknowledged listings for a staff member
+    public var fetchUnacknowledgedListings: @Sendable (_ staffId: String) async throws -> [Listing]
 }
 
 // MARK: - Live Implementation
@@ -102,6 +111,67 @@ extension ListingRepositoryClient {
                 .execute()
 
             Logger.database.info("Successfully deleted listing: \(listingId)")
+        },
+        acknowledgeListing: { listingId, staffId in
+            Logger.database.info("Acknowledging listing \(listingId) for staff \(staffId)")
+
+            let ack: ListingAcknowledgment = try await supabase
+                .from("listing_acknowledgments")
+                .insert([
+                    "listing_id": listingId,
+                    "staff_id": staffId,
+                    "acknowledged_at": Date().ISO8601Format(),
+                    "acknowledged_from": "mobile"
+                ])
+                .select()
+                .single()
+                .execute()
+                .value
+
+            Logger.database.info("Successfully acknowledged listing: \(listingId)")
+            return ack
+        },
+        hasAcknowledged: { listingId, staffId in
+            Logger.database.info("Checking acknowledgment for listing \(listingId), staff \(staffId)")
+
+            let acks: [ListingAcknowledgment] = try await supabase
+                .from("listing_acknowledgments")
+                .select()
+                .eq("listing_id", value: listingId)
+                .eq("staff_id", value: staffId)
+                .execute()
+                .value
+
+            return !acks.isEmpty
+        },
+        fetchUnacknowledgedListings: { staffId in
+            Logger.database.info("Fetching unacknowledged listings for staff \(staffId)")
+
+            // Get all active listings
+            let allListings: [Listing] = try await supabase
+                .from("listings")
+                .select()
+                .is("deleted_at", value: nil)
+                .is("completed_at", value: nil)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+
+            // Get acknowledged listing IDs for this staff member
+            let acknowledged: [ListingAcknowledgment] = try await supabase
+                .from("listing_acknowledgments")
+                .select()
+                .eq("staff_id", value: staffId)
+                .execute()
+                .value
+
+            let acknowledgedIds = Set(acknowledged.map { $0.listingId })
+
+            // Filter out acknowledged listings
+            let unacknowledged = allListings.filter { !acknowledgedIds.contains($0.id) }
+
+            Logger.database.info("Found \(unacknowledged.count) unacknowledged listings")
+            return unacknowledged
         }
     )
 }
@@ -125,6 +195,20 @@ extension ListingRepositoryClient {
             return [Listing.mock3]
         },
         deleteListing: { _, _ in
+        },
+        acknowledgeListing: { listingId, staffId in
+            return ListingAcknowledgment(
+                listingId: listingId,
+                staffId: staffId,
+                acknowledgedAt: Date(),
+                acknowledgedFrom: .mobile
+            )
+        },
+        hasAcknowledged: { _, _ in
+            return false
+        },
+        fetchUnacknowledgedListings: { _ in
+            return [Listing.mock1, Listing.mock2]
         }
     )
 }

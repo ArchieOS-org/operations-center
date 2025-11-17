@@ -25,6 +25,12 @@ final class ListingDetailStore {
     /// Notes for this listing
     private(set) var notes: [ListingNote] = []
 
+    /// Activities for this listing
+    private(set) var activities: [Activity] = []
+
+    /// Expanded activity ID for UI state
+    var expandedActivityId: String?
+
     /// New note input text
     var newNoteText: String = ""
 
@@ -38,6 +44,7 @@ final class ListingDetailStore {
     private let listingId: String
     private let listingRepository: ListingRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
+    private let taskRepository: TaskRepositoryClient
 
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
@@ -47,31 +54,66 @@ final class ListingDetailStore {
     init(
         listingId: String,
         listingRepository: ListingRepositoryClient,
-        noteRepository: ListingNoteRepositoryClient
+        noteRepository: ListingNoteRepositoryClient,
+        taskRepository: TaskRepositoryClient
     ) {
         self.listingId = listingId
         self.listingRepository = listingRepository
         self.noteRepository = noteRepository
+        self.taskRepository = taskRepository
+    }
+
+    // MARK: - Computed Properties
+
+    /// Marketing activities, sorted with incomplete first
+    var marketingActivities: [Activity] {
+        activities
+            .filter { $0.taskCategory == .marketing }
+            .sorted { ($0.completedAt == nil) && ($1.completedAt != nil) }
+    }
+
+    /// Admin activities, sorted with incomplete first
+    var adminActivities: [Activity] {
+        activities
+            .filter { $0.taskCategory == .admin }
+            .sorted { ($0.completedAt == nil) && ($1.completedAt != nil) }
+    }
+
+    /// Other categorized activities, sorted with incomplete first
+    var otherActivities: [Activity] {
+        activities
+            .filter { $0.taskCategory != .marketing && $0.taskCategory != .admin && $0.taskCategory != nil }
+            .sorted { ($0.completedAt == nil) && ($1.completedAt != nil) }
+    }
+
+    /// Uncategorized activities, sorted with incomplete first
+    var uncategorizedActivities: [Activity] {
+        activities
+            .filter { $0.taskCategory == nil }
+            .sorted { ($0.completedAt == nil) && ($1.completedAt != nil) }
     }
 
     // MARK: - Actions
 
-    /// Fetch listing data and notes
+    /// Fetch listing data, activities, and notes
     func fetchListingData() async {
         isLoading = true
         errorMessage = nil
 
         do {
-            // Fetch listing and notes in parallel
-            async let activitiesFetch = listingRepository.fetchListing(listingId)
+            // Fetch listing, activities, and notes in parallel
+            async let listingFetch = listingRepository.fetchListing(listingId)
+            async let activitiesFetch = taskRepository.fetchActivities()
             async let notesFetch = noteRepository.fetchNotes(listingId)
 
-            let (fetchedListing, fetchedNotes) = try await (activitiesFetch, notesFetch)
+            let (fetchedListing, allActivities, fetchedNotes) = try await (listingFetch, activitiesFetch, notesFetch)
 
             listing = fetchedListing
+            // Filter activities to only those for this listing
+            activities = allActivities.map { $0.task }.filter { $0.listingId == listingId }
             notes = fetchedNotes
 
-            Logger.database.info("Fetched listing \(self.listingId) with \(self.notes.count) notes")
+            Logger.database.info("Fetched listing \(self.listingId) with \(self.activities.count) activities and \(self.notes.count) notes")
         } catch {
             Logger.database.error("Failed to fetch listing data: \(error.localizedDescription)")
             errorMessage = "Failed to load listing: \(error.localizedDescription)"
@@ -124,6 +166,39 @@ final class ListingDetailStore {
         } catch {
             Logger.database.error("Failed to delete note: \(error.localizedDescription)")
             errorMessage = "Failed to delete note: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Activity Actions
+
+    /// Toggle expansion state for an activity
+    func toggleExpansion(for activityId: String) {
+        if expandedActivityId == activityId {
+            expandedActivityId = nil
+        } else {
+            expandedActivityId = activityId
+        }
+    }
+
+    /// Claim an activity
+    func claimActivity(_ activity: Activity) async {
+        let userId = authClient.currentUserId()
+
+        do {
+            _ = try await taskRepository.claimActivity(activity.id, userId)
+            await fetchListingData() // Refresh
+        } catch {
+            errorMessage = "Failed to claim activity: \(error.localizedDescription)"
+        }
+    }
+
+    /// Delete an activity
+    func deleteActivity(_ activity: Activity) async {
+        do {
+            try await taskRepository.deleteActivity(activity.id, authClient.currentUserId())
+            await fetchListingData() // Refresh
+        } catch {
+            errorMessage = "Failed to delete activity: \(error.localizedDescription)"
         }
     }
 }

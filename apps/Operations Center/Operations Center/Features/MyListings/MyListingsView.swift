@@ -36,6 +36,7 @@ struct MyListingsView: View {
 
     private var listingsList: some View {
         List {
+            categoryFilterSection
             listingsSection
             emptyStateSection
         }
@@ -52,10 +53,24 @@ struct MyListingsView: View {
     }
 
     @ViewBuilder
+    private var categoryFilterSection: some View {
+        Section {
+            Picker("Category", selection: $store.selectedCategory) {
+                Text("All").tag(nil as TaskCategory?)
+                Text("Admin").tag(TaskCategory.admin as TaskCategory?)
+                Text("Marketing").tag(TaskCategory.marketing as TaskCategory?)
+            }
+            .pickerStyle(.segmented)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    @ViewBuilder
     private var listingsSection: some View {
-        if !store.listings.isEmpty {
+        if !store.filteredListings.isEmpty {
             Section {
-                ForEach(store.listings, id: \.id) { listing in
+                ForEach(store.filteredListings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingBrowseCard(listing: listing)
                     }
@@ -67,7 +82,7 @@ struct MyListingsView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.listings.isEmpty && !store.isLoading {
+        if store.filteredListings.isEmpty && !store.isLoading {
             DSEmptyState(
                 icon: "house.circle",
                 title: "No listings with claimed activities",

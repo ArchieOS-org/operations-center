@@ -2,17 +2,21 @@
 //  TaskCategory.swift
 //  OperationsCenterKit
 //
-//  Task categorization: Admin, Marketing, or uncategorized
-//  Clean, simple, three-state model (admin/marketing/nil)
+//  Task categorization: Admin, Marketing, Photo, Staging, Inspection, Other
+//  Matches database check constraint from migration 017
 //
 
 import Foundation
 
 /// Task categorization for work items
-/// Optional type: nil = uncategorized, .admin or .marketing = categorized
+/// Matches database check constraint: ADMIN, MARKETING, PHOTO, STAGING, INSPECTION, OTHER
 public enum TaskCategory: String, Codable, Sendable {
     case admin = "ADMIN"
     case marketing = "MARKETING"
+    case photo = "PHOTO"
+    case staging = "STAGING"
+    case inspection = "INSPECTION"
+    case other = "OTHER"
 }
 
 // MARK: - Optional Extensions
@@ -25,6 +29,14 @@ extension Optional where Wrapped == TaskCategory {
             return "Admin"
         case .marketing:
             return "Marketing"
+        case .photo:
+            return "Photo"
+        case .staging:
+            return "Staging"
+        case .inspection:
+            return "Inspection"
+        case .other:
+            return "Other"
         case nil:
             return "Uncategorized"
         }

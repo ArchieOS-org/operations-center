@@ -1,0 +1,230 @@
+===================================================================================
+                    OPERATIONS CENTER DATABASE SCHEMA MAP
+===================================================================================
+
+CORE WORKFLOW ENTITIES:
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                            PEOPLE MANAGEMENT LAYER                             ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                                 ┃
+┃  ┌─────────────────────────┐           ┌──────────────────────────────────┐   ┃
+┃  │      STAFF TABLE        │           │     REALTORS TABLE               │   ┃
+┃  ├─────────────────────────┤           ├──────────────────────────────────┤   ┃
+┃  │ PK: staff_id (ULID)     │           │ PK: realtor_id (ULID)            │   ┃
+┃  │    email (UNIQUE)       │           │    email (UNIQUE)                │   ┃
+┃  │    name                 │           │    name                          │   ┃
+┃  │    role: ENUM           │           │    license_number (UNIQUE)       │   ┃
+┃  │    slack_user_id        │           │    brokerage                     │   ┃
+┃  │    status: ENUM         │           │    slack_user_id                 │   ┃
+┃  │    metadata: JSONB      │           │    territories: ARRAY            │   ┃
+┃  │                         │           │    status: ENUM                  │   ┃
+┃  │ Role: admin,            │           │    metadata: JSONB               │   ┃
+┃  │       operations,        │           │                                  │   ┃
+┃  │       marketing,         │           │ Status: active, inactive,        │   ┃
+┃  │       support            │           │         suspended, pending       │   ┃
+┃  │                         │           │                                  │   ┃
+┃  └─────────────────────────┘           └──────────────────────────────────┘   ┃
+┃           △                                       △                            ┃
+┃           │ FK: assigned_staff_id                │ FK: realtor_id             ┃
+┃           │                                      │                            ┃
+┃           └──────────────┬───────────────────────┘                            ┃
+└━━━━━━━━━━━━━━━━━━━━━━━━━│━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                           │
+┏━━━━━━━━━━━━━━━━━━━━━━━━━│━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                          │         PROPERTY & ACTIVITY MANAGEMENT             ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━│━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                          │                                                    ┃
+┃                    ┌─────▼──────────────────┐                                ┃
+┃                    │   LISTINGS TABLE       │                                ┃
+┃                    ├────────────────────────┤                                ┃
+┃                    │ PK: listing_id (ULID) │                                ┃
+┃                    │    address_string      │                                ┃
+┃                    │    status: ENUM        │                                ┃
+┃                    │    assignee            │                                ┃
+┃                    │    agent_id/realtor_id │                                ┃
+┃                    │    due_date            │                                ┃
+┃                    │    progress (0-100)    │                                ┃
+┃                    │    type                │                                ┃
+┃                    │    created_at/updated  │                                ┃
+┃                    │    deleted_at          │                                ┃
+┃                    │                        │                                ┃
+┃                    │ Status: new,           │                                ┃
+┃                    │         in_progress,   │                                ┃
+┃                    │         completed      │                                ┃
+┃                    │                        │                                ┃
+┃                    └───────┬────────────────┘                                ┃
+┃                            │                                                  ┃
+┃                  ┌─────────┼─────────┐                                        ┃
+┃                  │         │         │                                        ┃
+┃    ┌─────────────▼────┐   │   ┌──────▼────────────┐   ┌──────────────────┐ ┃
+┃    │ LISTING_DETAILS  │   │   │  LISTING_NOTES    │   │ LISTING_ACKS     │ ┃
+┃    ├──────────────────┤   │   ├───────────────────┤   ├──────────────────┤ ┃
+┃    │ id (UUID)        │   │   │ note_id (ULID)    │   │ id (UUID)        │ ┃
+┃    │ listing_id (FK)  │   │   │ listing_id (FK)   │   │ listing_id (FK)  │ ┃
+┃    │ property_type    │   │   │ content           │   │ staff_id (FK)    │ ┃
+┃    │ bedrooms         │   │   │ type              │   │ acknowledged_at  │ ┃
+┃    │ bathrooms        │   │   │ created_by        │   │ acknowledged_fr  │ ┃
+┃    │ sqft             │   │   │ created_at/upd    │   │ UNIQUE(listing,  │ ┃
+┃    │ year_built       │   │   │                   │   │        staff)    │ ┃
+┃    │ list_price       │   │   │                   │   │                  │ ┃
+┃    │ notes            │   │   └───────────────────┘   └──────────────────┘ ┃
+┃    │ created_at/upd   │   │                                                  ┃
+┃    │ UNIQUE(listing)  │   │   *** KEY FOR INBOX → MYLISTINGS FLOW ***       ┃
+┃    │                  │   │   Insert here when staff claims listing          ┃
+┃    └──────────────────┘   │                                                  ┃
+┃                           │                                                  ┃
+┃        ┌──────────────────▼────────────────────┐                             ┃
+┃        │                                       │                             ┃
+┃    ┌───▼──────────────────┐     ┌─────────────▼────────────────────┐        ┃
+┃    │  ACTIVITIES TABLE    │     │   AGENT_TASKS TABLE              │        ┃
+┃    │  (listing_tasks)     │     │   (stray_tasks)                  │        ┃
+┃    ├──────────────────────┤     ├──────────────────────────────────┤        ┃
+┃    │ PK: task_id (ULID)   │     │ PK: task_id (ULID)               │        ┃
+┃    │    listing_id (FK)   │     │    realtor_id (FK) NOT NULL      │        ┃
+┃    │ ※ realtor_id (FK)    │     │    task_key: TEXT NOT NULL       │        ┃
+┃    │    name              │     │    name                          │        ┃
+┃    │    description       │     │    description                   │        ┃
+┃    │    task_category     │     │    status: ENUM                  │        ┃
+┃    │    status: ENUM      │     │    priority (0-10)               │        ┃
+┃    │    priority (0-10)   │     │    assigned_staff_id (FK)        │        ┃
+┃    │    visibility_group  │     │    due_date/claimed/completed    │        ┃
+┃    │    assigned_staff_id │     │    created_at/updated/deleted    │        ┃
+┃    │    due_date          │     │    inputs/outputs: JSONB         │        ┃
+┃    │    claimed_at        │     │    notes                         │        ┃
+┃    │    completed_at      │     │                                  │        ┃
+┃    │    inputs/outputs    │     │ UNIQUE(realtor_id, task_key)     │        ┃
+┃    │    created_at/upd    │     │                                  │        ┃
+┃    │    deleted_at        │     │ Task Categories:                 │        ┃
+┃    │                      │     │  - NEW_LISTING_ONBOARDING       │        ┃
+┃    │ Task Category:       │     │  - LISTING_PREP                 │        ┃
+┃    │  ADMIN, MARKETING,   │     │  - MARKETING_SETUP              │        ┃
+┃    │  NULL (uncategorized)│     │  - AGENT_SUPPORT                │        ┃
+┃    │                      │     │  - ADMIN_TASK                   │        ┃
+┃    │ Status: OPEN,        │     │                                  │        ┃
+┃    │         CLAIMED,     │     │ Status: OPEN, CLAIMED,           │        ┃
+┃    │         IN_PROGRESS, │     │         IN_PROGRESS, DONE,       │        ┃
+┃    │         DONE,        │     │         FAILED, CANCELLED        │        ┃
+┃    │         FAILED,      │     │                                  │        ┃
+┃    │         CANCELLED    │     └──────────────────────────────────┘        ┃
+┃    │                      │                                                  ┃
+┃    └──────┬───────────────┘                                                  ┃
+┃           │                                                                   ┃
+┃    ┌──────▼────────────────┐                                                 ┃
+┃    │   TASK_NOTES TABLE    │                                                 ┃
+┃    ├───────────────────────┤                                                 ┃
+┃    │ note_id (ULID)        │                                                 ┃
+┃    │ task_id (FK)          │                                                 ┃
+┃    │ content (1-5000 chr)  │                                                 ┃
+┃    │ author_id             │                                                 ┃
+┃    │ created_at/updated_at │                                                 ┃
+┃    └───────────────────────┘                                                 ┃
+┃                                                                                ┃
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                      SLACK INTEGRATION & AUDIT LAYER                            ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                                 ┃
+┃    ┌──────────────────────────────────────────────────────────────────┐       ┃
+┃    │           SLACK_MESSAGES TABLE (Event Audit Trail)              │       ┃
+┃    ├──────────────────────────────────────────────────────────────────┤       ┃
+┃    │ PK: message_id (ULID)                                            │       ┃
+┃    │    slack_user_id NOT NULL                                        │       ┃
+┃    │    slack_channel_id NOT NULL                                     │       ┃
+┃    │    slack_ts UNIQUE                                               │       ┃
+┃    │    slack_thread_ts                                               │       ┃
+┃    │    message_text NOT NULL                                         │       ┃
+┃    │    classification: JSONB NOT NULL  ← LANGCHAIN OUTPUT            │       ┃
+┃    │    message_type: TEXT NOT NULL     ← Classification result        │       ┃
+┃    │    task_key                        ← Task category from enum     │       ┃
+┃    │    group_key                       ← Grouping key               │       ┃
+┃    │    confidence: NUMERIC(5,4)        ← LLM confidence (0-1)        │       ┃
+┃    │                                                                   │       ┃
+┃    │    *** ENTITY CREATION TRACKING ***                              │       ┃
+┃    │    created_listing_id (FK)         ← Created listing (if any)   │       ┃
+┃    │    created_task_id                 ← Task ID created            │       ┃
+┃    │    created_task_type: ENUM         ← listing_task/stray_task    │       ┃
+┃    │                                                                   │       ┃
+┃    │    *** PROCESSING TRACKING ***                                   │       ┃
+┃    │    received_at: TIMESTAMPTZ        ← When Slack sent            │       ┃
+┃    │    processed_at: TIMESTAMPTZ       ← When we processed          │       ┃
+┃    │    processing_status: ENUM         ← pending/processed/failed   │       ┃
+┃    │    error_message                   ← If failed                  │       ┃
+┃    │    metadata: JSONB                 ← Extra context              │       ┃
+┃    │                                                                   │       ┃
+┃    └──────────────────────────────────────────────────────────────────┘       ┃
+┃                                                                                 ┃
+┃    Data Flow:                                                                  ┃
+┃    Slack → POST /webhooks/slack → Save to slack_messages                      ┃
+┃                                 → POST /classify (LangChain)                   ┃
+┃                                 → Create activity/agent_task                   ┃
+┃                                 → Update slack_messages.created_task_id        ┃
+┃                                                                                 ┃
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+===================================================================================
+                           TABLE SUMMARY (9 TOTAL)
+===================================================================================
+
+CORE TABLES (6):
+├─ staff              - Internal team members
+├─ realtors           - External agents/brokers
+├─ listings           - Properties being managed
+├─ activities         - Property-specific tasks
+├─ agent_tasks        - Realtor-specific tasks (not tied to property)
+└─ slack_messages     - Slack event audit trail + classification results
+
+SUPPORTING TABLES (3):
+├─ listing_details    - Property metadata
+├─ listing_notes      - Collaborative notes on listings
+├─ task_notes         - Comments on individual tasks
+
+DEPRECATED (1):
+└─ audit_log          - Unused (intentionally not active)
+
+===================================================================================
+                         KEY DATABASE DESIGN PATTERNS
+===================================================================================
+
+1. PRIMARY KEY STRATEGY
+   - Most tables use TEXT PRIMARY KEY with ULID format
+   - listing_acknowledgments uses UUID (gen_random_uuid()::TEXT)
+   - All keys generated client-side (ULID) or database (UUID)
+
+2. SOFT DELETES
+   - All tables have deleted_at TIMESTAMPTZ
+   - Indexes filter with WHERE deleted_at IS NULL
+   - Enables recovery and maintains audit trail
+
+3. FOREIGN KEY RELATIONSHIPS
+   - activities → listings (CASCADE)
+   - activities → realtors (SET NULL)
+   - activities → staff (SET NULL)
+   - agent_tasks → realtors (CASCADE)
+   - agent_tasks → staff (SET NULL)
+   - listing_acknowledgments → listings (CASCADE)
+   - listing_acknowledgments → staff (CASCADE)
+
+4. AUTO-UPDATED TIMESTAMPS
+   - Every table has created_at DEFAULT NOW()
+   - Every table has updated_at trigger (BEFORE UPDATE)
+   - Automatically maintained by database
+
+5. FLEXIBLE JSON STORAGE
+   - inputs: JSONB - Task parameters going in
+   - outputs: JSONB - Results coming out
+   - classification: JSONB - Full LangChain classifier output
+   - metadata: JSONB - Free-form extension point
+
+6. VALIDATION CONSTRAINTS
+   - CHECK constraints on enum columns
+   - UNIQUE constraints on natural keys (email, slack_user_id, license_number)
+   - UNIQUE on composite keys (realtor_id + task_key, listing_id + staff_id)
+
+7. ROW LEVEL SECURITY
+   - All tables have RLS enabled
+   - No policies currently implemented
+   - Ready for permission-based access control
+
+===================================================================================

@@ -22,6 +22,12 @@ final class AllListingsStore {
     /// All listings
     private(set) var listings: [Listing] = []
 
+    /// Category filter selection (nil = "All")
+    var selectedCategory: TaskCategory? = nil
+
+    /// Mapping of listing ID to categories of all tasks for that listing
+    private var listingCategories: [String: Set<TaskCategory?>] = [:]
+
     /// Error message to display
     var errorMessage: String?
 
@@ -29,15 +35,28 @@ final class AllListingsStore {
     private(set) var isLoading = false
 
     /// Repository for data access
-    private let repository: ListingRepositoryClient
+    private let listingRepository: ListingRepositoryClient
+    private let taskRepository: TaskRepositoryClient
 
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
+    // MARK: - Computed Properties
+
+    /// Filtered listings based on selected category
+    var filteredListings: [Listing] {
+        guard let selectedCategory else { return listings } // "All" selected
+
+        return listings.filter { listing in
+            listingCategories[listing.id]?.contains(selectedCategory) ?? false
+        }
+    }
+
     // MARK: - Initialization
 
-    init(repository: ListingRepositoryClient) {
-        self.repository = repository
+    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+        self.listingRepository = listingRepository
+        self.taskRepository = taskRepository
     }
 
     // MARK: - Actions
@@ -48,8 +67,27 @@ final class AllListingsStore {
         errorMessage = nil
 
         do {
-            listings = try await repository.fetchListings()
-            Logger.database.info("Fetched \(self.listings.count) listings")
+            // Fetch both listings and activities in parallel
+            async let listingsResult = listingRepository.fetchListings()
+            async let activitiesResult = taskRepository.fetchActivities()
+
+            let (allListings, allActivities) = try await (listingsResult, activitiesResult)
+
+            // Build category mapping from activities
+            var categoryMapping: [String: Set<TaskCategory?>] = [:]
+            for activityWithDetails in allActivities {
+                let listingId = activityWithDetails.task.listingId
+
+                if categoryMapping[listingId] == nil {
+                    categoryMapping[listingId] = Set()
+                }
+                categoryMapping[listingId]?.insert(activityWithDetails.task.taskCategory)
+            }
+
+            listings = allListings
+            listingCategories = categoryMapping
+
+            Logger.database.info("Fetched \(self.listings.count) listings with category mapping")
         } catch {
             Logger.database.error("Failed to fetch all listings: \(error.localizedDescription)")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"
@@ -66,7 +104,7 @@ final class AllListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            try await repository.deleteListing(listing.id, authClient.currentUserId())
+            try await listingRepository.deleteListing(listing.id, authClient.currentUserId())
 
             await refresh()
         } catch {

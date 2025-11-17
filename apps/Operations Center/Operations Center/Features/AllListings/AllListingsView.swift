@@ -19,8 +19,11 @@ struct AllListingsView: View {
 
     // MARK: - Initialization
 
-    init(repository: ListingRepositoryClient) {
-        _store = State(initialValue: AllListingsStore(repository: repository))
+    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+        _store = State(initialValue: AllListingsStore(
+            listingRepository: listingRepository,
+            taskRepository: taskRepository
+        ))
     }
 
     // MARK: - Body
@@ -33,6 +36,7 @@ struct AllListingsView: View {
 
     private var listingsList: some View {
         List {
+            categoryFilterSection
             listingsSection
             emptyStateSection
         }
@@ -49,10 +53,24 @@ struct AllListingsView: View {
     }
 
     @ViewBuilder
+    private var categoryFilterSection: some View {
+        Section {
+            Picker("Category", selection: $store.selectedCategory) {
+                Text("All").tag(nil as TaskCategory?)
+                Text("Admin").tag(TaskCategory.admin as TaskCategory?)
+                Text("Marketing").tag(TaskCategory.marketing as TaskCategory?)
+            }
+            .pickerStyle(.segmented)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    @ViewBuilder
     private var listingsSection: some View {
-        if !store.listings.isEmpty {
+        if !store.filteredListings.isEmpty {
             Section {
-                ForEach(store.listings, id: \.id) { listing in
+                ForEach(store.filteredListings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingCollapsedContent(listing: listing)
                     }
@@ -64,7 +82,7 @@ struct AllListingsView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.listings.isEmpty && !store.isLoading {
+        if store.filteredListings.isEmpty && !store.isLoading {
             DSEmptyState(
                 icon: "house.circle",
                 title: "No listings",
@@ -78,5 +96,8 @@ struct AllListingsView: View {
 // MARK: - Preview
 
 #Preview {
-    AllListingsView(repository: .preview)
+    AllListingsView(
+        listingRepository: .preview,
+        taskRepository: .preview
+    )
 }
