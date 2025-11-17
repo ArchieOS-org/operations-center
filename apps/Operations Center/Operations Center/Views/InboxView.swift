@@ -185,7 +185,6 @@ struct InboxView: View {
     }
 }
 
-
 #Preview("With Mock Data") {
     let store = InboxStore(
         taskRepository: .preview,
