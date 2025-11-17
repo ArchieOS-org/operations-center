@@ -17,7 +17,7 @@ public struct TaskRepositoryClient {
     /// Fetch all tasks with their associated Slack messages
     public var fetchTasks: @Sendable () async throws -> [TaskWithMessages]
 
-    /// Fetch all activities with their listing data and subtasks
+    /// Fetch all activities with their listing data and activity items
     public var fetchActivities: @Sendable () async throws -> [ActivityWithDetails]
 
     /// Claim a task
@@ -31,12 +31,6 @@ public struct TaskRepositoryClient {
 
     /// Delete an activity (soft delete)
     public var deleteActivity: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
-
-    /// Complete a subtask within an activity
-    public var completeSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
-
-    /// Uncomplete a subtask within an activity
-    public var uncompleteSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
 
     /// Fetch tasks for a specific realtor
     public var fetchTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [TaskWithMessages]
@@ -129,11 +123,7 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         outputs: row.outputs
     )
 
-    // swiftlint:disable:next todo
-    // TODO: Add subtasks query once subtasks table exists
-    let subtasks: [Subtask] = []
-
-    return ActivityWithDetails(task: task, listing: listing, subtasks: subtasks)
+    return ActivityWithDetails(task: task, listing: listing)
 }
 
 // MARK: - Live Implementation
@@ -227,20 +217,6 @@ extension TaskRepositoryClient {
                     .eq("task_id", value: taskId)
                     .execute()
             },
-            completeSubtask: { _ in
-                // swiftlint:disable:next todo
-                // TODO: Implement once subtasks table exists
-                throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
-                    NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
-                ])
-            },
-            uncompleteSubtask: { _ in
-                // swiftlint:disable:next todo
-                // TODO: Implement once subtasks table exists
-                throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
-                    NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
-                ])
-            },
             fetchTasksByRealtor: { realtorId in
                 let response: [AgentTask] = try await supabase
                     .from("agent_tasks")
@@ -302,18 +278,15 @@ extension TaskRepositoryClient {
             [
                 ActivityWithDetails(
                     task: Activity.mock1,
-                    listing: Listing.mock1,
-                    subtasks: [Subtask.mock1, Subtask.mock2]
+                    listing: Listing.mock1
                 ),
                 ActivityWithDetails(
                     task: Activity.mock2,
-                    listing: Listing.mock2,
-                    subtasks: []
+                    listing: Listing.mock2
                 ),
                 ActivityWithDetails(
                     task: Activity.mock3,
-                    listing: Listing.mock3,
-                    subtasks: [Subtask.mock3]
+                    listing: Listing.mock3
                 )
             ]
         },
@@ -333,16 +306,6 @@ extension TaskRepositoryClient {
         },
         deleteTask: { _, _ in },
         deleteActivity: { _, _ in },
-        completeSubtask: { _ in
-            var subtask = Subtask.mock1
-            subtask.completedAt = Date()
-            return subtask
-        },
-        uncompleteSubtask: { _ in
-            var subtask = Subtask.mock1
-            subtask.completedAt = nil
-            return subtask
-        },
         fetchTasksByRealtor: { _ in
             return [
                 TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
@@ -353,13 +316,11 @@ extension TaskRepositoryClient {
             return [
                 ActivityWithDetails(
                     task: Activity.mock1,
-                    listing: Listing.mock1,
-                    subtasks: [Subtask.mock1]
+                    listing: Listing.mock1
                 ),
                 ActivityWithDetails(
                     task: Activity.mock2,
-                    listing: Listing.mock2,
-                    subtasks: []
+                    listing: Listing.mock2
                 )
             ]
         },

@@ -128,13 +128,9 @@ struct AllTasksView: View {
                     ActivityCard(
                         task: taskWithDetails.task,
                         listing: taskWithDetails.listing,
-                        subtasks: taskWithDetails.subtasks,
                         isExpanded: store.expandedTaskId == taskWithDetails.task.id,
                         onTap: {
                             store.toggleExpansion(for: taskWithDetails.task.id)
-                        },
-                        onSubtaskToggle: { _ in
-                            // NOTE: Implement subtask toggle
                         }
                     )
                     .listRowSeparator(.hidden)

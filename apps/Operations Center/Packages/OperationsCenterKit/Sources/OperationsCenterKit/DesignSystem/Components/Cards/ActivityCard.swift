@@ -2,39 +2,32 @@
 //  ActivityCard.swift
 //  OperationsCenterKit
 //
-//  Blue accent, with border, subtasks first
-//  First-class citizen for property-linked activities
+//  Blue accent card for property-linked activities
 //
 
 import SwiftUI
 
-/// Card for displaying activities (property-linked, has a home)
+/// Card for displaying activities (property-linked tasks)
 public struct ActivityCard: View {
     // MARK: - Properties
 
     let task: Activity
     let listing: Listing
-    let subtasks: [Subtask]
     let isExpanded: Bool
     let onTap: () -> Void
-    let onSubtaskToggle: (Subtask) -> Void
 
     // MARK: - Initialization
 
     public init(
         task: Activity,
         listing: Listing,
-        subtasks: [Subtask],
         isExpanded: Bool,
-        onTap: @escaping () -> Void,
-        onSubtaskToggle: @escaping (Subtask) -> Void
+        onTap: @escaping () -> Void
     ) {
         self.task = task
         self.listing = listing
-        self.subtasks = subtasks
         self.isExpanded = isExpanded
         self.onTap = onTap
-        self.onSubtaskToggle = onSubtaskToggle
     }
 
     // MARK: - Body
@@ -45,7 +38,7 @@ public struct ActivityCard: View {
             isExpanded: isExpanded,
             onTap: onTap
         ) {
-            // Collapsed content (always shown)
+            // Card content
             CardHeader(
                 title: listing.addressString,
                 subtitle: task.assignedStaffId ?? "Unassigned",
@@ -54,12 +47,8 @@ public struct ActivityCard: View {
                 isExpanded: isExpanded
             )
         } expandedContent: {
-            // Expanded content (only when expanded)
-            ActivitiesSection(subtasks: subtasks, onToggle: onSubtaskToggle)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity
-                ))
+            // No expanded content - activities are simple tasks
+            EmptyView()
         }
     }
 
@@ -154,15 +143,13 @@ public struct ActivityCard: View {
     ActivityCard(
         task: task,
         listing: listing,
-        subtasks: [],
         isExpanded: false,
-        onTap: {},
-        onSubtaskToggle: { _ in }
+        onTap: {}
     )
     .padding()
 }
 
-#Preview("Expanded with Subtasks") {
+#Preview("Expanded") {
     let task = Activity(
         id: "1",
         listingId: "listing-001",
@@ -201,46 +188,11 @@ public struct ActivityCard: View {
         deletedAt: nil
     )
 
-    let subtasks = [
-        Subtask(
-            id: "1",
-            parentTaskId: "1",
-            name: "Deep clean all rooms",
-            isCompleted: true,
-            completedAt: Date(),
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "2",
-            parentTaskId: "1",
-            name: "Touch up paint in living room",
-            isCompleted: true,
-            completedAt: Date(),
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "3",
-            parentTaskId: "1",
-            name: "Landscape front yard",
-            isCompleted: false,
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "4",
-            parentTaskId: "1",
-            name: "Stage master bedroom",
-            isCompleted: false,
-            createdAt: Date()
-        )
-    ]
-
     ActivityCard(
         task: task,
         listing: listing,
-        subtasks: subtasks,
         isExpanded: true,
-        onTap: {},
-        onSubtaskToggle: { _ in }
+        onTap: {}
     )
     .padding()
 }
