@@ -14,9 +14,13 @@ import OSLog
 final class AllListingsStore {
     // MARK: - Properties
 
+    /// Defer filtering updates during batch mutations
+    private var isDeferringUpdates = false
+
     /// All listings
     private(set) var listings: [Listing] = [] {
         didSet {
+            guard !isDeferringUpdates else { return }
             updateFilteredListings()
         }
     }
@@ -24,6 +28,7 @@ final class AllListingsStore {
     /// Category filter selection (nil = "All")
     var selectedCategory: TaskCategory? {
         didSet {
+            guard !isDeferringUpdates else { return }
             updateFilteredListings()
         }
     }
@@ -31,6 +36,7 @@ final class AllListingsStore {
     /// Mapping of listing ID to categories of all tasks for that listing
     private var listingCategories: [String: Set<TaskCategory?>] = [:] {
         didSet {
+            guard !isDeferringUpdates else { return }
             updateFilteredListings()
         }
     }
@@ -95,8 +101,14 @@ final class AllListingsStore {
                 categoryMapping[listingId]?.insert(activityWithDetails.task.taskCategory)
             }
 
+            // Batch update: defer filtering until both properties updated
+            isDeferringUpdates = true
             listings = allListings
             listingCategories = categoryMapping
+            isDeferringUpdates = false
+
+            // Trigger single filter update with complete data
+            updateFilteredListings()
         } catch {
             Logger.database.error("Failed to fetch all listings: \(error.localizedDescription)")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"

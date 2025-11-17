@@ -94,15 +94,20 @@ final class AuthenticationStore {
             currentUser = session.user
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
-            // Map Supabase errors to friendly signup errors using stable error codes
-            switch authError.errorCode {
-            case .emailExists:
+            // Map Supabase errors to friendly signup errors
+            // Check HTTP status code (409 = conflict) and message content
+            let isDuplicateEmail = authError.statusCode == 409 ||
+                authError.message.localizedCaseInsensitiveContains("already registered") ||
+                authError.message.localizedCaseInsensitiveContains("already exists")
+
+            if isDuplicateEmail {
                 self.error = .emailAlreadyInUse
-            default:
+            } else {
                 self.error = .supabaseError(authError)
             }
         } catch {
-            self.error = .signupFailed
+            // Consistent error mapping with login
+            self.error = .unknown(error)
         }
 
         isLoading = false
