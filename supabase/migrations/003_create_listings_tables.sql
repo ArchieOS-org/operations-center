@@ -106,7 +106,10 @@ CREATE TRIGGER listing_notes_updated_at
 -- ============================================================
 -- AUDIT LOG TABLE (for listing history)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS audit_log (
+-- Drop existing audit_log if it exists with wrong schema
+DROP TABLE IF EXISTS audit_log CASCADE;
+
+CREATE TABLE audit_log (
     event_id TEXT PRIMARY KEY,
     entity_key TEXT NOT NULL,  -- Format: "listing#<listing_id>" or "task#<task_id>"
     action TEXT NOT NULL,
