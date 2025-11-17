@@ -7,6 +7,10 @@
         "XCODEBUILDMCP_DEBUG": "false",
         "XCODEBUILDMCP_SENTRY_DISABLED": "true"
       }
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=kukmshbkzlskyuacgzbo"
     }
   }
 }
