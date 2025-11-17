@@ -72,9 +72,8 @@ final class AdminTeamStore: TeamViewStore {
     }
 
     func claimTask(_ task: AgentTask) async {
-        let userId = await authClient.currentUserId()
-
         do {
+            let userId = try await authClient.currentUserId()
             _ = try await taskRepository.claimTask(task.id, userId)
             await loadTasks() // Refresh
         } catch {
@@ -83,9 +82,8 @@ final class AdminTeamStore: TeamViewStore {
     }
 
     func claimActivity(_ activity: Activity) async {
-        let userId = await authClient.currentUserId()
-
         do {
+            let userId = try await authClient.currentUserId()
             _ = try await taskRepository.claimActivity(activity.id, userId)
             await loadTasks() // Refresh
         } catch {
@@ -94,9 +92,8 @@ final class AdminTeamStore: TeamViewStore {
     }
 
     func deleteTask(_ task: AgentTask) async {
-        let userId = await authClient.currentUserId()
-
         do {
+            let userId = try await authClient.currentUserId()
             try await taskRepository.deleteTask(task.id, userId)
             await loadTasks() // Refresh
         } catch {
@@ -105,9 +102,8 @@ final class AdminTeamStore: TeamViewStore {
     }
 
     func deleteActivity(_ activity: Activity) async {
-        let userId = await authClient.currentUserId()
-
         do {
+            let userId = try await authClient.currentUserId()
             try await taskRepository.deleteActivity(activity.id, userId)
             await loadTasks() // Refresh
         } catch {

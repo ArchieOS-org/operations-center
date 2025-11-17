@@ -9,45 +9,44 @@
 import SwiftUI
 import OperationsCenterKit
 
+/// Configuration for team views
+struct TeamViewConfiguration {
+    let navigationTitle: String
+    let tasksSectionTitle: String
+    let activitiesSectionTitle: String
+    let emptyStateIcon: String
+    let emptyStateTitle: String
+    let emptyStateMessage: String
+
+    static let marketing = TeamViewConfiguration(
+        navigationTitle: "Marketing Team",
+        tasksSectionTitle: "Marketing Tasks",
+        activitiesSectionTitle: "Property Marketing",
+        emptyStateIcon: "megaphone",
+        emptyStateTitle: "No Marketing Tasks",
+        emptyStateMessage: "Marketing tasks and campaigns will appear here"
+    )
+
+    static let admin = TeamViewConfiguration(
+        navigationTitle: "Admin Team",
+        tasksSectionTitle: "Admin Tasks",
+        activitiesSectionTitle: "Property Admin",
+        emptyStateIcon: "gearshape",
+        emptyStateTitle: "No Admin Tasks",
+        emptyStateMessage: "Administrative tasks will appear here"
+    )
+}
+
 /// Generic team view for marketing and admin teams
 struct TeamView<Store: TeamViewStore>: View {
-    // MARK: - Configuration
-
-    struct Configuration {
-        let navigationTitle: String
-        let tasksSectionTitle: String
-        let activitiesSectionTitle: String
-        let emptyStateIcon: String
-        let emptyStateTitle: String
-        let emptyStateMessage: String
-
-        static let marketing = Configuration(
-            navigationTitle: "Marketing Team",
-            tasksSectionTitle: "Marketing Tasks",
-            activitiesSectionTitle: "Property Marketing",
-            emptyStateIcon: "megaphone",
-            emptyStateTitle: "No Marketing Tasks",
-            emptyStateMessage: "Marketing tasks and campaigns will appear here"
-        )
-
-        static let admin = Configuration(
-            navigationTitle: "Admin Team",
-            tasksSectionTitle: "Admin Tasks",
-            activitiesSectionTitle: "Property Admin",
-            emptyStateIcon: "gearshape",
-            emptyStateTitle: "No Admin Tasks",
-            emptyStateMessage: "Administrative tasks will appear here"
-        )
-    }
-
     // MARK: - Properties
 
     @State private var store: Store
-    private let config: Configuration
+    private let config: TeamViewConfiguration
 
     // MARK: - Initialization
 
-    init(store: Store, config: Configuration) {
+    init(store: Store, config: TeamViewConfiguration) {
         _store = State(initialValue: store)
         self.config = config
     }

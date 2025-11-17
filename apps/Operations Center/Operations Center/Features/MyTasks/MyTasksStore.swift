@@ -53,7 +53,7 @@ final class MyTasksStore {
 
         do {
             // Get current user ID for filtering
-            let currentUserId = await authClient.currentUserId()
+            let currentUserId = try await authClient.currentUserId()
 
             // Fetch agent tasks and filter for current user
             let tasksResults = try await repository.fetchTasks()

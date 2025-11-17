@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import OperationsCenterKit
 
 /// View modifier that displays a floating context menu at the bottom of the screen
 /// Used when task cards are expanded to show available actions

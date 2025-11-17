@@ -116,12 +116,12 @@ enum AppConfig {
         do {
             _ = try supabaseURL
             _ = try supabaseAnonKey
-            Logger.app.info("✅ Configuration validated successfully")
+            Logger.uiLogger.info("✅ Configuration validated successfully")
         } catch {
             #if DEBUG
             fatalError("Configuration error: \(error.localizedDescription)")
             #else
-            Logger.app.error("⚠️ Configuration error: \(error.localizedDescription)")
+            Logger.uiLogger.error("⚠️ Configuration error: \(error.localizedDescription)")
             #endif
         }
 
@@ -129,7 +129,7 @@ enum AppConfig {
         do {
             _ = try fastAPIURL
         } catch {
-            Logger.app.warning("⚠️ FastAPI URL not configured: \(error.localizedDescription)")
+            Logger.uiLogger.warning("⚠️ FastAPI URL not configured: \(error.localizedDescription)")
         }
     }
 }

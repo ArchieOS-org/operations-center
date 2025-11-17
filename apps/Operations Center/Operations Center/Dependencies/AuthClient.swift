@@ -11,7 +11,7 @@ import Supabase
 
 // MARK: - Auth Errors
 
-public enum AuthError: Error, LocalizedError {
+public enum AuthClientError: Error, LocalizedError {
     case noSession
     case sessionExpired
     case invalidSession
@@ -50,7 +50,7 @@ public enum AuthError: Error, LocalizedError {
 /// ```
 public struct AuthClient {
     /// Get the current authenticated user ID
-    /// Throws AuthError if no valid session exists
+    /// Throws AuthClientError if no valid session exists
     public var currentUserId: @Sendable () async throws -> String
 
     public init(currentUserId: @escaping @Sendable () async throws -> String) {
@@ -62,20 +62,18 @@ public struct AuthClient {
 
 extension AuthClient: DependencyKey {
     /// Live implementation - returns actual authenticated user ID from Supabase
-    /// Throws AuthError.noSession if user is not authenticated
+    /// Throws AuthClientError.noSession if user is not authenticated
     /// Never returns a fake/fallback ID - fails explicitly
     public static let liveValue = AuthClient(
         currentUserId: {
             do {
-                guard let session = try await supabase.auth.session else {
-                    throw AuthError.noSession
-                }
+                let session = try await supabase.auth.session
                 return session.user.id.uuidString
-            } catch let error as AuthError {
+            } catch let error as AuthClientError {
                 throw error
             } catch {
-                // Wrap Supabase errors in AuthError
-                throw AuthError.invalidSession
+                // Wrap Supabase errors in AuthClientError
+                throw AuthClientError.invalidSession
             }
         }
     )

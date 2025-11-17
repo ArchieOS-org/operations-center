@@ -98,7 +98,8 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            _ = try await repository.claimTask(task.id, userId)
 
             await refresh()
         } catch {
@@ -110,7 +111,8 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
-            _ = try await repository.claimActivity(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            _ = try await repository.claimActivity(task.id, userId)
 
             await refresh()
         } catch {
@@ -122,7 +124,8 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            try await repository.deleteTask(task.id, userId)
 
             await refresh()
         } catch {
@@ -134,7 +137,8 @@ final class AllTasksStore {
     /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
-            try await repository.deleteActivity(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            try await repository.deleteActivity(task.id, userId)
 
             await refresh()
         } catch {

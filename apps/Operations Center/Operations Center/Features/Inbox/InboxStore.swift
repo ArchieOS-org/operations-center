@@ -56,7 +56,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            let currentUserId = await authClient.currentUserId()
+            let currentUserId = try await authClient.currentUserId()
 
             // Fetch agent tasks, activities, and unacknowledged listings concurrently
             async let agentTasks = taskRepository.fetchTasks()
@@ -172,7 +172,8 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimTask(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            _ = try await taskRepository.claimTask(task.id, userId)
 
             // Refresh the list
             await fetchTasks()
@@ -185,7 +186,8 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteTask(task.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            try await taskRepository.deleteTask(task.id, userId)
 
             // Refresh the list
             await fetchTasks()
@@ -200,7 +202,8 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimActivity(activity.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            _ = try await taskRepository.claimActivity(activity.id, userId)
 
             // Refresh the list
             await fetchTasks()
@@ -213,7 +216,8 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteActivity(activity.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            try await taskRepository.deleteActivity(activity.id, userId)
 
             // Refresh the list
             await fetchTasks()
@@ -228,7 +232,8 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await noteRepository.createNote(listingId, content, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            _ = try await noteRepository.createNote(listingId, content, userId)
 
             // Refresh to get updated notes
             await fetchTasks()

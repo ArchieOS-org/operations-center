@@ -91,7 +91,7 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
-            let currentUserId = await authClient.currentUserId()
+            let currentUserId = try await authClient.currentUserId()
             Logger.database.info("👤 Current user ID: \(currentUserId)")
 
             // Get activities claimed by this staff member directly from repository
@@ -159,7 +159,8 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            try await listingRepository.deleteListing(listing.id, await authClient.currentUserId())
+            let userId = try await authClient.currentUserId()
+            try await listingRepository.deleteListing(listing.id, userId)
 
             await refresh()
         } catch {
