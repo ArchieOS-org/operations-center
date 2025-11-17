@@ -39,7 +39,7 @@ public struct OCActivityRow<ExpandedContent: View>: View {
             HStack(spacing: Spacing.md) {
                 // Status dot on the leading edge
                 Circle()
-                    .fill(statusColor(for: activity.status))
+                    .fill(activity.status.statusColor)
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -88,25 +88,6 @@ public struct OCActivityRow<ExpandedContent: View>: View {
             if let dueDate = activity.dueDate {
                 DSChip(date: dueDate)
             }
-        }
-    }
-
-    // MARK: - Helper Methods
-
-    private func statusColor(for status: Activity.TaskStatus) -> Color {
-        switch status {
-        case .open:
-            return Colors.statusOpen
-        case .claimed:
-            return Colors.statusClaimed
-        case .inProgress:
-            return Colors.statusInProgress
-        case .done:
-            return Colors.statusCompleted
-        case .failed:
-            return Colors.statusFailed
-        case .cancelled:
-            return Colors.statusCancelled
         }
     }
 }

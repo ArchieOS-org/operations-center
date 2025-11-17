@@ -39,7 +39,7 @@ public struct OCTaskRow<ExpandedContent: View>: View {
             HStack(spacing: Spacing.md) {
                 // Status dot on the leading edge
                 Circle()
-                    .fill(statusColor(for: task.status))
+                    .fill(task.status.statusColor)
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -58,7 +58,7 @@ public struct OCTaskRow<ExpandedContent: View>: View {
 
                         // Category chip
                         DSChip(
-                            text: formatCategory(task.taskCategory),
+                            text: task.taskCategory.displayName,
                             color: Colors.accentAgentTask
                         )
 
@@ -77,42 +77,6 @@ public struct OCTaskRow<ExpandedContent: View>: View {
             if let dueDate = task.dueDate {
                 DSChip(date: dueDate)
             }
-        }
-    }
-
-    // MARK: - Helper Methods
-
-    private func statusColor(for status: AgentTask.TaskStatus) -> Color {
-        switch status {
-        case .open:
-            return Colors.statusOpen
-        case .claimed:
-            return Colors.statusClaimed
-        case .inProgress:
-            return Colors.statusInProgress
-        case .done:
-            return Colors.statusCompleted
-        case .failed:
-            return Colors.statusFailed
-        case .cancelled:
-            return Colors.statusCancelled
-        }
-    }
-
-    private func formatCategory(_ category: AgentTask.TaskCategory) -> String {
-        switch category {
-        case .admin:
-            return "Admin"
-        case .marketing:
-            return "Marketing"
-        case .photo:
-            return "Photo"
-        case .staging:
-            return "Staging"
-        case .inspection:
-            return "Inspection"
-        case .other:
-            return "Other"
         }
     }
 }
