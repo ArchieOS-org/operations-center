@@ -109,9 +109,15 @@ struct LogbookView: View {
                         }
 
                         HStack {
-                            Label(task.taskCategory.rawValue, systemImage: categoryIcon(for: task.taskCategory))
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                            if let category = task.taskCategory {
+                                Label(category.rawValue, systemImage: categoryIcon(for: category))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            } else {
+                                Label("Uncategorized", systemImage: "ellipsis.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
 
                             if let completedAt = task.completedAt {
                                 Spacer()
@@ -144,14 +150,10 @@ struct LogbookView: View {
 
     // MARK: - Helper Methods
 
-    private func categoryIcon(for category: AgentTask.TaskCategory) -> String {
+    private func categoryIcon(for category: TaskCategory) -> String {
         switch category {
         case .admin: return "gearshape"
         case .marketing: return "megaphone"
-        case .photo: return "camera"
-        case .staging: return "house"
-        case .inspection: return "checklist"
-        case .other: return "ellipsis.circle"
         }
     }
 }

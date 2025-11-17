@@ -129,9 +129,11 @@ public struct ListingCard: View {
                 Spacer()
 
                 // Task category badge
-                Text(task.taskCategory.displayName)
-                    .font(Typography.chipLabel)
-                    .foregroundStyle(.secondary)
+                if let category = task.taskCategory {
+                    Text(category.rawValue)
+                        .font(Typography.chipLabel)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal, Spacing.sm)
@@ -156,8 +158,11 @@ public struct ListingCard: View {
 
     private func activityAccessibilityLabel(for task: Activity) -> String {
         let statusName = task.status.displayName
-        let categoryName = task.taskCategory.displayName
-        return "\(task.name), \(statusName), \(categoryName)"
+        if let category = task.taskCategory {
+            return "\(task.name), \(statusName), \(category.rawValue)"
+        } else {
+            return "\(task.name), \(statusName), Uncategorized"
+        }
     }
 }
 
@@ -251,7 +256,7 @@ public struct ListingCard: View {
             realtorId: "realtor_002",
             name: "Schedule professional photos",
             description: "Book photographer",
-            taskCategory: .photo,
+            taskCategory: nil,  // Uncategorized
             status: .open,
             priority: 1,
             visibilityGroup: .both,
@@ -272,7 +277,7 @@ public struct ListingCard: View {
             realtorId: "realtor_002",
             name: "Deep clean interior",
             description: "Professional cleaning service",
-            taskCategory: .admin,
+            taskCategory: .admin,  // Admin category
             status: .claimed,
             priority: 2,
             visibilityGroup: .both,
@@ -291,13 +296,13 @@ public struct ListingCard: View {
             id: "3",
             listingId: "listing-001",
             realtorId: "realtor_002",
-            name: "Stage master bedroom",
-            description: "Furniture and decor",
-            taskCategory: .staging,
+            name: "Social media campaign",
+            description: "Launch property on social platforms",
+            taskCategory: .marketing,  // Marketing category
             status: .inProgress,
             priority: 3,
             visibilityGroup: .both,
-            assignedStaffId: "Staging Co",
+            assignedStaffId: "Marketing Team",
             dueDate: Date().addingTimeInterval(5 * 24 * 3600),
             claimedAt: Date().addingTimeInterval(-1 * 24 * 3600),
             completedAt: nil,

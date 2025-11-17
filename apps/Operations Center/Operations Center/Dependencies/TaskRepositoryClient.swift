@@ -107,7 +107,7 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         realtorId: row.realtorId,
         name: row.name,
         description: row.description,
-        taskCategory: Activity.TaskCategory(rawValue: row.taskCategory) ?? .other,
+        taskCategory: TaskCategory(rawValue: row.taskCategory),  // Optional: admin, marketing, or nil
         status: Activity.TaskStatus(rawValue: row.status) ?? .open,
         priority: row.priority,
         visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,

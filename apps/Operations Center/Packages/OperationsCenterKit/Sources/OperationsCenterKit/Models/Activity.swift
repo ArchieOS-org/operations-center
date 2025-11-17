@@ -13,7 +13,7 @@ public struct Activity: Identifiable, Codable, Sendable {
     public let realtorId: String?
     public let name: String
     public let description: String?
-    public let taskCategory: TaskCategory
+    public let taskCategory: TaskCategory?  // Optional: admin, marketing, or nil
     public var status: TaskStatus
     public let priority: Int
     public let visibilityGroup: VisibilityGroup
@@ -29,26 +29,7 @@ public struct Activity: Identifiable, Codable, Sendable {
     public let outputs: [String: AnyCodable]?
 
     // MARK: - Nested Types
-
-    public enum TaskCategory: String, Codable, Sendable {
-        case admin = "ADMIN"
-        case marketing = "MARKETING"
-        case photo = "PHOTO"
-        case staging = "STAGING"
-        case inspection = "INSPECTION"
-        case other = "OTHER"
-
-        public var displayName: String {
-            switch self {
-            case .admin: return "Admin"
-            case .marketing: return "Marketing"
-            case .photo: return "Photo"
-            case .staging: return "Staging"
-            case .inspection: return "Inspection"
-            case .other: return "Other"
-            }
-        }
-    }
+    // TaskCategory is now imported from shared TaskCategory.swift
 
     public enum TaskStatus: String, Codable, Sendable {
         case open = "OPEN"
@@ -86,7 +67,7 @@ public struct Activity: Identifiable, Codable, Sendable {
         realtorId: String? = nil,
         name: String,
         description: String? = nil,
-        taskCategory: TaskCategory,
+        taskCategory: TaskCategory? = nil,  // Optional category
         status: TaskStatus,
         priority: Int,
         visibilityGroup: VisibilityGroup,
@@ -173,7 +154,7 @@ extension Activity {
             realtorId: "realtor_001",
             name: "Professional Photography",
             description: "Schedule and complete professional photography for the listing",
-            taskCategory: .photo,
+            taskCategory: nil,  // Uncategorized
             status: .open,
             priority: 100,
             visibilityGroup: .both,
@@ -219,9 +200,9 @@ extension Activity {
             id: "activity_003",
             listingId: "listing_003",
             realtorId: "realtor_001",
-            name: "Home Inspection Coordination",
-            description: "Schedule and coordinate the home inspection",
-            taskCategory: .inspection,
+            name: "Document Review",
+            description: "Review and verify all listing documents",
+            taskCategory: .admin,  // Admin category
             status: .done,
             priority: 90,
             visibilityGroup: .agent,
@@ -233,8 +214,8 @@ extension Activity {
             updatedAt: Date().addingTimeInterval(-86400 * 2),
             deletedAt: nil,
             deletedBy: nil,
-            inputs: ["inspector": AnyCodable("AAA Home Inspections")],
-            outputs: ["report_url": AnyCodable("https://example.com/report.pdf")]
+            inputs: nil,
+            outputs: nil
         )
     }
 }

@@ -49,11 +49,70 @@ public struct TaskCard: View {
             )
         } expandedContent: {
             // Expanded content (only when expanded)
-            SlackMessagesSection(messages: messages)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity
-                ))
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Slack messages (if any)
+                if !messages.isEmpty {
+                    SlackMessagesSection(messages: messages)
+                }
+
+                // Description/Notes
+                if let description = task.description, !description.isEmpty {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text("Notes")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Text(description)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                }
+
+                // Metadata grid
+                MetadataGrid(columnCount: 2) {
+                    MetadataItem(
+                        label: "Created",
+                        value: task.createdAt.formatted(date: .abbreviated, time: .omitted)
+                    )
+
+                    if let claimedAt = task.claimedAt {
+                        MetadataItem(
+                            label: "Claimed",
+                            value: claimedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let dueDate = task.dueDate {
+                        MetadataItem(
+                            label: "Due",
+                            value: dueDate.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let completedAt = task.completedAt {
+                        MetadataItem(
+                            label: "Completed",
+                            value: completedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    MetadataItem(
+                        label: "Status",
+                        value: task.status.displayName
+                    )
+
+                    MetadataItem(
+                        label: "Category",
+                        value: task.taskCategory.displayName
+                    )
+                }
+            }
+            .padding(Spacing.md)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .top)),
+                removal: .opacity
+            ))
         }
     }
 
@@ -67,23 +126,21 @@ public struct TaskCard: View {
             chips.append(.agent(name: staffId, style: .agentTask))
         }
 
-        // Category chip
-        chips.append(.custom(
-            text: task.taskCategory.rawValue,
-            color: categoryColor(for: task.taskCategory)
-        ))
+        // Category chip (if categorized)
+        if let category = task.taskCategory {
+            chips.append(.custom(
+                text: category.rawValue,
+                color: categoryColor(for: category)
+            ))
+        }
 
         return chips
     }
 
-    private func categoryColor(for category: AgentTask.TaskCategory) -> Color {
+    private func categoryColor(for category: TaskCategory) -> Color {
         switch category {
         case .admin: return Colors.categoryAdmin
         case .marketing: return Colors.categoryMarketing
-        case .photo: return Colors.categoryPhoto
-        case .staging: return Colors.categoryStaging
-        case .inspection: return Colors.categoryInspection
-        case .other: return Colors.categoryOther
         }
     }
 }

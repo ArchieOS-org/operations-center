@@ -12,7 +12,8 @@ public struct AgentTask: Identifiable, Codable, Sendable {
     public let realtorId: String
     public let name: String
     public let description: String?
-    public let taskCategory: TaskCategory
+    public let taskCategory: TaskCategory?  // Optional: admin, marketing, or nil
+    public var listingId: String?  // NEW: Optional assignment to a listing
     public var status: TaskStatus
     public let priority: Int
     public var assignedStaffId: String?
@@ -25,15 +26,7 @@ public struct AgentTask: Identifiable, Codable, Sendable {
     public let deletedBy: String?
 
     // MARK: - Nested Types
-
-    public enum TaskCategory: String, Codable, Sendable {
-        case admin = "ADMIN"
-        case marketing = "MARKETING"
-        case photo = "PHOTO"
-        case staging = "STAGING"
-        case inspection = "INSPECTION"
-        case other = "OTHER"
-    }
+    // TaskCategory is now imported from shared TaskCategory.swift
 
     public enum TaskStatus: String, Codable, Sendable {
         case open = "OPEN"
@@ -42,6 +35,17 @@ public struct AgentTask: Identifiable, Codable, Sendable {
         case done = "DONE"
         case failed = "FAILED"
         case cancelled = "CANCELLED"
+
+        public var displayName: String {
+            switch self {
+            case .open: return "Open"
+            case .claimed: return "Claimed"
+            case .inProgress: return "In Progress"
+            case .done: return "Done"
+            case .failed: return "Failed"
+            case .cancelled: return "Cancelled"
+            }
+        }
     }
 
     // MARK: - Initialization
@@ -53,7 +57,8 @@ public struct AgentTask: Identifiable, Codable, Sendable {
         realtorId: String,
         name: String,
         description: String? = nil,
-        taskCategory: TaskCategory,
+        taskCategory: TaskCategory? = nil,  // Optional category
+        listingId: String? = nil,  // NEW: Optional listing assignment
         status: TaskStatus,
         priority: Int,
         assignedStaffId: String? = nil,
@@ -70,6 +75,7 @@ public struct AgentTask: Identifiable, Codable, Sendable {
         self.name = name
         self.description = description
         self.taskCategory = taskCategory
+        self.listingId = listingId
         self.status = status
         self.priority = priority
         self.assignedStaffId = assignedStaffId
@@ -90,6 +96,7 @@ public struct AgentTask: Identifiable, Codable, Sendable {
         case name
         case description
         case taskCategory = "task_category"
+        case listingId = "listing_id"  // NEW
         case status
         case priority
         case assignedStaffId = "assigned_staff_id"
@@ -168,7 +175,8 @@ extension AgentTask {
             realtorId: "realtor_001",
             name: "Portfolio Photos Update",
             description: "Update website portfolio with recent property photos",
-            taskCategory: .photo,
+            taskCategory: nil,  // Uncategorized
+            listingId: nil,  // Not assigned to a listing
             status: .inProgress,
             priority: 50,
             assignedStaffId: "staff_001",
