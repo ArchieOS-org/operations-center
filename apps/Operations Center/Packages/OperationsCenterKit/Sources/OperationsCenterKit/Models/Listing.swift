@@ -46,7 +46,7 @@ public enum ListingType: String, Codable, Sendable {
     public var semanticColorName: String {
         switch self {
         case .sale: return "info"           // Blue
-        case .rental: return "warning"      // Purple/Orange
+        case .rental: return "warning"      // Orange
         case .commercial: return "warning"  // Orange
         case .residential: return "success" // Green
         }

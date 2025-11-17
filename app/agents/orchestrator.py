@@ -143,7 +143,16 @@ class OrchestratorAgent(BaseAgent):
 
     def _get_routing_decision(self, state: OrchestratorState) -> str:
         """Extract routing decision from state"""
-        return state.get("routing_decision") or END
+        routing_decision = state.get("routing_decision")
+
+        if not routing_decision:
+            logger.warning(
+                "routing_decision was missing or corrupted in state - "
+                "falling back to conservative default 'generic'"
+            )
+            return "generic"
+
+        return routing_decision
 
     async def _process_with_realtor_agent(
         self, state: OrchestratorState

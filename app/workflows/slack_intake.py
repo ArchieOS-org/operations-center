@@ -227,7 +227,7 @@ async def store_classification(
         primary_ts = messages[0].slack_ts
         thread_ts = get_primary_thread_ts(messages)
 
-        message_data = {
+        message_data: dict[str, Any] = {
             "message_id": message_id,  # PRIMARY KEY
             "slack_user_id": user_id,  # User who sent
             "slack_channel_id": channel_id,  # Channel
@@ -248,7 +248,7 @@ async def store_classification(
             "received_at": datetime.now(timezone.utc).isoformat(),
             "processing_status": "pending",  # Will update later
             "metadata": {"batch_size": len(messages), "all_timestamps": all_timestamps},
-        }  # type: dict[str, Any]
+        }
 
         result = client.table("slack_messages").insert(message_data).execute()
 

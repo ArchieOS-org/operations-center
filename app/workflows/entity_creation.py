@@ -270,9 +270,8 @@ def map_task_key_to_category(task_key: Optional[TaskKey]) -> str:
     Mapping:
     - SALE_ACTIVE_TASKS → MARKETING
     - LEASE_ACTIVE_TASKS → MARKETING
-    - GENERAL_ADMIN → ADMIN
-    - PHOTO_VIDEO → PHOTO
-    - Default → ADMIN
+    - OPS_MISC_TASK → ADMIN
+    - Default (everything else) → ADMIN
 
     Args:
         task_key: TaskKey enum from classification
@@ -458,10 +457,10 @@ async def create_listing_with_activities(
     created_count = 0
     for activity in activities_template:
         # Type assertion for activity template structure
-        activity_name: str = str(activity["name"])
-        activity_priority: int = int(activity["priority"])
-        activity_category: str = str(activity["category"])
-        activity_visibility: str = str(activity["visibility"])
+        activity_name: str = cast(str, activity["name"])
+        activity_priority: int = cast(int, activity["priority"])
+        activity_category: str = cast(str, activity["category"])
+        activity_visibility: str = cast(str, activity["visibility"])
 
         activity_id = await create_activity_record(
             listing_id=listing_id,

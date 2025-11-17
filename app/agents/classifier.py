@@ -193,7 +193,7 @@ class MessageClassifier:
             {"role": "user", "content": user_message},
         ]
 
-        classification: ClassificationV1 = self.llm.invoke(messages)
+        classification = cast(ClassificationV1, self.llm.invoke(messages))
 
         # Additional custom validation
         classification.validate_keys()
