@@ -74,7 +74,7 @@ struct CardBase<Content: View>: View {
             .scaleEffect(isPressed ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: isPressed)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
         ._onButtonGesture { pressing in
             isPressed = pressing
         } perform: {}

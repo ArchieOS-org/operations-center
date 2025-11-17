@@ -37,8 +37,12 @@ struct AllListingsView: View {
     private var listingsList: some View {
         List {
             categoryFilterSection
-            listingsSection
-            emptyStateSection
+            if store.isLoading {
+                skeletonSection
+            } else {
+                listingsSection
+                emptyStateSection
+            }
         }
         .listStyle(.plain)
         .navigationTitle("All Listings")
@@ -48,7 +52,6 @@ struct AllListingsView: View {
         .task {
             await store.fetchAllListings()
         }
-        .loadingOverlay(store.isLoading)
         .errorAlert($store.errorMessage)
     }
 
@@ -66,6 +69,18 @@ struct AllListingsView: View {
                     }
                     .standardListRowInsets()
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var skeletonSection: some View {
+        Section {
+            ForEach(0..<5, id: \.self) { _ in
+                SkeletonCard(tintColor: Colors.surfaceListingTinted)
+                    .skeletonShimmer()
+                    .listRowSeparator(.hidden)
+                    .standardListRowInsets()
             }
         }
     }

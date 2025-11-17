@@ -45,7 +45,7 @@ struct AllTasksView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
+        .animation(.spring(response: 0.3, dampingFraction: 0.68), value: store.expandedTaskId)
     }
 
     // MARK: - Helpers
@@ -84,9 +84,13 @@ struct AllTasksView: View {
 
     private var tasksList: some View {
         List {
-            tasksSection
-            activitiesSection
-            emptyStateSection
+            if store.isLoading {
+                skeletonSection
+            } else {
+                tasksSection
+                activitiesSection
+                emptyStateSection
+            }
         }
         .listStyle(.plain)
         .navigationTitle("All Tasks")
@@ -96,7 +100,6 @@ struct AllTasksView: View {
         .task {
             await store.fetchAllTasks()
         }
-        .loadingOverlay(store.isLoading)
         .errorAlert($store.errorMessage)
     }
 
@@ -141,6 +144,18 @@ struct AllTasksView: View {
     }
 
     @ViewBuilder
+    private var skeletonSection: some View {
+        Section {
+            ForEach(0..<5, id: \.self) { _ in
+                SkeletonCard(tintColor: Colors.surfaceAgentTaskTinted)
+                    .skeletonShimmer()
+                    .listRowSeparator(.hidden)
+                    .standardListRowInsets()
+            }
+        }
+    }
+
+    @ViewBuilder
     private var emptyStateSection: some View {
         if store.filteredTasks.isEmpty && store.filteredActivities.isEmpty {
             DSEmptyState(
@@ -168,7 +183,7 @@ struct AllTasksView: View {
             .padding(.bottom, Spacing.md)
             .offset(y: store.expandedTaskId != nil ? 100 : 0)
             .opacity(store.expandedTaskId != nil ? 0 : 1)
-            .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
+            .animation(.spring(response: 0.3, dampingFraction: 0.68), value: store.expandedTaskId)
         }
     }
 }

@@ -3,9 +3,14 @@ import SwiftUI
 /// Animation presets for consistent timing and feel
 ///
 /// Design Philosophy:
-/// - Modern spring API (duration + bounce)
+/// - Physics-based spring animations (response + dampingFraction)
 /// - Consistent motion across UI
-/// - Subtle but responsive feel
+/// - Premium, responsive feel with proper bounce
+///
+/// Research-driven animation timing from iOS HIG and Context7:
+/// - Card interactions: response 0.3s, damping 0.68-0.7 (responsive, alive)
+/// - Quick interactions: response 0.25s, damping 0.7 (snappy)
+/// - Smooth transitions: response 0.4s, damping 0.8 (calm, deliberate)
 ///
 /// Semantic Animation System:
 /// Base animations are defined once, semantic names alias them for clarity.
@@ -13,14 +18,17 @@ import SwiftUI
 public enum Animations {
     // MARK: - Base Animations
 
-    /// Medium-paced spring with subtle bounce (0.3s, 0.1 bounce)
-    private static let springMedium = Animation.spring(duration: 0.3, bounce: 0.1)
+    /// Medium-paced spring with responsive bounce (0.3s response, 0.68 damping)
+    /// Feels premium and alive - use for card expansion, state changes
+    private static let springMedium = Animation.spring(response: 0.3, dampingFraction: 0.68)
 
-    /// Fast spring with moderate bounce (0.2s, 0.3 bounce)
-    private static let springFast = Animation.spring(duration: 0.2, bounce: 0.3)
+    /// Fast spring with snappy bounce (0.25s response, 0.7 damping)
+    /// Quick feedback - use for button presses, toggles
+    private static let springFast = Animation.spring(response: 0.25, dampingFraction: 0.7)
 
-    /// Smooth spring without bounce (0.4s, 0.0 bounce)
-    private static let springSmooth = Animation.spring(duration: 0.4, bounce: 0.0)
+    /// Smooth spring with gentle bounce (0.4s response, 0.8 damping)
+    /// Calm transitions - use for navigation, modal presentation
+    private static let springSmooth = Animation.spring(response: 0.4, dampingFraction: 0.8)
 
     // MARK: - Semantic Aliases
 
