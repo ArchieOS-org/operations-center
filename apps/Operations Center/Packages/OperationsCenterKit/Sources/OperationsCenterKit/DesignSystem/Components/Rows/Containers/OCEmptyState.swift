@@ -12,7 +12,6 @@ public struct OCEmptyState: View {
     private let title: String
     private let systemImage: String
     private let description: String?
-    private let searchText: String?
     private let action: (() -> Void)?
     private let actionLabel: String?
 
@@ -27,7 +26,6 @@ public struct OCEmptyState: View {
         self.title = title
         self.systemImage = systemImage
         self.description = description
-        self.searchText = nil
         self.action = action
         self.actionLabel = actionLabel
     }
@@ -37,7 +35,6 @@ public struct OCEmptyState: View {
         self.title = "No Results"
         self.systemImage = "magnifyingglass"
         self.description = "No results found for \"\(searchText)\""
-        self.searchText = searchText
         self.action = nil
         self.actionLabel = nil
     }
