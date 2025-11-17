@@ -18,21 +18,21 @@ final class AllListingsStore {
     /// All listings
     private(set) var listings: [Listing] = [] {
         didSet {
-            Logger.database.info("📦 AllListingsStore.listings updated: \(listings.count) items")
+            Logger.database.info("📦 AllListingsStore.listings updated: \(self.listings.count) items")
         }
     }
 
     /// Category filter selection (nil = "All")
     var selectedCategory: TaskCategory? {
         didSet {
-            Logger.database.info("🔄 Category filter changed to: \(String(describing: selectedCategory))")
+            Logger.database.info("🔄 Category filter changed to: \(String(describing: self.selectedCategory))")
         }
     }
 
     /// Mapping of listing ID to categories of all tasks for that listing
     private var listingCategories: [String: Set<TaskCategory?>] = [:] {
         didSet {
-            Logger.database.info("🗺️ Category mapping updated: \(listingCategories.count) listings mapped")
+            Logger.database.info("🗺️ Category mapping updated: \(self.listingCategories.count) listings mapped")
         }
     }
 
@@ -53,12 +53,12 @@ final class AllListingsStore {
     var filteredListings: [Listing] {
         let result: [Listing]
         
-        if selectedCategory == nil {
-            result = listings
+        if self.selectedCategory == nil {
+            result = self.listings
             Logger.database.info("🔍 Filter: All (\(result.count) listings)")
         } else {
-            result = listings.filter { listing in
-                listingCategories[listing.id]?.contains(selectedCategory) ?? false
+            result = self.listings.filter { listing in
+                self.listingCategories[listing.id]?.contains(selectedCategory) ?? false
             }
             Logger.database.info("🔍 Filter: \(String(describing: selectedCategory)) (\(result.count) listings)")
         }
