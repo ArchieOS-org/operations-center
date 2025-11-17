@@ -159,7 +159,7 @@ final class AppState {
         do {
             let taskData = try await taskRepository.fetchActivities()
             self.allTasks = taskData.map(\.task)  // Extract just the activities
-            Logger.database.info("Updated \(allTasks.count) tasks from realtime change")
+            Logger.database.info("Updated \(self.allTasks.count) tasks from realtime change")
 
             // Save to cache
             saveCachedData()
