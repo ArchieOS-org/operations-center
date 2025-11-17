@@ -68,6 +68,7 @@ private func buildSupabaseClient() -> SupabaseClient {
                     schema: "public"
                 ),
                 auth: .init(
+                    redirectToURL: URL(string: "operationscenter://")!,
                     flowType: .pkce,
                     emitLocalSessionAsInitialSession: true
                 ),
