@@ -25,8 +25,11 @@ def get_supabase() -> Client:
         Client: Supabase client instance
     """
     settings = get_settings()
+    service_key = settings.supabase_service_key
+    if not service_key:
+        raise ValueError("SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY must be set")
     return create_client(
-        supabase_url=settings.SUPABASE_URL, supabase_key=settings.supabase_service_key
+        supabase_url=settings.SUPABASE_URL, supabase_key=service_key
     )
 
 

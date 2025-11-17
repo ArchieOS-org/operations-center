@@ -11,7 +11,7 @@ Processes batched messages from the queue:
 No orchestrator, no routing - just straight processing.
 """
 
-from typing import Any, List, Optional
+from typing import List, Optional
 from datetime import datetime, timezone
 import logging
 from ulid import ULID
