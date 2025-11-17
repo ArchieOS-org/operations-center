@@ -84,7 +84,7 @@ final class AppState {
         // Listen for auth state changes using structured concurrency
         authStateTask = Task { [weak self] in
             guard let self else { return }
-            for await state in await self.supabase.auth.authStateChanges
+            for await state in self.supabase.auth.authStateChanges
                 where [.initialSession, .signedIn, .signedOut].contains(state.event) {
                 self.currentUser = state.session?.user
 
@@ -128,12 +128,14 @@ final class AppState {
 
         let channel = supabase.realtimeV2.channel("all_tasks")
 
-        realtimeSubscription = Task {
+        realtimeSubscription = Task { [weak self] in
+            guard let self else { return }
             do {
                 // Setup listener BEFORE subscribing
-                let listenerTask = Task {
+                let listenerTask = Task { [weak self] in
+                    guard let self else { return }
                     for await change in channel.postgresChange(AnyAction.self, table: "activities") {
-                        await handleRealtimeChange(change)
+                        await self.handleRealtimeChange(change)
                     }
                 }
 
@@ -143,9 +145,7 @@ final class AppState {
                 // Keep listener running
                 await listenerTask.value
             } catch {
-                await MainActor.run {
-                    errorMessage = "Realtime subscription error: \(error.localizedDescription)"
-                }
+                self.errorMessage = "Realtime subscription error: \(error.localizedDescription)"
             }
         }
     }
