@@ -27,10 +27,10 @@ final class AppState {
     private let taskRepository: TaskRepositoryClient
 
     @ObservationIgnored
-    private var realtimeSubscription: _Concurrency.Task<Void, Never>?
+    private var realtimeSubscription: Task<Void, Never>?
 
     @ObservationIgnored
-    private var authStateTask: _Concurrency.Task<Void, Never>?
+    private var authStateTask: Task<Void, Never>?
 
     // MARK: - Computed Properties
 
@@ -81,14 +81,12 @@ final class AppState {
     // MARK: - Authentication
 
     private func setupAuthStateListener() async {
-        // Listen for auth state changes
-        authStateTask = Task.detached { [weak self] in
+        // Listen for auth state changes using structured concurrency
+        authStateTask = Task { [weak self] in
             guard let self else { return }
-            for await state in self.supabase.auth.authStateChanges
+            for await state in await self.supabase.auth.authStateChanges
                 where [.initialSession, .signedIn, .signedOut].contains(state.event) {
-                await MainActor.run {
-                    self.currentUser = state.session?.user
-                }
+                self.currentUser = state.session?.user
 
                 // Refresh tasks when auth state changes
                 if state.session != nil {
