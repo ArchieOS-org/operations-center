@@ -8,7 +8,6 @@
 import Foundation
 import OperationsCenterKit
 import OSLog
-import Dependencies
 
 @Observable
 @MainActor
@@ -49,9 +48,6 @@ final class AllListingsStore {
     /// Repository for data access
     private let listingRepository: ListingRepositoryClient
     private let taskRepository: TaskRepositoryClient
-
-    /// Authentication client for current user ID
-    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
