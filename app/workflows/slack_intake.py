@@ -174,10 +174,25 @@ async def classify_batched_messages(batched_text: str) -> Optional[Classificatio
             "message": batched_text
         })
 
-        classification_dict = result.get("classification")
+        # Handle both shapes: {"classification": {...}} OR {...} directly
+        if isinstance(result, dict):
+            if "classification" in result:
+                classification_dict = result["classification"]
+            else:
+                # Assume result itself is the classification dict
+                classification_dict = result
+        else:
+            logger.error(
+                f"Classifier returned invalid structure (not dict): "
+                f"{type(result).__name__}"
+            )
+            return None
 
-        if not classification_dict:
-            logger.error("Classifier returned no classification")
+        if not isinstance(classification_dict, dict):
+            logger.error(
+                f"Classification data is not a dict: "
+                f"{type(classification_dict).__name__}"
+            )
             return None
 
         # Convert dict to ClassificationV1 object
@@ -234,7 +249,7 @@ async def store_classification(
             "slack_ts": primary_ts,                                      # Primary timestamp
             "slack_thread_ts": thread_ts,                                # Thread (optional)
             "message_text": batched_text,                                # Combined text
-            "classification": classification.model_dump(),               # Full JSON
+            "classification": classification.model_dump(mode='json'),    # Full JSON (mode='json' for serialization)
             "message_type": classification.message_type.value,
             "task_key": classification.task_key.value if classification.task_key else None,
             "group_key": classification.group_key.value if classification.group_key else None,

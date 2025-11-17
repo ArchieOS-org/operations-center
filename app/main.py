@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Set, cast
 import logging
 import asyncio
 from datetime import datetime
@@ -36,7 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Background task storage
-background_tasks = set()
+background_tasks: Set[asyncio.Task[Any]] = set()
 
 
 @asynccontextmanager
@@ -138,7 +138,11 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
 
     # Handle event callback
     if payload.type == "event_callback":
-        event = payload.event
+        if payload.event is None:
+            logger.error("❌ Slack event_callback payload missing 'event' field")
+            return {"ok": False, "error": "missing_event"}
+
+        event = cast(dict, payload.event)
 
         # Skip bot messages
         if event.get("bot_id") or event.get("subtype") == "bot_message":
@@ -146,9 +150,19 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
             return {"ok": True}
 
         # Extract identifiers
-        user_id = event.get("user")
-        channel_id = event.get("channel")
-        message_text = event.get("text", "")
+        user = event.get("user")
+        channel = event.get("channel")
+        message_text = str(event.get("text", ""))
+
+        if not isinstance(user, str) or not isinstance(channel, str):
+            logger.error(
+                "❌ Slack message missing user or channel; "
+                f"event keys: {list(event.keys())}"
+            )
+            return {"ok": False, "error": "missing_user_or_channel"}
+
+        user_id = user
+        channel_id = channel
 
         logger.info(
             f"📬 Message from user={user_id}, channel={channel_id}: "
