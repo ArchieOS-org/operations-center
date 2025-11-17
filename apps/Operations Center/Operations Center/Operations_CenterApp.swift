@@ -37,7 +37,7 @@ struct OperationsCenterApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AppView()
                 .environment(appState)
         }
     }
