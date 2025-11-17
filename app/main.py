@@ -30,8 +30,7 @@ from app.agents import get_agent, list_agents
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ app = FastAPI(
     version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS middleware
@@ -95,8 +94,10 @@ app.add_middleware(
 # REQUEST/RESPONSE MODELS
 # ═══════════════════════════════════════════════════════════
 
+
 class SlackWebhookPayload(BaseModel):
     """Slack event webhook payload"""
+
     type: str
     challenge: Optional[str] = None
     event: Optional[Dict[str, Any]] = None
@@ -104,6 +105,7 @@ class SlackWebhookPayload(BaseModel):
 
 class ClassifyRequest(BaseModel):
     """Request to classify a message"""
+
     message: str
     source: str = "slack"
     metadata: Optional[Dict[str, Any]] = None
@@ -111,6 +113,7 @@ class ClassifyRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     """Request for interactive chat"""
+
     messages: List[Dict[str, str]]
     context: Optional[Dict[str, Any]] = None
 
@@ -118,6 +121,7 @@ class ChatRequest(BaseModel):
 # ═══════════════════════════════════════════════════════════
 # WEBHOOK ENDPOINTS (External → FastAPI)
 # ═══════════════════════════════════════════════════════════
+
 
 @app.post("/webhooks/slack")
 async def slack_webhook(payload: SlackWebhookPayload, request: Request):
@@ -176,7 +180,7 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
                 user_id=user_id,
                 channel_id=channel_id,
                 event=event,
-                processor_callback=process_batched_slack_messages
+                processor_callback=process_batched_slack_messages,
             )
 
             logger.info("✅ Message enqueued for batching")
@@ -189,8 +193,7 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
             # Return 500 to trigger Slack retry mechanism
             # TODO: Consider implementing dead-letter queue for failed enqueues
             return JSONResponse(
-                status_code=500,
-                content={"ok": False, "error": "enqueue_failed"}
+                status_code=500, content={"ok": False, "error": "enqueue_failed"}
             )
 
     logger.warning(f"⚠️ Unknown event type: {payload.type}")
@@ -220,14 +223,13 @@ async def sms_webhook(request: Request):
 
     logger.info(f"SMS received from: {form_data.get('From')}")
 
-    return JSONResponse({
-        "message": "SMS processing not yet implemented"
-    })
+    return JSONResponse({"message": "SMS processing not yet implemented"})
 
 
 # ═══════════════════════════════════════════════════════════
 # INTELLIGENCE ENDPOINTS (Swift/Web → FastAPI)
 # ═══════════════════════════════════════════════════════════
+
 
 @app.post("/classify")
 async def classify_stream(req: ClassifyRequest):
@@ -237,6 +239,7 @@ async def classify_stream(req: ClassifyRequest):
     Returns Server-Sent Events (SSE) with progressive
     classification results as the LLM processes the message.
     """
+
     async def generate():
         """Generate SSE stream"""
         try:
@@ -248,13 +251,13 @@ async def classify_stream(req: ClassifyRequest):
 
             # For now, do synchronous classification
             # TODO: Implement streaming when classifier supports it
-            result = await classifier.process({
-                "message": req.message,
-                "metadata": req.metadata or {}
-            })
+            result = await classifier.process(
+                {"message": req.message, "metadata": req.metadata or {}}
+            )
 
             # Send result
             import json
+
             yield f"data: {json.dumps(result)}\n\n"
             yield "data: [DONE]\n\n"
 
@@ -268,7 +271,7 @@ async def classify_stream(req: ClassifyRequest):
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
-        }
+        },
     )
 
 
@@ -280,6 +283,7 @@ async def chat_stream(req: ChatRequest):
     Sends messages to the orchestrator agent and streams
     responses back token-by-token for real-time UI updates.
     """
+
     async def generate():
         """Generate SSE stream"""
         try:
@@ -290,13 +294,13 @@ async def chat_stream(req: ChatRequest):
                 return
 
             # Process through orchestrator
-            result = await orchestrator.process({
-                "messages": req.messages,
-                "context": req.context or {}
-            })
+            result = await orchestrator.process(
+                {"messages": req.messages, "context": req.context or {}}
+            )
 
             # Stream response
             import json
+
             yield f"data: {json.dumps(result)}\n\n"
             yield "data: [DONE]\n\n"
 
@@ -310,13 +314,14 @@ async def chat_stream(req: ChatRequest):
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
-        }
+        },
     )
 
 
 # ═══════════════════════════════════════════════════════════
 # STATUS & HEALTH
 # ═══════════════════════════════════════════════════════════
+
 
 @app.get("/")
 async def root():
@@ -326,21 +331,12 @@ async def root():
         "version": "3.0.0",
         "description": "AI-powered intelligence layer for real estate operations",
         "endpoints": {
-            "webhooks": {
-                "slack": "POST /webhooks/slack",
-                "sms": "POST /webhooks/sms"
-            },
-            "intelligence": {
-                "classify": "POST /classify",
-                "chat": "POST /chat"
-            },
-            "system": {
-                "status": "GET /status",
-                "docs": "GET /docs"
-            }
+            "webhooks": {"slack": "POST /webhooks/slack", "sms": "POST /webhooks/sms"},
+            "intelligence": {"classify": "POST /classify", "chat": "POST /chat"},
+            "system": {"status": "GET /status", "docs": "GET /docs"},
         },
         "docs": "/docs",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -358,10 +354,7 @@ async def get_status():
     return {
         "status": "operational",
         "timestamp": datetime.utcnow().isoformat(),
-        "agents": {
-            "available": agents,
-            "total": len(agents)
-        },
+        "agents": {"available": agents, "total": len(agents)},
         "workers": {
             "slack_processor": "ready",  # TODO: Get actual status
             "sms_processor": "ready",
@@ -370,15 +363,16 @@ async def get_status():
             "supabase": "connected",
             "openai": "configured",
             "slack": "configured",
-            "twilio": "configured"
+            "twilio": "configured",
         },
-        "version": "3.0.0"
+        "version": "3.0.0",
     }
 
 
 # ═══════════════════════════════════════════════════════════
 # BACKGROUND WORKERS (Future)
 # ═══════════════════════════════════════════════════════════
+
 
 async def monitor_slack_queue():
     """
@@ -418,10 +412,5 @@ async def monitor_sms_queue():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

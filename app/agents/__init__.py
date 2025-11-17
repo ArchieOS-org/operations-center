@@ -30,8 +30,12 @@ class BaseAgent(ABC):
         """What this agent does"""
         pass
 
+
 # Agent Registry - Single source of truth for all agents
-AGENT_REGISTRY: Dict[str, Type[BaseAgent]] = {
+# Note: MessageClassifier doesn't inherit from BaseAgent (legacy code)
+from typing import Any
+
+AGENT_REGISTRY: Dict[str, Any] = {
     "classifier": MessageClassifier,
     # "orchestrator": OrchestratorAgent,  # TODO: Create
     # "realtor": RealtorAgent,            # TODO: Create

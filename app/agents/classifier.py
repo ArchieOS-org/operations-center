@@ -123,7 +123,7 @@ class MessageClassifier:
     def description(self) -> str:
         return "Classifies messages and extracts structured data"
 
-    def __init__(self, model_name: str = None, temperature: float = 0):
+    def __init__(self, model_name: str | None = None, temperature: float = 0):
         """
         Initialize the classifier
 
@@ -131,7 +131,7 @@ class MessageClassifier:
             model_name: OpenAI model name (default: from env or gpt-4o-mini)
             temperature: Sampling temperature (0 for deterministic)
         """
-        self.model_name = model_name or os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+        self.model_name = model_name or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
         # Initialize OpenAI chat model with structured output
         # LangChain automatically reads OPENAI_API_KEY from environment
@@ -139,7 +139,7 @@ class MessageClassifier:
             model=self.model_name,
             temperature=temperature,
             timeout=20.0,  # 20 second timeout (matches original)
-            max_retries=0   # No automatic retries
+            max_retries=0,  # No automatic retries
         ).with_structured_output(ClassificationV1)
 
     async def process(self, input_data: dict) -> dict:
@@ -162,9 +162,7 @@ class MessageClassifier:
         return classification.model_dump()
 
     def classify(
-        self,
-        message: str,
-        message_timestamp: Optional[str] = None
+        self, message: str, message_timestamp: Optional[str] = None
     ) -> ClassificationV1:
         """
         Classify a message and return structured output
@@ -182,13 +180,15 @@ class MessageClassifier:
         # Add timestamp context if provided
         user_message = message
         if message_timestamp:
-            user_message = f"Message timestamp: {message_timestamp}\n\nMessage: {message}"
+            user_message = (
+                f"Message timestamp: {message_timestamp}\n\nMessage: {message}"
+            )
 
         # Invoke LLM with structured output
         # with_structured_output() guarantees ClassificationV1 return type
         messages = [
             {"role": "system", "content": CLASSIFICATION_INSTRUCTIONS},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         classification: ClassificationV1 = self.llm.invoke(messages)
@@ -202,6 +202,7 @@ class MessageClassifier:
 # Singleton instance for reuse (optimal for serverless)
 _classifier_instance = None
 
+
 def get_classifier() -> MessageClassifier:
     """Get or create singleton classifier instance"""
     global _classifier_instance
@@ -210,7 +211,9 @@ def get_classifier() -> MessageClassifier:
     return _classifier_instance
 
 
-def classify_message(message: str, message_timestamp: str = None) -> ClassificationV1:
+def classify_message(
+    message: str, message_timestamp: str | None = None
+) -> ClassificationV1:
     """
     Convenience function to classify a message
 
@@ -235,15 +238,15 @@ if __name__ == "__main__":
             "We got an offer on 123 Main St! Need to schedule closing by Friday.",
             "Can someone update the MLS listing for the property at 456 Oak Ave?",
             "Great job team! 🎉",
-            "Need help with a lease renewal for a tenant"
+            "Need help with a lease renewal for a tenant",
         ]
 
         timestamp = datetime.utcnow().isoformat()
 
         for msg in test_messages:
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print(f"Message: {msg}")
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
 
             try:
                 result = classify_message(msg, timestamp)

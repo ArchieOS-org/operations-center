@@ -29,8 +29,7 @@ def _get_slack_client() -> WebClient:
 
 
 async def send_task_acknowledgment(
-    channel: str,
-    thread_ts: Optional[str] = None
+    channel: str, thread_ts: Optional[str] = None
 ) -> bool:
     """Send task detection acknowledgment to Slack.
 
@@ -47,33 +46,27 @@ async def send_task_acknowledgment(
             slack_client.chat_postMessage,
             channel=channel,
             text="✅ Task detected and added to your queue!",
-            thread_ts=thread_ts
+            thread_ts=thread_ts,
         )
 
-        logger.info(
-            f"Posted task acknowledgment to {channel}, ts={response['ts']}"
-        )
+        logger.info(f"Posted task acknowledgment to {channel}, ts={response['ts']}")
         return True
 
     except SlackApiError as e:
         logger.error(
             f"Failed to post task acknowledgment to {channel}: {e.response['error']}",
-            exc_info=True
+            exc_info=True,
         )
         return False
     except Exception as e:
         logger.error(
-            f"Unexpected error posting task acknowledgment: {e}",
-            exc_info=True
+            f"Unexpected error posting task acknowledgment: {e}", exc_info=True
         )
         return False
 
 
 async def send_listing_acknowledgment(
-    channel: str,
-    listing_type: str,
-    address: str,
-    thread_ts: Optional[str] = None
+    channel: str, listing_type: str, address: str, thread_ts: Optional[str] = None
 ) -> bool:
     """Send listing detection acknowledgment to Slack.
 
@@ -95,32 +88,27 @@ async def send_listing_acknowledgment(
             slack_client.chat_postMessage,
             channel=channel,
             text=f"🏠 Listing detected: {formatted_type} - {address}",
-            thread_ts=thread_ts
+            thread_ts=thread_ts,
         )
 
-        logger.info(
-            f"Posted listing acknowledgment to {channel}, ts={response['ts']}"
-        )
+        logger.info(f"Posted listing acknowledgment to {channel}, ts={response['ts']}")
         return True
 
     except SlackApiError as e:
         logger.error(
             f"Failed to post listing acknowledgment to {channel}: {e.response['error']}",
-            exc_info=True
+            exc_info=True,
         )
         return False
     except Exception as e:
         logger.error(
-            f"Unexpected error posting listing acknowledgment: {e}",
-            exc_info=True
+            f"Unexpected error posting listing acknowledgment: {e}", exc_info=True
         )
         return False
 
 
 async def send_acknowledgment(
-    classification: ClassificationV1,
-    channel: str,
-    thread_ts: Optional[str] = None
+    classification: ClassificationV1, channel: str, thread_ts: Optional[str] = None
 ) -> bool:
     """Route to appropriate acknowledgment based on classification.
 
@@ -136,7 +124,9 @@ async def send_acknowledgment(
 
     if message_type == MessageType.GROUP:
         # Listing detected
-        listing_type = classification.group_key.value if classification.group_key else "UNKNOWN"
+        listing_type = (
+            classification.group_key.value if classification.group_key else "UNKNOWN"
+        )
 
         # Safely extract address with fallback
         address = "Unknown Address"
@@ -147,25 +137,18 @@ async def send_acknowledgment(
             channel=channel,
             listing_type=listing_type,
             address=address,
-            thread_ts=thread_ts
+            thread_ts=thread_ts,
         )
 
     elif message_type == MessageType.STRAY:
         # Task detected
-        return await send_task_acknowledgment(
-            channel=channel,
-            thread_ts=thread_ts
-        )
+        return await send_task_acknowledgment(channel=channel, thread_ts=thread_ts)
 
     elif message_type in [MessageType.INFO_REQUEST, MessageType.IGNORE]:
         # No acknowledgment needed
-        logger.debug(
-            f"Skipping acknowledgment for message_type={message_type.value}"
-        )
+        logger.debug(f"Skipping acknowledgment for message_type={message_type.value}")
         return False
 
     else:
-        logger.warning(
-            f"Unknown message_type={message_type}, skipping acknowledgment"
-        )
+        logger.warning(f"Unknown message_type={message_type}, skipping acknowledgment")
         return False

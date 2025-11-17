@@ -20,7 +20,11 @@ from app.agents import get_agent
 from app.database.supabase_client import get_supabase
 from app.schemas.classification import ClassificationV1
 from app.queue.message_queue import QueuedMessage
-from app.workflows.batched_classification import batch_messages_for_classification, extract_all_message_timestamps, get_primary_thread_ts
+from app.workflows.batched_classification import (
+    batch_messages_for_classification,
+    extract_all_message_timestamps,
+    get_primary_thread_ts,
+)
 from app.workflows.entity_creation import create_entities_from_classification
 from app.services.slack_client import send_acknowledgment
 
@@ -28,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 async def process_batched_slack_messages(
-    messages: List[QueuedMessage],
-    user_id: str,
-    channel_id: str
+    messages: List[QueuedMessage], user_id: str, channel_id: str
 ) -> dict:
     """
     Main entry point for processing batched Slack messages.
@@ -70,7 +72,7 @@ async def process_batched_slack_messages(
             user_id=user_id,
             channel_id=channel_id,
             classification=classification,
-            batched_text=batched_text
+            batched_text=batched_text,
         )
 
         if not message_id:
@@ -80,16 +82,14 @@ async def process_batched_slack_messages(
         entity_result = await create_entities_from_classification(
             classification=classification,
             message_id=message_id,
-            message_text=batched_text
+            message_text=batched_text,
         )
 
         # Step 6: Send Slack acknowledgment (if entity created)
         if entity_result.get("status") == "success":
             thread_ts = get_primary_thread_ts(messages)
             await send_acknowledgment(
-                classification=classification,
-                channel=channel_id,
-                thread_ts=thread_ts
+                classification=classification, channel=channel_id, thread_ts=thread_ts
             )
 
         logger.info(
@@ -100,21 +100,15 @@ async def process_batched_slack_messages(
         return {
             "status": "success",
             "message_id": message_id,
-            "entity_result": entity_result
+            "entity_result": entity_result,
         }
 
     except Exception as e:
         logger.error(f"Batch processing failed: {str(e)}", exc_info=True)
-        return {
-            "status": "error",
-            "reason": str(e)
-        }
+        return {"status": "error", "reason": str(e)}
 
 
-async def validate_messages(
-    messages: List[QueuedMessage],
-    user_id: str
-) -> bool:
+async def validate_messages(messages: List[QueuedMessage], user_id: str) -> bool:
     """
     Validate messages before processing.
 
@@ -170,9 +164,7 @@ async def classify_batched_messages(batched_text: str) -> Optional[Classificatio
             )
             return None
 
-        result = await classifier.process({
-            "message": batched_text
-        })
+        result = await classifier.process({"message": batched_text})
 
         # Handle both shapes: {"classification": {...}} OR {...} directly
         if isinstance(result, dict):
@@ -215,7 +207,7 @@ async def store_classification(
     user_id: str,
     channel_id: str,
     classification: ClassificationV1,
-    batched_text: str
+    batched_text: str,
 ) -> Optional[str]:
     """
     Store classification in slack_messages table.
@@ -243,23 +235,26 @@ async def store_classification(
         thread_ts = get_primary_thread_ts(messages)
 
         message_data = {
-            "message_id": message_id,                                    # PRIMARY KEY
-            "slack_user_id": user_id,                                    # User who sent
-            "slack_channel_id": channel_id,                              # Channel
-            "slack_ts": primary_ts,                                      # Primary timestamp
-            "slack_thread_ts": thread_ts,                                # Thread (optional)
-            "message_text": batched_text,                                # Combined text
-            "classification": classification.model_dump(mode='json'),    # Full JSON (mode='json' for serialization)
+            "message_id": message_id,  # PRIMARY KEY
+            "slack_user_id": user_id,  # User who sent
+            "slack_channel_id": channel_id,  # Channel
+            "slack_ts": primary_ts,  # Primary timestamp
+            "slack_thread_ts": thread_ts,  # Thread (optional)
+            "message_text": batched_text,  # Combined text
+            "classification": classification.model_dump(
+                mode="json"
+            ),  # Full JSON (mode='json' for serialization)
             "message_type": classification.message_type.value,
-            "task_key": classification.task_key.value if classification.task_key else None,
-            "group_key": classification.group_key.value if classification.group_key else None,
+            "task_key": classification.task_key.value
+            if classification.task_key
+            else None,
+            "group_key": classification.group_key.value
+            if classification.group_key
+            else None,
             "confidence": float(classification.confidence),
             "received_at": datetime.now(timezone.utc).isoformat(),
-            "processing_status": "pending",                              # Will update later
-            "metadata": {
-                "batch_size": len(messages),
-                "all_timestamps": all_timestamps
-            }
+            "processing_status": "pending",  # Will update later
+            "metadata": {"batch_size": len(messages), "all_timestamps": all_timestamps},
         }
 
         result = client.table("slack_messages").insert(message_data).execute()

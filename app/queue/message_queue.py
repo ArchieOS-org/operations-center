@@ -7,7 +7,7 @@ then processes them as a single batch after a timeout period.
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class QueuedMessage:
     """Single message in the queue."""
+
     event: dict
     received_at: datetime
     text: str
@@ -26,6 +27,7 @@ class QueuedMessage:
 @dataclass
 class MessageQueue:
     """Queue for batching messages from same user/channel."""
+
     queue_key: str  # Format: "user_id:channel_id"
     messages: List[QueuedMessage] = field(default_factory=list)
     timer: Optional[asyncio.Task] = None
@@ -52,7 +54,7 @@ async def enqueue_message(
     user_id: str,
     channel_id: str,
     event: dict,
-    processor_callback: callable
+    processor_callback: Callable[..., Any],
 ) -> None:
     """Add message to queue and manage batching timer.
 
@@ -71,23 +73,24 @@ async def enqueue_message(
         received_at=datetime.now(timezone.utc),
         text=event.get("text", ""),
         slack_ts=event.get("ts", ""),
-        thread_ts=event.get("thread_ts")
+        thread_ts=event.get("thread_ts"),
     )
 
     # Get or create queue
-    if queue_key not in _active_queues or _active_queues[queue_key].status == "processing":
+    if (
+        queue_key not in _active_queues
+        or _active_queues[queue_key].status == "processing"
+    ):
         # Create new queue
         queue = MessageQueue(
             queue_key=queue_key,
             user_id=user_id,
             channel_id=channel_id,
-            messages=[queued_msg]
+            messages=[queued_msg],
         )
         _active_queues[queue_key] = queue
 
-        logger.info(
-            f"Created new queue for {queue_key}, message count: 1"
-        )
+        logger.info(f"Created new queue for {queue_key}, message count: 1")
     else:
         # Add to existing queue
         queue = _active_queues[queue_key]
@@ -101,8 +104,7 @@ async def enqueue_message(
         queue.messages.append(queued_msg)
 
         logger.info(
-            f"Added to existing queue {queue_key}, "
-            f"message count: {len(queue.messages)}"
+            f"Added to existing queue {queue_key}, message count: {len(queue.messages)}"
         )
 
         # Check if we hit max batch size
@@ -119,15 +121,11 @@ async def enqueue_message(
         _batch_timer(queue_key, processor_callback, BATCH_TIMEOUT_SECONDS)
     )
 
-    logger.debug(
-        f"Started {BATCH_TIMEOUT_SECONDS}s timer for {queue_key}"
-    )
+    logger.debug(f"Started {BATCH_TIMEOUT_SECONDS}s timer for {queue_key}")
 
 
 async def _batch_timer(
-    queue_key: str,
-    processor_callback: callable,
-    delay: float
+    queue_key: str, processor_callback: Callable[..., Any], delay: float
 ) -> None:
     """Wait for timeout, then process the queue.
 
@@ -146,8 +144,7 @@ async def _batch_timer(
 
 
 async def _process_queue(
-    queue_key: str,
-    processor_callback: callable
+    queue_key: str, processor_callback: Callable[..., Any]
 ) -> None:
     """Process all messages in the queue as a batch.
 
@@ -169,25 +166,17 @@ async def _process_queue(
     user_id = queue.user_id
     channel_id = queue.channel_id
 
-    logger.info(
-        f"Processing batch for {queue_key}: "
-        f"{len(messages)} message(s)"
-    )
+    logger.info(f"Processing batch for {queue_key}: {len(messages)} message(s)")
 
     try:
         # Call the processor with batched messages
         await processor_callback(
-            messages=messages,
-            user_id=user_id,
-            channel_id=channel_id
+            messages=messages, user_id=user_id, channel_id=channel_id
         )
 
         logger.info(f"Batch processed successfully for {queue_key}")
     except Exception as e:
-        logger.error(
-            f"Error processing batch for {queue_key}: {e}",
-            exc_info=True
-        )
+        logger.error(f"Error processing batch for {queue_key}: {e}", exc_info=True)
     finally:
         # Clean up queue
         if queue_key in _active_queues:
@@ -235,11 +224,7 @@ def get_queue_stats() -> dict:
         "accumulating": accumulating,
         "processing": processing,
         "queues": [
-            {
-                "key": q.queue_key,
-                "messages": len(q.messages),
-                "status": q.status
-            }
+            {"key": q.queue_key, "messages": len(q.messages), "status": q.status}
             for q in _active_queues.values()
-        ]
+        ],
     }

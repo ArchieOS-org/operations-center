@@ -3,9 +3,10 @@ Supabase client management with singleton pattern.
 Context7 Pattern: @lru_cache for singleton + FastAPI dependency injection
 Source: /supabase/supabase-py and /fastapi/fastapi docs
 """
+
 from supabase import create_client, Client
 from functools import lru_cache
-from config.settings import get_settings
+from app.config.settings import get_settings
 
 
 @lru_cache()
@@ -25,8 +26,7 @@ def get_supabase() -> Client:
     """
     settings = get_settings()
     return create_client(
-        supabase_url=settings.SUPABASE_URL,
-        supabase_key=settings.supabase_service_key
+        supabase_url=settings.SUPABASE_URL, supabase_key=settings.supabase_service_key
     )
 
 

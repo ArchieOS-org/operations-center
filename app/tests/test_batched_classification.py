@@ -13,11 +13,14 @@ def test_batch_single_message():
     """Test batching a single message returns text as-is."""
     messages = [
         QueuedMessage(
-            event={"text": "New sale listing at 123 Main St", "ts": "1234567890.123456"},
+            event={
+                "text": "New sale listing at 123 Main St",
+                "ts": "1234567890.123456",
+            },
             received_at=datetime.now(timezone.utc),
             text="New sale listing at 123 Main St",
             slack_ts="1234567890.123456",
-            thread_ts=None
+            thread_ts=None,
         )
     ]
 
@@ -33,21 +36,21 @@ def test_batch_multiple_messages():
             received_at=datetime.now(timezone.utc),
             text="New listing",
             slack_ts="1234567890.123456",
-            thread_ts=None
+            thread_ts=None,
         ),
         QueuedMessage(
             event={"text": "at 123 Main St", "ts": "1234567891.123456"},
             received_at=datetime.now(timezone.utc),
             text="at 123 Main St",
             slack_ts="1234567891.123456",
-            thread_ts=None
+            thread_ts=None,
         ),
         QueuedMessage(
             event={"text": "$500k asking price", "ts": "1234567892.123456"},
             received_at=datetime.now(timezone.utc),
             text="$500k asking price",
             slack_ts="1234567892.123456",
-            thread_ts=None
+            thread_ts=None,
         ),
     ]
 
@@ -66,9 +69,27 @@ def test_batch_multiple_messages():
 def test_extract_all_message_timestamps():
     """Test extracting timestamps from batched messages."""
     messages = [
-        QueuedMessage(event={"text": "msg1", "ts": "1234567890.123456"}, received_at=datetime.now(timezone.utc), text="msg1", slack_ts="1234567890.123456", thread_ts=None),
-        QueuedMessage(event={"text": "msg2", "ts": "1234567891.123456"}, received_at=datetime.now(timezone.utc), text="msg2", slack_ts="1234567891.123456", thread_ts=None),
-        QueuedMessage(event={"text": "msg3", "ts": "1234567892.123456"}, received_at=datetime.now(timezone.utc), text="msg3", slack_ts="1234567892.123456", thread_ts=None),
+        QueuedMessage(
+            event={"text": "msg1", "ts": "1234567890.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg1",
+            slack_ts="1234567890.123456",
+            thread_ts=None,
+        ),
+        QueuedMessage(
+            event={"text": "msg2", "ts": "1234567891.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg2",
+            slack_ts="1234567891.123456",
+            thread_ts=None,
+        ),
+        QueuedMessage(
+            event={"text": "msg3", "ts": "1234567892.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg3",
+            slack_ts="1234567892.123456",
+            thread_ts=None,
+        ),
     ]
 
     timestamps = extract_all_message_timestamps(messages)
@@ -82,8 +103,20 @@ def test_extract_all_message_timestamps():
 def test_get_primary_thread_ts_no_thread():
     """Test getting thread timestamp when no messages are in a thread."""
     messages = [
-        QueuedMessage(event={"text": "msg1", "ts": "1234567890.123456"}, received_at=datetime.now(timezone.utc), text="msg1", slack_ts="1234567890.123456", thread_ts=None),
-        QueuedMessage(event={"text": "msg2", "ts": "1234567891.123456"}, received_at=datetime.now(timezone.utc), text="msg2", slack_ts="1234567891.123456", thread_ts=None),
+        QueuedMessage(
+            event={"text": "msg1", "ts": "1234567890.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg1",
+            slack_ts="1234567890.123456",
+            thread_ts=None,
+        ),
+        QueuedMessage(
+            event={"text": "msg2", "ts": "1234567891.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg2",
+            slack_ts="1234567891.123456",
+            thread_ts=None,
+        ),
     ]
 
     thread_ts = get_primary_thread_ts(messages)
@@ -93,9 +126,35 @@ def test_get_primary_thread_ts_no_thread():
 def test_get_primary_thread_ts_with_thread():
     """Test getting thread timestamp when messages are in a thread."""
     messages = [
-        QueuedMessage(event={"text": "msg1", "ts": "1234567890.123456"}, received_at=datetime.now(timezone.utc), text="msg1", slack_ts="1234567890.123456", thread_ts=None),
-        QueuedMessage(event={"text": "msg2", "ts": "1234567891.123456", "thread_ts": "1234567890.000000"}, received_at=datetime.now(timezone.utc), text="msg2", slack_ts="1234567891.123456", thread_ts="1234567890.000000"),
-        QueuedMessage(event={"text": "msg3", "ts": "1234567892.123456", "thread_ts": "1234567890.000000"}, received_at=datetime.now(timezone.utc), text="msg3", slack_ts="1234567892.123456", thread_ts="1234567890.000000"),
+        QueuedMessage(
+            event={"text": "msg1", "ts": "1234567890.123456"},
+            received_at=datetime.now(timezone.utc),
+            text="msg1",
+            slack_ts="1234567890.123456",
+            thread_ts=None,
+        ),
+        QueuedMessage(
+            event={
+                "text": "msg2",
+                "ts": "1234567891.123456",
+                "thread_ts": "1234567890.000000",
+            },
+            received_at=datetime.now(timezone.utc),
+            text="msg2",
+            slack_ts="1234567891.123456",
+            thread_ts="1234567890.000000",
+        ),
+        QueuedMessage(
+            event={
+                "text": "msg3",
+                "ts": "1234567892.123456",
+                "thread_ts": "1234567890.000000",
+            },
+            received_at=datetime.now(timezone.utc),
+            text="msg3",
+            slack_ts="1234567892.123456",
+            thread_ts="1234567890.000000",
+        ),
     ]
 
     thread_ts = get_primary_thread_ts(messages)

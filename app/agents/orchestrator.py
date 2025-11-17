@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class OrchestratorState(TypedDict):
     """State for orchestrator workflow"""
+
     messages: Annotated[list, add_messages]
     classification: Optional[Dict[str, Any]]
     routing_decision: Optional[str]
@@ -44,7 +45,9 @@ class OrchestratorAgent(BaseAgent):
 
     @property
     def description(self) -> str:
-        return "Routes messages to appropriate specialist agents based on classification"
+        return (
+            "Routes messages to appropriate specialist agents based on classification"
+        )
 
     def _build_graph(self) -> StateGraph:
         """Build the orchestration workflow graph"""
@@ -71,7 +74,7 @@ class OrchestratorAgent(BaseAgent):
                 "task": "process_task",
                 "generic": "process_generic",
                 END: END,
-            }
+            },
         )
 
         # All processing nodes lead to END
@@ -100,10 +103,12 @@ class OrchestratorAgent(BaseAgent):
                 input_data["classification"] = classification_result
 
         # Run the orchestration workflow
-        result = await self.graph.ainvoke({
-            "messages": input_data.get("messages", []),
-            "classification": input_data.get("classification"),
-        })
+        result = await self.graph.ainvoke(
+            {
+                "messages": input_data.get("messages", []),
+                "classification": input_data.get("classification"),
+            }
+        )
 
         return result.get("result", {})
 
@@ -139,7 +144,9 @@ class OrchestratorAgent(BaseAgent):
         """Extract routing decision from state"""
         return state.get("routing_decision", END)
 
-    async def _process_with_realtor_agent(self, state: OrchestratorState) -> OrchestratorState:
+    async def _process_with_realtor_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with realtor specialist agent"""
 
         # TODO: Implement when RealtorAgent is created
@@ -158,7 +165,9 @@ class OrchestratorAgent(BaseAgent):
             "result": result,
         }
 
-    async def _process_with_listing_agent(self, state: OrchestratorState) -> OrchestratorState:
+    async def _process_with_listing_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with listing specialist agent"""
 
         # TODO: Implement when ListingAgent is created
@@ -173,7 +182,9 @@ class OrchestratorAgent(BaseAgent):
             "result": result,
         }
 
-    async def _process_with_task_agent(self, state: OrchestratorState) -> OrchestratorState:
+    async def _process_with_task_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with task specialist agent"""
 
         # TODO: Implement when TaskAgent is created
