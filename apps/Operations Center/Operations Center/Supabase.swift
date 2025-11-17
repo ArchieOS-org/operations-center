@@ -34,8 +34,7 @@ var supabase: SupabaseClient {
 // MARK: - Builder
 
 private func buildSupabaseClient() -> SupabaseClient {
-    // Check if we're in tests NOW (not at module load time)
-    // By the time this runs, test environment variables are set
+    // 1. Swift Testing environment - use stub client
     if isRunningSwiftTests() {
         Logger.database.info("🧪 Swift Testing environment - using stub client")
         return SupabaseClient(
@@ -44,7 +43,16 @@ private func buildSupabaseClient() -> SupabaseClient {
         )
     }
 
-    // Production initialization
+    // 2. Preview mode (--use-preview-data flag) - use stub client
+    if CommandLine.arguments.contains("--use-preview-data") {
+        Logger.database.info("📱 Preview mode - using stub client")
+        return SupabaseClient(
+            supabaseURL: URL(string: "https://preview.supabase.co")!,
+            supabaseKey: "preview-key-stub"
+        )
+    }
+
+    // 3. Production initialization - requires environment variables
     do {
         let url = try AppConfig.supabaseURL
         let key = try AppConfig.supabaseAnonKey
@@ -72,15 +80,17 @@ private func buildSupabaseClient() -> SupabaseClient {
         Logger.database.info("✅ Supabase client initialized successfully")
         return client
     } catch {
+        // 4. Development fallback - missing config in DEBUG builds
         #if DEBUG
-        fatalError("Failed to initialize Supabase client: \(error.localizedDescription)")
-        #else
-        Logger.database.error("❌ Failed to initialize Supabase client: \(error.localizedDescription)")
-        // Return a dummy client - app will fail gracefully
+        Logger.database.warning("⚠️ Missing Supabase config in DEBUG - using stub client")
+        Logger.database.warning("   Run with 'Operations Center Preview' scheme OR set environment variables")
         return SupabaseClient(
-            supabaseURL: URL(string: "https://placeholder.supabase.co")!,
-            supabaseKey: "placeholder"
+            supabaseURL: URL(string: "https://dev-stub.supabase.co")!,
+            supabaseKey: "dev-stub-key"
         )
+        #else
+        // Release builds MUST have config - fail loudly
+        fatalError("Failed to initialize Supabase client: \(error.localizedDescription)")
         #endif
     }
 }

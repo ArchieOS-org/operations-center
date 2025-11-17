@@ -74,6 +74,23 @@
             ReferencedContainer = "container:Operations Center.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SUPABASE_URL"
+            value = "https://nfyrtinbdlbwrwrynuwe.supabase.co"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SUPABASE_ANON_KEY"
+            value = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5meXJ0aW5iZGxid3J3cnludXdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzI5NjAsImV4cCI6MjA1MzE0ODk2MH0.JuH1C3BXqjGXl_aQQ4u9tEn_SiZuECvvU8s-u1Dx5GQ"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "FASTAPI_URL"
+            value = "https://operations-center.vercel.app"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

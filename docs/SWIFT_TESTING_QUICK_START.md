@@ -176,14 +176,16 @@ struct MockTaskRepositoryTests {
     }
     
     @Test("Claiming non-existent task throws")
-    async func claimTaskNotFound() async throws {
+    async func claimTaskNotFound() async {
         let repo = MockTaskRepository()
-        
-        // This should throw MockRepositoryError.taskNotFound
-        _ = try await repo.claimTask(
-            taskId: "nonexistent",
-            staffId: "staff-1"
-        )
+
+        // Verify that attempting to claim nonexistent task throws taskNotFound error
+        await #expect(throws: MockRepositoryError.taskNotFound) {
+            try await repo.claimTask(
+                taskId: "nonexistent",
+                staffId: "staff-1"
+            )
+        }
     }
 }
 ```

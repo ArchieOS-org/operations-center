@@ -87,19 +87,11 @@ public struct DSEmptyState: View {
                     .padding(.top, 20)
                     .accessibilityHint("Resolves the empty state")
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(
-                        reduceMotionEnabled ? .none : .easeOut(duration: 0.35).delay(0.1),
-                        value: action.title
-                    )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, Spacing.emptyStateVertical)
-        .transition(.opacity.combined(with: .scale(scale: 0.95)))
-        .animation(
-            reduceMotionEnabled ? .none : .easeOut(duration: 0.35),
-            value: title
-        )
+        .transition(.opacity.combined(with: .scale(scale: ScaleFactors.cardCollapse)))
     }
 }
 

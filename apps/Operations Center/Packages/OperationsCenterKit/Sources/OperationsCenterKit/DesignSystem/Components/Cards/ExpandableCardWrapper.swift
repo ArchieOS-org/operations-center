@@ -60,13 +60,13 @@ struct ExpandableCardWrapper<CollapsedContent: View, ExpandedContent: View>: Vie
                 if isExpanded {
                     expandedContent()
                         .transition(.asymmetric(
-                            insertion: .scale(scale: 0.95).combined(with: .opacity),
+                            insertion: .scale(scale: ScaleFactors.cardCollapse).combined(with: .opacity),
                             removal: .opacity
                         ))
                 }
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.68), value: isExpanded)
+        .animation(Animations.cardExpansion, value: isExpanded)
     }
 }
 

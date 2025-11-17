@@ -203,30 +203,58 @@ struct TaskRepositoryTests {
         #expect(tasks2After.count == tasks2.count) // Unchanged
     }
 
-    // MARK: - Thread Safety Tests
+    // MARK: - MainActor Serialization Tests
 
-    @Test("Concurrent operations are safe")
-    func testConcurrentOperations() async throws {
+    @Test("MainActor serializes concurrent task submissions")
+    func testMainActorSerializedOperations() async throws {
         let repository = MockTaskRepository()
 
-        // Fire off multiple concurrent operations
+        // Submit multiple operations concurrently - @MainActor ensures serial execution
+        var fetchCount = 0
+        var claimSucceeded = false
+
         await withTaskGroup(of: Void.self) { group in
+            // Task 1: Fetch tasks
             group.addTask {
-                _ = try? await repository.fetchTasks()
+                do {
+                    let tasks = try await repository.fetchTasks()
+                    fetchCount = tasks.count
+                } catch {
+                    // Fail test if operation throws
+                    fatalError("Fetch tasks failed: \(error)")
+                }
             }
+
+            // Task 2: Fetch activities
             group.addTask {
-                _ = try? await repository.fetchActivities()
+                do {
+                    _ = try await repository.fetchActivities()
+                } catch {
+                    fatalError("Fetch activities failed: \(error)")
+                }
             }
+
+            // Task 3: Claim a task
             group.addTask {
-                let tasks = try? await repository.fetchTasks()
-                if let task = tasks?.first {
-                    _ = try? await repository.claimTask(taskId: task.task.id, staffId: "staff-concurrent")
+                do {
+                    let tasks = try await repository.fetchTasks()
+                    if let task = tasks.first {
+                        let result = try await repository.claimTask(taskId: task.task.id, staffId: "staff-concurrent")
+                        claimSucceeded = (result.assignedStaffId == "staff-concurrent")
+                    }
+                } catch {
+                    fatalError("Claim task failed: \(error)")
                 }
             }
         }
 
-        // Verify repository still works after concurrent access
+        // Verify all operations completed successfully
+        #expect(fetchCount > 0)
+        #expect(claimSucceeded)
+
+        // Verify repository state is consistent after serialized operations
         let tasks = try await repository.fetchTasks()
         #expect(tasks.count > 0)
+        #expect(tasks.contains(where: { $0.task.assignedStaffId == "staff-concurrent" }))
     }
 }
