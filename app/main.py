@@ -172,8 +172,12 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
 
         except Exception as e:
             logger.error(f"❌ Slack webhook error: {str(e)}", exc_info=True)
-            # Still return 200 to Slack to avoid retries
-            return {"ok": True, "error": "enqueue_failed"}
+            # Return 500 to trigger Slack retry mechanism
+            # TODO: Consider implementing dead-letter queue for failed enqueues
+            return JSONResponse(
+                status_code=500,
+                content={"ok": False, "error": "enqueue_failed"}
+            )
 
     logger.warning(f"⚠️ Unknown event type: {payload.type}")
     return {"ok": False, "error": "unknown_event_type"}

@@ -133,6 +133,10 @@ async def validate_messages(
         logger.warning("No messages to validate")
         return False
 
+    if not user_id:
+        logger.warning("Missing user_id for queued messages; skipping batch")
+        return False
+
     # Check if user is a bot (bot IDs start with 'B')
     if user_id.startswith("B"):
         logger.info(f"Skipping bot message from user={user_id}")

@@ -63,7 +63,4 @@ def get_primary_thread_ts(messages: List[QueuedMessage]) -> str | None:
     Returns:
         thread_ts from first threaded message, or None
     """
-    for msg in messages:
-        if msg.thread_ts:
-            return msg.thread_ts
-    return None
+    return next((msg.thread_ts for msg in messages if msg.thread_ts), None)

@@ -4,6 +4,7 @@ Sends acknowledgments back to Slack channels when tasks or listings
 are detected and created in the database.
 """
 
+import asyncio
 import logging
 from typing import Optional
 from slack_sdk import WebClient
@@ -14,9 +15,17 @@ from app.schemas.classification import ClassificationV1, MessageType
 
 logger = logging.getLogger(__name__)
 
-# Initialize Slack client (singleton)
-settings = get_settings()
-slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
+# Lazy-initialize Slack client
+_slack_client: Optional[WebClient] = None
+
+
+def _get_slack_client() -> WebClient:
+    """Get or create Slack client singleton."""
+    global _slack_client
+    if _slack_client is None:
+        settings = get_settings()
+        _slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
+    return _slack_client
 
 
 async def send_task_acknowledgment(
@@ -33,7 +42,9 @@ async def send_task_acknowledgment(
         True if successful, False otherwise
     """
     try:
-        response = slack_client.chat_postMessage(
+        slack_client = _get_slack_client()
+        response = await asyncio.to_thread(
+            slack_client.chat_postMessage,
             channel=channel,
             text="✅ Task detected and added to your queue!",
             thread_ts=thread_ts
@@ -79,7 +90,9 @@ async def send_listing_acknowledgment(
     formatted_type = listing_type.replace("_", " ").title()
 
     try:
-        response = slack_client.chat_postMessage(
+        slack_client = _get_slack_client()
+        response = await asyncio.to_thread(
+            slack_client.chat_postMessage,
             channel=channel,
             text=f"🏠 Listing detected: {formatted_type} - {address}",
             thread_ts=thread_ts
