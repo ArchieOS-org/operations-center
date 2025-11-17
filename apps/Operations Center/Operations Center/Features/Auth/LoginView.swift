@@ -205,6 +205,10 @@ struct LoginView: View {
         .buttonStyle(.borderedProminent)
         .disabled(store.isLoading || !isFormValid)
         .accessibility(hint: Text("Sign in with your email and password"))
+        .sensoryFeedback(.success, trigger: store.isAuthenticated)
+        .sensoryFeedback(trigger: store.error) { _, newError in
+            newError != nil ? .error : nil
+        }
     }
 
     private var createAccountLink: some View {

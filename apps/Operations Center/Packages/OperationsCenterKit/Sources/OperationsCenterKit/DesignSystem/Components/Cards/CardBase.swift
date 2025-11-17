@@ -78,6 +78,7 @@ struct CardBase<Content: View>: View {
         ._onButtonGesture { pressing in
             isPressed = pressing
         } perform: {}
+        .sensoryFeedback(.selection, trigger: isExpanded)
     }
 
     // MARK: - Actions

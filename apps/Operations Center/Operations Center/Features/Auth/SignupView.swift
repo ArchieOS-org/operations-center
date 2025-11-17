@@ -245,6 +245,10 @@ struct SignupView: View {
         .keyboardShortcut(.defaultAction)
         .buttonStyle(.borderedProminent)
         .disabled(store.isLoading || !isFormValid)
+        .sensoryFeedback(.success, trigger: store.isAuthenticated)
+        .sensoryFeedback(trigger: store.error) { _, newError in
+            newError != nil ? .error : nil
+        }
     }
 
     private func errorLabel(_ message: String) -> some View {
@@ -375,6 +379,7 @@ private struct TeamSelectionCard: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
 

@@ -223,3 +223,27 @@ enum AuthError: LocalizedError {
         }
     }
 }
+
+// MARK: - Equatable Conformance
+
+extension AuthError: Equatable {
+    static func == (lhs: AuthError, rhs: AuthError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidEmail, .invalidEmail),
+             (.weakPassword, .weakPassword),
+             (.userNotFound, .userNotFound),
+             (.invalidCredentials, .invalidCredentials),
+             (.emailAlreadyInUse, .emailAlreadyInUse),
+             (.signupFailed, .signupFailed),
+             (.networkError, .networkError),
+             (.logoutFailed, .logoutFailed):
+            return true
+        case let (.supabaseError(lhs), .supabaseError(rhs)):
+            return lhs.localizedDescription == rhs.localizedDescription
+        case let (.unknown(lhs), .unknown(rhs)):
+            return type(of: lhs) == type(of: rhs) && lhs.localizedDescription == rhs.localizedDescription
+        default:
+            return false
+        }
+    }
+}

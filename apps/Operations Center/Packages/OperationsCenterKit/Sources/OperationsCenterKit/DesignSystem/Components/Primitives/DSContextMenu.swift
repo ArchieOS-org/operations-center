@@ -51,6 +51,7 @@ public struct DSContextMenu: View {
     // MARK: - Properties
 
     private let actions: [DSContextAction]
+    @State private var lastActionId: UUID?
 
     // MARK: - Initialization
 
@@ -64,6 +65,7 @@ public struct DSContextMenu: View {
         HStack(spacing: Spacing.md) {
             ForEach(actions) { action in
                 Button(role: action.role) {
+                    lastActionId = action.id
                     action.action()
                 } label: {
                     Label(action.title, systemImage: action.systemImage)
@@ -83,6 +85,7 @@ public struct DSContextMenu: View {
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.md))
         .shadow(color: .black.opacity(0.1), radius: 8, y: -2)
+        .sensoryFeedback(.impact, trigger: lastActionId)
     }
 }
 
