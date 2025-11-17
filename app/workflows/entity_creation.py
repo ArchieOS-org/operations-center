@@ -16,9 +16,61 @@ import logging
 from uuid import uuid4
 
 from database.supabase_client import get_supabase
-from schemas.classification import ClassificationV1, MessageType, TaskKey
+from schemas.classification import ClassificationV1, MessageType, TaskKey, GroupKey
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# ACTIVITIES TEMPLATES - Auto-created for each listing type
+# ============================================================================
+
+LISTING_ACTIVITIES = {
+    # Sale Listings
+    GroupKey.SALE_LISTING: [
+        {"name": "Take listing photos", "priority": 100, "category": "MARKETING", "visibility": "BOTH"},
+        {"name": "Create MLS listing", "priority": 90, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Schedule open house", "priority": 80, "category": "MARKETING", "visibility": "BOTH"},
+        {"name": "Order yard sign", "priority": 70, "category": "MARKETING", "visibility": "MARKETING"},
+        {"name": "Draft listing description", "priority": 60, "category": "MARKETING", "visibility": "MARKETING"},
+    ],
+
+    # Lease Listings
+    GroupKey.LEASE_LISTING: [
+        {"name": "Schedule property showings", "priority": 100, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Prepare lease agreement", "priority": 90, "category": "ADMIN", "visibility": "AGENT"},
+        {"name": "Run background checks", "priority": 80, "category": "ADMIN", "visibility": "AGENT"},
+        {"name": "Take listing photos", "priority": 70, "category": "MARKETING", "visibility": "BOTH"},
+    ],
+
+    # Sale + Lease Listings
+    GroupKey.SALE_LEASE_LISTING: [
+        {"name": "Take listing photos", "priority": 100, "category": "MARKETING", "visibility": "BOTH"},
+        {"name": "Create MLS listing (sale)", "priority": 90, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Create rental listing", "priority": 85, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Draft dual listing description", "priority": 80, "category": "MARKETING", "visibility": "MARKETING"},
+    ],
+
+    # Relist Listings
+    GroupKey.RELIST_LISTING: [
+        {"name": "Update listing photos", "priority": 100, "category": "MARKETING", "visibility": "BOTH"},
+        {"name": "Refresh MLS listing", "priority": 90, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Review pricing strategy", "priority": 80, "category": "ADMIN", "visibility": "AGENT"},
+    ],
+
+    # Marketing Agenda Template
+    GroupKey.MARKETING_AGENDA_TEMPLATE: [
+        {"name": "Create marketing materials", "priority": 100, "category": "MARKETING", "visibility": "MARKETING"},
+        {"name": "Schedule social media posts", "priority": 90, "category": "MARKETING", "visibility": "MARKETING"},
+        {"name": "Design property flyer", "priority": 80, "category": "MARKETING", "visibility": "MARKETING"},
+    ],
+
+    # Default fallback for other types
+    "DEFAULT": [
+        {"name": "Review listing details", "priority": 100, "category": "ADMIN", "visibility": "BOTH"},
+        {"name": "Schedule initial showing", "priority": 90, "category": "ADMIN", "visibility": "BOTH"},
+    ]
+}
 
 
 # ============================================================================
@@ -166,6 +218,135 @@ async def create_listing_record(
     except Exception as e:
         logger.error(f"Error creating listing: {str(e)}")
         return None
+
+
+async def create_activity_record(
+    listing_id: str,
+    realtor_id: Optional[str],
+    name: str,
+    priority: int,
+    task_category: str,
+    visibility_group: str
+) -> Optional[str]:
+    """
+    Create an activity (listing task) record.
+
+    CRITICAL: Column names MUST match database EXACTLY (snake_case).
+    Context7 Pattern: Supabase insert with .execute()
+
+    Args:
+        listing_id: Parent listing UUID
+        realtor_id: Assigned realtor UUID (nullable)
+        name: Activity name
+        priority: Priority value (0-100+, higher = more urgent)
+        task_category: ADMIN | MARKETING | NULL
+        visibility_group: BOTH | AGENT | MARKETING
+
+    Returns:
+        activity task_id (UUID string) or None on error
+    """
+    try:
+        client = get_supabase()
+
+        activity_data = {
+            "task_id": str(uuid4()),               # PRIMARY KEY
+            "listing_id": listing_id,              # FK to listings
+            "realtor_id": realtor_id,              # FK to realtors (nullable)
+            "name": name,                          # NOT NULL
+            "description": None,                   # Optional
+            "task_category": task_category,        # ADMIN | MARKETING | NULL
+            "status": "OPEN",                      # Initial status
+            "priority": priority,                  # 0-100+
+            "visibility_group": visibility_group,  # BOTH | AGENT | MARKETING
+            "assigned_staff_id": None,             # Unassigned initially
+            "due_date": None,
+            "claimed_at": None,
+            "completed_at": None,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+
+        result = client.table("activities").insert(activity_data).execute()
+
+        if result.data and len(result.data) > 0:
+            activity_id = result.data[0]["task_id"]
+            logger.info(f"Created activity: {activity_id} - {name}")
+            return activity_id
+        else:
+            logger.error(f"Failed to create activity '{name}' - no data returned")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error creating activity '{name}': {str(e)}")
+        return None
+
+
+async def create_listing_with_activities(
+    classification: ClassificationV1,
+    realtor_id: Optional[str],
+    message_text: str
+) -> Optional[str]:
+    """
+    Create listing record + auto-attach activities based on group_key.
+
+    This replaces create_listing_record for GROUP message types,
+    adding automatic activity creation based on listing type.
+
+    Args:
+        classification: ClassificationV1 object
+        realtor_id: Resolved realtor UUID
+        message_text: Original message for reference
+
+    Returns:
+        listing_id (UUID string) or None on error
+    """
+    # First, create the listing
+    listing_id = await create_listing_record(
+        classification=classification,
+        realtor_id=realtor_id,
+        message_text=message_text
+    )
+
+    if not listing_id:
+        logger.error("Failed to create listing, skipping activities")
+        return None
+
+    # Then, auto-create activities based on group_key
+    group_key = classification.group_key
+
+    if not group_key:
+        logger.warning("No group_key in classification, skipping activities")
+        return listing_id
+
+    # Get activities template for this listing type
+    activities_template = LISTING_ACTIVITIES.get(group_key, LISTING_ACTIVITIES["DEFAULT"])
+
+    logger.info(
+        f"Creating {len(activities_template)} activities for "
+        f"listing {listing_id} (type: {group_key.value})"
+    )
+
+    # Create each activity
+    created_count = 0
+    for activity in activities_template:
+        activity_id = await create_activity_record(
+            listing_id=listing_id,
+            realtor_id=realtor_id,
+            name=activity["name"],
+            priority=activity["priority"],
+            task_category=activity["category"],
+            visibility_group=activity["visibility"]
+        )
+
+        if activity_id:
+            created_count += 1
+
+    logger.info(
+        f"Successfully created {created_count}/{len(activities_template)} "
+        f"activities for listing {listing_id}"
+    )
+
+    return listing_id
 
 
 async def create_agent_task_record(
@@ -328,9 +509,9 @@ async def create_entities_from_classification(
         # Resolve realtor for all non-IGNORE messages
         realtor_id = await resolve_realtor(classification.assignee_hint)
 
-        # GROUP messages → Create listing
+        # GROUP messages → Create listing + activities
         if message_type == MessageType.GROUP:
-            listing_id = await create_listing_record(
+            listing_id = await create_listing_with_activities(
                 classification=classification,
                 realtor_id=realtor_id,
                 message_text=message_text

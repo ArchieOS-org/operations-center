@@ -28,5 +28,5 @@ python-ulid>=2.7.0
 # Development dependencies
 python-dotenv>=1.0.0
 
-# Optional: Slack SDK for posting results back to Slack
-# slack-sdk>=3.27.0
+# Slack SDK for posting acknowledgments back to Slack
+slack-sdk>=3.27.0

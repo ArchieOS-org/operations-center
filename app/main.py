@@ -24,9 +24,9 @@ import asyncio
 from datetime import datetime
 
 # Import our intelligence layer
-# from webhooks import slack, sms  # TODO: Implement webhook modules
-from workflows.slack_intake import process_slack_message
-from agents import get_agent, list_agents
+from app.queue.message_queue import enqueue_message
+from app.workflows.slack_intake import process_batched_slack_messages
+from app.agents import get_agent, list_agents
 
 # Configure logging
 logging.basicConfig(
@@ -122,10 +122,12 @@ class ChatRequest(BaseModel):
 @app.post("/webhooks/slack")
 async def slack_webhook(payload: SlackWebhookPayload, request: Request):
     """
-    Slack Events API webhook.
+    Slack Events API webhook with smart message queueing.
 
-    Receives messages from Slack, classifies them with AI,
-    routes to appropriate agents, and stores results.
+    Receives messages from Slack and enqueues them for batching.
+    Rapid consecutive messages from the same user/channel are batched together.
+
+    Returns 200 immediately to avoid Slack's 3-second timeout.
     """
     logger.info(f"📨 Slack webhook received: type={payload.type}")
 
@@ -137,25 +139,41 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
     # Handle event callback
     if payload.type == "event_callback":
         event = payload.event
-        logger.info(f"📬 Event callback: event_type={event.get('type')}, user={event.get('user')}, channel={event.get('channel')}")
-        logger.info(f"💬 Message text: {event.get('text', '')[:100]}")
+
+        # Skip bot messages
+        if event.get("bot_id") or event.get("subtype") == "bot_message":
+            logger.info("🤖 Skipping bot message")
+            return {"ok": True}
+
+        # Extract identifiers
+        user_id = event.get("user")
+        channel_id = event.get("channel")
+        message_text = event.get("text", "")
+
+        logger.info(
+            f"📬 Message from user={user_id}, channel={channel_id}: "
+            f"{message_text[:100]}"
+        )
 
         try:
-            result = await process_slack_message(payload.dict())
-            logger.info(f"✅ Processed successfully: {result.get('success')}")
+            # NEW: Enqueue instead of immediate processing
+            # The queue will batch rapid messages and trigger processing after timeout
+            await enqueue_message(
+                user_id=user_id,
+                channel_id=channel_id,
+                event=event,
+                processor_callback=process_batched_slack_messages
+            )
 
-            # Return 200 immediately to Slack (they timeout at 3s)
-            if result.get("response"):
-                # Queue response to be sent back to Slack
-                # This would be handled by a background task
-                pass
+            logger.info(f"✅ Message enqueued for batching")
 
+            # Return 200 immediately (Slack requirement)
             return {"ok": True}
 
         except Exception as e:
             logger.error(f"❌ Slack webhook error: {str(e)}", exc_info=True)
             # Still return 200 to Slack to avoid retries
-            return {"ok": True, "error": "processing_failed"}
+            return {"ok": True, "error": "enqueue_failed"}
 
     logger.warning(f"⚠️ Unknown event type: {payload.type}")
     return {"ok": False, "error": "unknown_event_type"}

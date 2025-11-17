@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # Slack (for existing webhook)
     SLACK_SIGNING_SECRET: str
     SLACK_BYPASS_VERIFY: bool = False
+    SLACK_BOT_TOKEN: str  # For posting acknowledgments via WebClient
 
     # Application
     APP_NAME: str = "Operations Center API"
