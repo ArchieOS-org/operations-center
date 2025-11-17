@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - ListingStatus
 
@@ -40,17 +41,14 @@ public enum ListingType: String, Codable, Sendable {
     case commercial = "COMMERCIAL"
     case residential = "RESIDENTIAL"
 
-    /// Color associated with this listing type
-    public var color: Color {
+    /// Semantic color name - maps to design token in view layer
+    /// Use `Colors.semantic(type.semanticColorName)` to resolve
+    public var semanticColorName: String {
         switch self {
-        case .sale:
-            return .blue
-        case .rental:
-            return .purple
-        case .commercial:
-            return .orange
-        case .residential:
-            return .green
+        case .sale: return "info"           // Blue
+        case .rental: return "warning"      // Purple/Orange
+        case .commercial: return "warning"  // Orange
+        case .residential: return "success" // Green
         }
     }
 }

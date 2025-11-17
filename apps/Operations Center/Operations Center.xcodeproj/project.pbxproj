@@ -36,6 +36,8 @@
 		0A911C862EC4311900E23DA7 /* Operations Center.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Operations Center.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A911C932EC4311B00E23DA7 /* Operations CenterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Operations CenterTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A911C9D2EC4311B00E23DA7 /* Operations CenterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Operations CenterUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0ACONFIG12EC4444400E23DA7 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
+		0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -90,11 +92,21 @@
 		0A911C7D2EC4311900E23DA7 = {
 			isa = PBXGroup;
 			children = (
+				0ACONFIG32EC4444400E23DA7 /* Configs */,
 				0A911C882EC4311900E23DA7 /* Operations Center */,
 				0A911C962EC4311B00E23DA7 /* Operations CenterTests */,
 				0A911CA02EC4311B00E23DA7 /* Operations CenterUITests */,
 				0A911C872EC4311900E23DA7 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		0ACONFIG32EC4444400E23DA7 /* Configs */ = {
+			isa = PBXGroup;
+			children = (
+				0ACONFIG12EC4444400E23DA7 /* Development.xcconfig */,
+				0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */,
+			);
+			path = Configs;
 			sourceTree = "<group>";
 		};
 		0A911C872EC4311900E23DA7 /* Products */ = {
@@ -295,6 +307,7 @@
 /* Begin XCBuildConfiguration section */
 		0A911CA52EC4311B00E23DA7 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0ACONFIG12EC4444400E23DA7 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -357,6 +370,7 @@
 		};
 		0A911CA62EC4311B00E23DA7 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

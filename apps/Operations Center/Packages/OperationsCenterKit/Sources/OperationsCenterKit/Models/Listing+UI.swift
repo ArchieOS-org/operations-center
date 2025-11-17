@@ -17,3 +17,13 @@ extension ListingStatus {
         Colors.semantic(semanticColorName)
     }
 }
+
+// MARK: - ListingType UI Extensions
+
+extension ListingType {
+    /// Resolved color for this type (design token)
+    /// Maps semantic color name to actual Color via design system
+    public var color: Color {
+        Colors.semantic(semanticColorName)
+    }
+}
