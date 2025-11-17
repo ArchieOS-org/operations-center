@@ -10,7 +10,7 @@ This is the OPTIMAL Python implementation using LangChain's structured output fe
 """
 
 import os
-from typing import Optional
+from typing import Optional, cast
 from langchain_openai import ChatOpenAI
 from app.schemas.classification import ClassificationV1
 
@@ -131,7 +131,9 @@ class MessageClassifier:
             model_name: OpenAI model name (default: from env or gpt-4o-mini)
             temperature: Sampling temperature (0 for deterministic)
         """
-        self.model_name: str = model_name or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.model_name: str = cast(
+            str, model_name or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        )
 
         # Initialize OpenAI chat model with structured output
         # LangChain automatically reads OPENAI_API_KEY from environment

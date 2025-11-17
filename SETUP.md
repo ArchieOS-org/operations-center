@@ -33,10 +33,10 @@ Add the following keys to your `Info.plist`:
 ### Option 3: .xcconfig Files (Best for Team Projects)
 
 1. Create `Config.xcconfig`:
-   ```
-   SUPABASE_URL = https:/$()/your-project.supabase.co
+   ```env
+   SUPABASE_URL = https://your-project.supabase.co
    SUPABASE_ANON_KEY = your-anon-key-here
-   FASTAPI_URL = https:/$()/your-project.vercel.app
+   FASTAPI_URL = https://your-project.vercel.app
    ```
 
 2. Add `Config.xcconfig` to `.gitignore`

@@ -457,13 +457,19 @@ async def create_listing_with_activities(
     # Create each activity
     created_count = 0
     for activity in activities_template:
+        # Type assertion for activity template structure
+        activity_name: str = str(activity["name"])
+        activity_priority: int = int(activity["priority"])
+        activity_category: str = str(activity["category"])
+        activity_visibility: str = str(activity["visibility"])
+
         activity_id = await create_activity_record(
             listing_id=listing_id,
             realtor_id=realtor_id,
-            name=str(activity["name"]),
-            priority=int(activity["priority"]),
-            task_category=str(activity["category"]),
-            visibility_group=str(activity["visibility"]),
+            name=activity_name,
+            priority=activity_priority,
+            task_category=activity_category,
+            visibility_group=activity_visibility,
         )
 
         if activity_id:

@@ -178,8 +178,9 @@ async def _process_queue(
     except Exception as e:
         logger.error(f"Error processing batch for {queue_key}: {e}", exc_info=True)
     finally:
-        # Clean up queue
-        if queue_key in _active_queues:
+        # Clean up queue - only if it's still the same instance we processed
+        # (avoid race condition where new queue was created during processing)
+        if _active_queues.get(queue_key) is queue:
             del _active_queues[queue_key]
             logger.debug(f"Removed queue {queue_key}")
 

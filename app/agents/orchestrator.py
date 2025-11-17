@@ -6,9 +6,9 @@ classification results. It's the central coordinator of the multi-agent system.
 """
 
 import logging
-from typing import Dict, Any, Optional, cast
+from typing import Dict, Any, Optional
 from langgraph.graph import StateGraph, END, START
-from langgraph.graph.graph import CompiledGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict, Annotated
 
@@ -50,7 +50,7 @@ class OrchestratorAgent(BaseAgent):
             "Routes messages to appropriate specialist agents based on classification"
         )
 
-    def _build_graph(self) -> CompiledGraph:
+    def _build_graph(self) -> CompiledStateGraph:
         """Build the orchestration workflow graph"""
 
         workflow = StateGraph(OrchestratorState)
@@ -116,7 +116,7 @@ class OrchestratorAgent(BaseAgent):
     def _route_message(self, state: OrchestratorState) -> OrchestratorState:
         """Analyze classification and determine routing"""
 
-        classification = state.get("classification", {})
+        classification = state.get("classification") or {}
 
         # Determine which agent should handle this
         message_type = classification.get("message_type") or ""
