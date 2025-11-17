@@ -116,14 +116,19 @@ struct SettingsView: View {
         .listStyle(.inset)
         #endif
         .navigationTitle("Settings")
-        .confirmationDialog("Sign Out", isPresented: $showingLogoutConfirmation) {
-            Button("Sign Out", role: .destructive) {
-                Task { await handleLogout() }
+        .confirmationDialog(
+            "Sign Out",
+            isPresented: $showingLogoutConfirmation,
+            actions: {
+                Button("Sign Out", role: .destructive) {
+                    Task { await handleLogout() }
+                }
+                Button("Cancel", role: .cancel) { }
+            },
+            message: {
+                Text("Are you sure you want to sign out?")
             }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Are you sure you want to sign out?")
-        }
+        )
         .task {
             selectedTeam = currentTeam
             hasInitialized = true
