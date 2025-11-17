@@ -77,7 +77,7 @@ public struct ActivityCard: View {
         if let listingType = listing.type {
             chips.append(.custom(
                 text: listingType,
-                color: .blue
+                color: Colors.accentListing
             ))
         }
 
@@ -91,7 +91,7 @@ public struct ActivityCard: View {
         if task.visibilityGroup != .both {
             chips.append(.custom(
                 text: task.visibilityGroup.rawValue,
-                color: .orange
+                color: Colors.accentAgentTask
             ))
         }
 
@@ -100,12 +100,12 @@ public struct ActivityCard: View {
 
     private func categoryColor(for category: Activity.TaskCategory) -> Color {
         switch category {
-        case .admin: return .blue
-        case .marketing: return .purple
-        case .photo: return .pink
-        case .staging: return .green
-        case .inspection: return .red
-        case .other: return .gray
+        case .admin: return Colors.categoryAdmin
+        case .marketing: return Colors.categoryMarketing
+        case .photo: return Colors.categoryPhoto
+        case .staging: return Colors.categoryStaging
+        case .inspection: return Colors.categoryInspection
+        case .other: return Colors.categoryOther
         }
     }
 }

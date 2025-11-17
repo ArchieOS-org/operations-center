@@ -44,23 +44,8 @@ struct AllListingsView: View {
         .task {
             await store.fetchAllListings()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .loadingOverlay(store.isLoading)
+        .errorAlert($store.errorMessage)
     }
 
     @ViewBuilder
@@ -71,12 +56,7 @@ struct AllListingsView: View {
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingCollapsedContent(listing: listing)
                     }
-                    .listRowInsets(EdgeInsets(
-                        top: Spacing.listRowVertical,
-                        leading: Spacing.listRowHorizontal,
-                        bottom: Spacing.listRowVertical,
-                        trailing: Spacing.listRowHorizontal
-                    ))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -85,20 +65,11 @@ struct AllListingsView: View {
     @ViewBuilder
     private var emptyStateSection: some View {
         if store.listings.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "house.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No listings")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("Listings will appear here when they're added to the system")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+            DSEmptyState(
+                icon: "house.circle",
+                title: "No listings",
+                message: "Listings will appear here when they're added to the system"
+            )
             .listRowSeparator(.hidden)
         }
     }

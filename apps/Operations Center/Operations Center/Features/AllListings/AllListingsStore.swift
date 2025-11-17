@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 238-253
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -29,6 +30,9 @@ final class AllListingsStore {
 
     /// Repository for data access
     private let repository: ListingRepositoryClient
+
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -62,8 +66,7 @@ final class AllListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // NOTE: Get from auth
-            try await repository.deleteListing(listing.id, currentUserId)
+            try await repository.deleteListing(listing.id, authClient.currentUserId())
 
             await refresh()
         } catch {

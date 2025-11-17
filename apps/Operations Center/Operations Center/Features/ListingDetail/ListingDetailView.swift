@@ -46,23 +46,8 @@ struct ListingDetailView: View {
         .task {
             await store.fetchListingData()
         }
-        .overlay {
-            if store.isLoading && store.listing == nil {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .loadingOverlay(store.isLoading && store.listing == nil)
+        .errorAlert($store.errorMessage)
     }
 
     // MARK: - Subviews
@@ -85,7 +70,7 @@ struct ListingDetailView: View {
             // Per spec: "Shows author name per note. Unlimited notes" (lines 354-355)
             if !store.notes.isEmpty {
                 ForEach(store.notes) { note in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(note.content)
                             .font(.body)
 
@@ -115,7 +100,7 @@ struct ListingDetailView: View {
                 Text("No notes yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Spacing.sm)
             }
         } header: {
             Text("Notes")

@@ -62,18 +62,7 @@ struct MyTasksView: View {
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
         .navigationTitle("My Tasks")
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .errorAlert($store.errorMessage)
         .task {
             await store.fetchMyTasks()
         }
@@ -169,21 +158,11 @@ struct MyTasksView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: Spacing.lg) {
-            Image(systemName: "tray")
-                .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
-
-            VStack(spacing: Spacing.xs) {
-                Text("No Tasks")
-                    .font(Typography.title)
-
-                Text("You haven't claimed any tasks yet")
-                    .font(Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        DSEmptyState(
+            icon: "tray",
+            title: "No Tasks",
+            message: "You haven't claimed any tasks yet"
+        )
     }
 
 }

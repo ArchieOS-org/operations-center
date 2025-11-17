@@ -5,6 +5,7 @@
 //  Store for inbox view - manages both agent tasks and activities
 //
 
+import Dependencies
 import Foundation
 import Observation
 import OperationsCenterKit
@@ -26,12 +27,7 @@ final class InboxStore {
     private let taskRepository: TaskRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
     private let realtorRepository: RealtorRepositoryClient
-
-    /// Current authenticated user ID
-    /// NOTE: Replace with actual authenticated user ID from auth service
-    private var currentUserId: String {
-        "current-staff-id"
-    }
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -156,7 +152,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimTask(task.id, currentUserId)
+            _ = try await taskRepository.claimTask(task.id, authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -169,7 +165,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteTask(task.id, currentUserId)
+            try await taskRepository.deleteTask(task.id, authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -184,7 +180,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimActivity(activity.id, currentUserId)
+            _ = try await taskRepository.claimActivity(activity.id, authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -197,7 +193,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteActivity(activity.id, currentUserId)
+            try await taskRepository.deleteActivity(activity.id, authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -212,7 +208,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await noteRepository.createNote(listingId, content, currentUserId)
+            _ = try await noteRepository.createNote(listingId, content, authClient.currentUserId())
 
             // Refresh to get updated notes
             await fetchTasks()

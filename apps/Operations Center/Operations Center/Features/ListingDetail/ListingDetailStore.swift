@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 338-375
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -37,6 +38,9 @@ final class ListingDetailStore {
     private let listingId: String
     private let listingRepository: ListingRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
+
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -93,8 +97,7 @@ final class ListingDetailStore {
         }
 
         do {
-            let currentUserId = "current-user" // NOTE: Get from auth
-            let createdNote = try await noteRepository.createNote(listingId, trimmedText, currentUserId)
+            let createdNote = try await noteRepository.createNote(listingId, trimmedText, authClient.currentUserId())
 
             // Add new note to beginning of list
             notes.insert(createdNote, at: 0)

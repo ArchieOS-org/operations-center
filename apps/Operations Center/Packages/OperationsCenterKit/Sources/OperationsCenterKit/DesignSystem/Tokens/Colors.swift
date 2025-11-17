@@ -191,4 +191,80 @@ public enum Colors {
         return Color(nsColor: .systemGray)
         #endif
     }()
+
+    // MARK: - Task Category Colors
+
+    /// Admin task category
+    public static let categoryAdmin: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue)
+        #endif
+    }()
+
+    /// Marketing task category
+    public static let categoryMarketing: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemPurple)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemPurple)
+        #endif
+    }()
+
+    /// Photo task category
+    public static let categoryPhoto: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemPink)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemPink)
+        #endif
+    }()
+
+    /// Staging task category
+    public static let categoryStaging: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGreen)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGreen)
+        #endif
+    }()
+
+    /// Inspection task category
+    public static let categoryInspection: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemRed)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemRed)
+        #endif
+    }()
+
+    /// Other task category
+    public static let categoryOther: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray)
+        #endif
+    }()
+
+    // MARK: - UI State Colors
+
+    /// Checkbox incomplete state
+    public static let checkboxIncomplete: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray).opacity(0.3)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray).opacity(0.3)
+        #endif
+    }()
+
+    /// Preview background for Xcode previews
+    public static let previewBackground: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray).opacity(0.1)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray).opacity(0.1)
+        #endif
+    }()
 }

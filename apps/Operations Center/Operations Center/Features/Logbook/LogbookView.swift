@@ -50,23 +50,8 @@ struct LogbookView: View {
         .task {
             await store.fetchCompletedItems()
         }
-        .overlay {
-            if store.isLoading && store.completedListings.isEmpty && store.completedTasks.isEmpty {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .loadingOverlay(store.isLoading && store.completedListings.isEmpty && store.completedTasks.isEmpty)
+        .errorAlert($store.errorMessage)
     }
 
     // MARK: - Completed Listings Section
@@ -79,7 +64,7 @@ struct LogbookView: View {
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingBrowseCard(listing: listing)
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .standardListRowInsets()
                     .listRowSeparator(.hidden)
                 }
             } else if !store.isLoading {
@@ -93,20 +78,12 @@ struct LogbookView: View {
 
     @ViewBuilder
     private var emptyListingsState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text("No completed listings")
-                .font(.body)
-                .foregroundStyle(.secondary)
-            Text("Listings will appear here when all activities are complete")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
+        DSEmptyState(
+            icon: "checkmark.circle",
+            title: "No completed listings",
+            message: "Listings will appear here when all activities are complete"
+        )
+        .padding(.vertical, Spacing.md)
     }
 
     // MARK: - Completed Tasks Section
@@ -116,7 +93,7 @@ struct LogbookView: View {
         Section {
             if !store.completedTasks.isEmpty {
                 ForEach(store.completedTasks) { task in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
@@ -144,7 +121,7 @@ struct LogbookView: View {
                             }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Spacing.xs)
                 }
             } else if !store.isLoading {
                 emptyTasksState
@@ -157,20 +134,12 @@ struct LogbookView: View {
 
     @ViewBuilder
     private var emptyTasksState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.square")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text("No completed tasks")
-                .font(.body)
-                .foregroundStyle(.secondary)
-            Text("Tasks will appear here when marked as done")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
+        DSEmptyState(
+            icon: "checkmark.square",
+            title: "No completed tasks",
+            message: "Tasks will appear here when marked as done"
+        )
+        .padding(.vertical, Spacing.md)
     }
 
     // MARK: - Helper Methods

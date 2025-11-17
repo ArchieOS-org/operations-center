@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 286-305
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -39,11 +40,8 @@ final class AllTasksStore {
     /// Repository for data access
     private let repository: TaskRepositoryClient
 
-    /// Current authenticated user ID
-    /// NOTE: Replace with actual authenticated user ID from auth service
-    private var currentUserId: String {
-        "current-user"
-    }
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -92,7 +90,7 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, currentUserId)
+            _ = try await repository.claimTask(task.id, authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -104,7 +102,7 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
-            _ = try await repository.claimActivity(task.id, currentUserId)
+            _ = try await repository.claimActivity(task.id, authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -116,7 +114,7 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, currentUserId)
+            try await repository.deleteTask(task.id, authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -128,7 +126,7 @@ final class AllTasksStore {
     /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
-            try await repository.deleteActivity(task.id, currentUserId)
+            try await repository.deleteActivity(task.id, authClient.currentUserId())
 
             await refresh()
         } catch {

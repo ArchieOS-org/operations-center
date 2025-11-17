@@ -60,9 +60,9 @@ struct ActivitiesSection: View {
             HStack(spacing: 12) {
                 // Checkbox
                 Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
+                    .font(.system(size: IconSizes.divider))
                     .foregroundStyle(
-                        subtask.isCompleted ? Colors.actionPositive : Color.gray.opacity(0.3)
+                        subtask.isCompleted ? Colors.actionPositive : Colors.checkboxIncomplete
                     )
 
                 // Subtask name

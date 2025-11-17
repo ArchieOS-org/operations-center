@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 197-213
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -34,6 +35,9 @@ final class MyListingsStore {
     private let listingRepository: ListingRepositoryClient
     private let taskRepository: TaskRepositoryClient
 
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
+
     // MARK: - Initialization
 
     init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
@@ -49,11 +53,8 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
-            // NOTE: Get actual user ID from auth
-            let currentUserId = "current-user"
-
             // Get activitys claimed by this realtor directly from repository
-            let userListingTasks = try await taskRepository.fetchActivitiesByRealtor(currentUserId)
+            let userListingTasks = try await taskRepository.fetchActivitiesByRealtor(authClient.currentUserId())
 
             // Extract unique listing IDs
             let listingIds = Set(userListingTasks.map { $0.task.listingId })
@@ -88,8 +89,7 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // NOTE: Get from auth
-            try await listingRepository.deleteListing(listing.id, currentUserId)
+            try await listingRepository.deleteListing(listing.id, authClient.currentUserId())
 
             await refresh()
         } catch {

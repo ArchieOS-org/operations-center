@@ -22,14 +22,21 @@ struct InboxView: View {
             if store.isLoading {
                 ProgressView("Loading inbox...")
             } else if let error = store.errorMessage {
-                InboxErrorView(message: error) {
-                    Task { await store.refresh() }
-                }
+                DSErrorState(
+                    message: error,
+                    retryAction: {
+                        Task { await store.refresh() }
+                    }
+                )
             } else if store.tasks.isEmpty && store.listings.isEmpty {
-                EmptyInboxView()
+                DSEmptyState(
+                    icon: "tray",
+                    title: "No Tasks",
+                    message: "New tasks will appear here"
+                )
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: Spacing.md) {
                         // Listings Section
                         if !store.listings.isEmpty {
                             sectionHeader(title: "Listings", count: store.listings.count)
@@ -169,55 +176,15 @@ struct InboxView: View {
             Text("\(count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)
                 .background(Color.gray.opacity(0.2))
                 .clipShape(Capsule())
         }
-        .padding(.top, 8)
+        .padding(.top, Spacing.sm)
     }
 }
 
-struct EmptyInboxView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "tray")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            Text("No Tasks")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text("New tasks will appear here")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .padding()
-    }
-}
-
-struct InboxErrorView: View {
-    let message: String
-    let retry: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 60))
-                .foregroundStyle(.red)
-            Text("Error")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text(message)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button("Try Again", action: retry)
-                .buttonStyle(.borderedProminent)
-        }
-        .padding()
-    }
-}
 
 #Preview("With Mock Data") {
     let store = InboxStore(

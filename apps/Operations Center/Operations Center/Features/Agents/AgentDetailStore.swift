@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 272-283
 //
 
+import Dependencies
 import Foundation
 import SwiftUI
 import OSLog
@@ -32,6 +33,9 @@ final class AgentDetailStore {
 
     var expandedTaskId: String?
     var expandedListingId: String?
+
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -136,8 +140,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            let currentUserId = "current-staff-id"
-            _ = try await taskRepository.claimTask(task.id, currentUserId)
+            _ = try await taskRepository.claimTask(task.id, authClient.currentUserId())
 
             Logger.tasks.info("Claimed agent task: \(task.id)")
 
@@ -153,8 +156,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            let currentUserId = "current-staff-id"
-            try await taskRepository.deleteTask(task.id, currentUserId)
+            try await taskRepository.deleteTask(task.id, authClient.currentUserId())
 
             Logger.tasks.info("Deleted agent task: \(task.id)")
 
@@ -170,8 +172,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            let currentUserId = "current-staff-id"
-            _ = try await taskRepository.claimActivity(task.id, currentUserId)
+            _ = try await taskRepository.claimActivity(task.id, authClient.currentUserId())
 
             Logger.tasks.info("Claimed activity: \(task.id)")
 
@@ -187,8 +188,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            let currentUserId = "current-staff-id"
-            try await taskRepository.deleteActivity(task.id, currentUserId)
+            try await taskRepository.deleteActivity(task.id, authClient.currentUserId())
 
             Logger.tasks.info("Deleted activity: \(task.id)")
 

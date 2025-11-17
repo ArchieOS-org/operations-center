@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 172-194
 //
 
+import Dependencies
 import Foundation
 import Observation
 import OperationsCenterKit
@@ -29,9 +30,8 @@ final class MyTasksStore {
     var isLoading = false
     var errorMessage: String?
 
-    /// Current authenticated user ID
-    /// NOTE: Replace with real user ID from auth system
-    private let currentUserId = "current-user"
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -58,7 +58,7 @@ final class MyTasksStore {
             // Filter for agent tasks claimed by me - break up for type-checker
             let allAgentTasks = tasksResults.map(\.task)
             tasks = allAgentTasks.filter { task in
-                task.assignedStaffId == currentUserId &&
+                task.assignedStaffId == authClient.currentUserId() &&
                 (task.status == .claimed || task.status == .inProgress)
             }
 
@@ -77,7 +77,7 @@ final class MyTasksStore {
     /// Per spec line 428: "Press: Claim for yourself"
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, currentUserId)
+            _ = try await repository.claimTask(task.id, authClient.currentUserId())
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
@@ -87,7 +87,7 @@ final class MyTasksStore {
     /// Delete a task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, currentUserId)
+            try await repository.deleteTask(task.id, authClient.currentUserId())
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
