@@ -79,7 +79,7 @@ INSERT INTO public.listing_acknowledgments (id, listing_id, staff_id, acknowledg
 
 -- David (operations) - assigned listings
 ('ack_17_david_listing08', '01JCQM3C0000000000000008', '01JCQM1A0000000000000005', NOW() - INTERVAL '14 days', 'mobile'),
-('ack_18_david_listing17', '01JCQM3C0000000000000017', '01JCQM1A0000000000000005', '01JCQM1A0000000000000005', 'mobile'),
+('ack_18_david_listing17', '01JCQM3C0000000000000017', '01JCQM1A0000000000000005', NOW() - INTERVAL '7 days', 'mobile'),
 ('ack_19_david_listing25', '01JCQM3C0000000000000025', '01JCQM1A0000000000000005', NOW() - INTERVAL '1 day', 'mobile'),
 ('ack_20_david_listing22', '01JCQM3C0000000000000022', '01JCQM1A0000000000000005', NOW() - INTERVAL '27 days', 'notification'),
 

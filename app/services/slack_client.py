@@ -124,7 +124,11 @@ async def send_acknowledgment(
     if message_type == MessageType.GROUP:
         # Listing detected
         listing_type = classification.group_key.value if classification.group_key else "UNKNOWN"
-        address = classification.listing.address if classification.listing else "Unknown Address"
+
+        # Safely extract address with fallback
+        address = "Unknown Address"
+        if classification.listing and classification.listing.address:
+            address = classification.listing.address
 
         return await send_listing_acknowledgment(
             channel=channel,

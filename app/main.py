@@ -165,7 +165,7 @@ async def slack_webhook(payload: SlackWebhookPayload, request: Request):
                 processor_callback=process_batched_slack_messages
             )
 
-            logger.info(f"✅ Message enqueued for batching")
+            logger.info("✅ Message enqueued for batching")
 
             # Return 200 immediately (Slack requirement)
             return {"ok": True}

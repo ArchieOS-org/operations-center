@@ -159,6 +159,13 @@ async def classify_batched_messages(batched_text: str) -> Optional[Classificatio
     try:
         classifier = get_agent("classifier")
 
+        if not classifier:
+            logger.error(
+                f"Classifier agent not found - cannot classify message "
+                f"(text length: {len(batched_text)})"
+            )
+            return None
+
         result = await classifier.process({
             "message": batched_text
         })
