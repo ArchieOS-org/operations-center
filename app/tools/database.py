@@ -52,7 +52,6 @@ async def store_classification(
 
 
 @tool
-@register_tool("create_task")
 async def create_task(
     title: str,
     description: str,
@@ -119,7 +118,6 @@ async def create_task(
 
 
 @tool
-@register_tool("find_realtor")
 async def find_realtor(
     name: Optional[str] = None,
     email: Optional[str] = None,
@@ -163,7 +161,6 @@ async def find_realtor(
 
 
 @tool
-@register_tool("update_listing")
 async def update_listing(
     listing_id: str,
     updates: Dict[str, Any]
@@ -203,7 +200,6 @@ async def update_listing(
 
 
 @tool
-@register_tool("add_task_note")
 async def add_task_note(
     task_id: str,
     note: str,
