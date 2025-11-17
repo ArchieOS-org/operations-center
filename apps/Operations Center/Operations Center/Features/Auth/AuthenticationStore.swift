@@ -94,11 +94,11 @@ final class AuthenticationStore {
             currentUser = session.user
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
-            // Map Supabase errors to friendly signup errors
-            if authError.localizedDescription.contains("already registered") ||
-               authError.localizedDescription.contains("already exists") {
+            // Map Supabase errors to friendly signup errors using stable error codes
+            switch authError.errorCode {
+            case .emailExists:
                 self.error = .emailAlreadyInUse
-            } else {
+            default:
                 self.error = .supabaseError(authError)
             }
         } catch {
