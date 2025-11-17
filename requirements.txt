@@ -28,5 +28,8 @@ python-ulid>=2.7.0
 # Development dependencies
 python-dotenv>=1.0.0
 
+# Type stubs for mypy
+types-python-jose>=3.3.4
+
 # Slack SDK for posting acknowledgments back to Slack
 slack-sdk>=3.27.0
