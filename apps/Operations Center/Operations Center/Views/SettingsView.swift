@@ -15,6 +15,7 @@ struct SettingsView: View {
     @Environment(AuthenticationStore.self) private var authStore
     @State private var selectedTeam: Team?
     @State private var isUpdatingTeam = false
+    @State private var teamUpdateError: String?
     @State private var showingLogoutConfirmation = false
     @State private var hasInitialized = false
 
@@ -30,6 +31,7 @@ struct SettingsView: View {
                         get: { selectedTeam ?? currentTeam },
                         set: { newTeam in
                             selectedTeam = newTeam
+                            teamUpdateError = nil
                             if let newTeam, newTeam != currentTeam, hasInitialized {
                                 Task { await updateTeam(newTeam) }
                             }
@@ -49,6 +51,12 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+
+                    if let error = teamUpdateError {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                 } header: {
                     Text("Profile")
@@ -149,6 +157,7 @@ struct SettingsView: View {
 
     private func updateTeam(_ team: Team) async {
         isUpdatingTeam = true
+        teamUpdateError = nil
 
         do {
             try await supabase.auth.update(
@@ -159,6 +168,7 @@ struct SettingsView: View {
         } catch {
             // Revert on error
             selectedTeam = currentTeam
+            teamUpdateError = "Failed to update team. Please try again."
         }
 
         isUpdatingTeam = false

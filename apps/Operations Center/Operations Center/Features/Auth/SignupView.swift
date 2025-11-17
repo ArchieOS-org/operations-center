@@ -274,9 +274,18 @@ struct SignupView: View {
         .cornerRadius(8)
     }
 
-    // MARK: - Validation
+    // MARK: - Actions
 
-    private func validateEmail(_ value: String) {
+    private func handleSignup() async {
+        guard let team = selectedTeam else { return }
+        await store.signup(email: email, password: password, team: team)
+    }
+}
+
+// MARK: - Validation Helpers
+
+private extension SignupView {
+    func validateEmail(_ value: String) {
         if value.isEmpty {
             emailError = "Email is required"
         } else if !isValidEmail(value) {
@@ -286,7 +295,7 @@ struct SignupView: View {
         }
     }
 
-    private func validatePassword(_ value: String) {
+    func validatePassword(_ value: String) {
         if value.isEmpty {
             passwordError = nil
         } else if value.count < 8 {
@@ -301,7 +310,7 @@ struct SignupView: View {
         }
     }
 
-    private func validateConfirmPassword(_ value: String) {
+    func validateConfirmPassword(_ value: String) {
         if value.isEmpty {
             confirmPasswordError = nil
         } else if value != password {
@@ -311,13 +320,13 @@ struct SignupView: View {
         }
     }
 
-    private func isValidEmail(_ email: String) -> Bool {
+    func isValidEmail(_ email: String) -> Bool {
         let emailRegex = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
         let predicate = NSPredicate(format: "SELF MATCHES[c] %@", emailRegex)
         return predicate.evaluate(with: email)
     }
 
-    private var isFormValid: Bool {
+    var isFormValid: Bool {
         !email.isEmpty &&
         emailError == nil &&
         !password.isEmpty &&
@@ -325,13 +334,6 @@ struct SignupView: View {
         passwordError == nil &&
         password == confirmPassword &&
         selectedTeam != nil
-    }
-
-    // MARK: - Actions
-
-    private func handleSignup() async {
-        guard let team = selectedTeam else { return }
-        await store.signup(email: email, password: password, team: team)
     }
 }
 

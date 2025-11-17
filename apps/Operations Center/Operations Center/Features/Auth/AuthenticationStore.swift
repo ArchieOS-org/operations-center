@@ -51,7 +51,7 @@ final class AuthenticationStore {
 
     // MARK: - Initialization
 
-    nonisolated init(supabaseClient: SupabaseClient) {
+    init(supabaseClient: SupabaseClient) {
         self.supabaseClient = supabaseClient
     }
 
