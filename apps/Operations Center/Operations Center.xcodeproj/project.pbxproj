@@ -40,22 +40,9 @@
 		0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0A3F0ED62ECBA62A0040FE76 /* Exceptions for "Operations Center" folder in "Operations Center" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Operations-Center-Info.plist",
-			);
-			target = 0A911C852EC4311900E23DA7 /* Operations Center */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0A911C882EC4311900E23DA7 /* Operations Center */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0A3F0ED62ECBA62A0040FE76 /* Exceptions for "Operations Center" folder in "Operations Center" target */,
-			);
 			path = "Operations Center";
 			sourceTree = "<group>";
 		};

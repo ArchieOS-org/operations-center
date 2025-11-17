@@ -127,11 +127,14 @@ final class AuthenticationStore {
         error = nil
 
         do {
-            // Supabase will open Safari for OAuth flow
-            // Callback handled by .onOpenURL in AppView
+            // Supabase handles OAuth flow:
+            // 1. Opens Safari for Google authentication
+            // 2. Google redirects to Supabase HTTPS endpoint (not custom scheme)
+            // 3. Supabase processes OAuth response
+            // 4. Supabase deep links back to app via operationscenter://
+            // NO redirectTo parameter - let Supabase use its default HTTPS callback
             try await supabaseClient.auth.signInWithOAuth(
-                provider: .google,
-                redirectTo: URL(string: "Noah.Operations-Center://callback")
+                provider: .google
             )
         } catch let authError as Auth.AuthError {
             self.error = .oauthFailed(authError)

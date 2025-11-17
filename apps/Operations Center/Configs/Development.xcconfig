@@ -5,8 +5,13 @@
 // Build configuration for local development and debugging
 //
 
-// Auto-generate Info.plist
-GENERATE_INFOPLIST_FILE = YES
+// Use manual Info.plist for OAuth URL scheme configuration
+GENERATE_INFOPLIST_FILE = NO
+INFOPLIST_FILE = Info.plist
+
+// OAuth URL Scheme: operationscenter://
+// Used for deep link callback after Supabase processes OAuth
+// Configured in Info.plist CFBundleURLTypes
 
 // Configuration values - not used by Info.plist, accessed directly in Config.swift
 SUPABASE_URL = https://kukmshbkzlskyuacgzbo.supabase.co
