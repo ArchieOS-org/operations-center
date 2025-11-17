@@ -8,6 +8,32 @@
 import Foundation
 import SwiftUI
 
+// MARK: - ListingStatus
+
+/// Enum representing the status of a listing
+public enum ListingStatus: String, Codable, Sendable {
+    case active = "ACTIVE"
+    case pending = "PENDING"
+    case completed = "COMPLETED"
+
+    /// Color associated with this status
+    public var color: Color {
+        switch self {
+        case .active:
+            return .green
+        case .pending:
+            return .orange
+        case .completed:
+            return .blue
+        }
+    }
+
+    /// Display name for this status
+    public var displayName: String {
+        rawValue.capitalized
+    }
+}
+
 // MARK: - ListingType
 
 /// Enum representing the type of listing
@@ -94,6 +120,11 @@ public struct Listing: Identifiable, Codable, Sendable {
     /// Whether this listing has been completed
     public var isComplete: Bool {
         completedAt != nil
+    }
+
+    /// Parsed listing status from the underlying string value
+    public var listingStatus: ListingStatus? {
+        ListingStatus(rawValue: status.uppercased())
     }
 
     /// Parsed listing type from the underlying string value

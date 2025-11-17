@@ -101,10 +101,11 @@ extension ListingRepositoryClient {
         },
         fetchCompletedListings: {
             Logger.database.info("Fetching completed listings")
+            // Fetch completed listings: completed_at IS NOT NULL
             let listings: [Listing] = try await supabase
                 .from("listings")
                 .select()
-                .not("completed_at", operator: .is, value: nil)
+                .filter("completed_at", operator: "not.is.null", value: "")
                 .is("deleted_at", value: nil)
                 .order("completed_at", ascending: false)
                 .execute()

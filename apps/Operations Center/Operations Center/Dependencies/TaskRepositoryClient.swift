@@ -192,10 +192,11 @@ extension TaskRepositoryClient {
             },
             fetchDeletedTasks: {
                 Logger.database.info("Fetching deleted tasks")
+                // Fetch deleted tasks: deleted_at IS NOT NULL
                 let tasks: [AgentTask] = try await supabase
                     .from("agent_tasks")
                     .select()
-                    .not("deleted_at", operator: .is, value: "null")
+                    .filter("deleted_at", operator: "not.is.null", value: "")
                     .order("deleted_at", ascending: false)
                     .execute()
                     .value
@@ -205,10 +206,11 @@ extension TaskRepositoryClient {
             },
             fetchDeletedActivities: {
                 Logger.database.info("Fetching deleted activities")
+                // Fetch deleted activities: deleted_at IS NOT NULL
                 let response: [ActivityResponse] = try await supabase
                     .from("activities")
                     .select("*, listings(*)")
-                    .not("deleted_at", operator: .is, value: "null")
+                    .filter("deleted_at", operator: "not.is.null", value: "")
                     .order("deleted_at", ascending: false)
                     .execute()
                     .value
