@@ -77,6 +77,6 @@ extension OCMessageRow {
         self.showBackground = showBackground
     }
 
-    /// Initialize from a Slack message (when we have that model)
-    /// TODO: Add SlackMessage initializer when model is available
+    /// Initialize from a Slack message
+    /// TODO: Add init(slackMessage: SlackMessage) once SlackMessage model is defined in Models/SlackMessage.swift
 }

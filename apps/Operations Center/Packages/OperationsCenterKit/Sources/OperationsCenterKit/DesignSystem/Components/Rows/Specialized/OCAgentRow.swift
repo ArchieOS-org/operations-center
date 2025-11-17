@@ -30,7 +30,8 @@ public struct OCAgentRow: View {
 
                 // Secondary info row
                 HStack(spacing: Spacing.md) {
-                    // Email
+                    // Email (required per Realtor model, checked with isEmpty)
+                    // Phone is optional. If model changes to make both optional, update this logic.
                     if !realtor.email.isEmpty {
                         Label {
                             Text(realtor.email)
