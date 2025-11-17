@@ -45,7 +45,7 @@ extension ListingRepositoryClient {
     /// Production implementation using global Supabase client
     public static let live = Self(
         fetchListings: {
-            Logger.database.info("Fetching all listings")
+            Logger.database.info("🔍 ListingRepository.fetchListings() - Starting query...")
             let listings: [Listing] = try await supabase
                 .from("listings")
                 .select()
@@ -54,7 +54,12 @@ extension ListingRepositoryClient {
                 .execute()
                 .value
 
-            Logger.database.info("Fetched \(listings.count) listings")
+            Logger.database.info("✅ Supabase returned \(listings.count) listings")
+            if !listings.isEmpty {
+                Logger.database.info("📋 Listing IDs from database: \(listings.map { $0.id })")
+            } else {
+                Logger.database.warning("⚠️ NO LISTINGS IN DATABASE - listings table is empty or all are deleted")
+            }
             return listings
         },
         fetchListing: { listingId in
@@ -157,6 +162,8 @@ extension ListingRepositoryClient {
                 .execute()
                 .value
 
+            Logger.database.info("📚 Total active listings in database: \(allListings.count)")
+
             // Get acknowledged listing IDs for this staff member
             let acknowledged: [ListingAcknowledgment] = try await supabase
                 .from("listing_acknowledgments")
@@ -165,12 +172,22 @@ extension ListingRepositoryClient {
                 .execute()
                 .value
 
+            Logger.database.info("✅ Staff \(staffId) has acknowledged \(acknowledged.count) listings")
+
             let acknowledgedIds = Set(acknowledged.map { $0.listingId })
+
+            if !acknowledgedIds.isEmpty {
+                Logger.database.info("📋 Acknowledged listing IDs: \(acknowledgedIds)")
+            }
 
             // Filter out acknowledged listings
             let unacknowledged = allListings.filter { !acknowledgedIds.contains($0.id) }
 
-            Logger.database.info("Found \(unacknowledged.count) unacknowledged listings")
+            Logger.database.info("🔔 Found \(unacknowledged.count) unacknowledged listings to show")
+            if !unacknowledged.isEmpty {
+                Logger.database.info("📍 Unacknowledged listing IDs: \(unacknowledged.map { $0.id })")
+            }
+
             return unacknowledged
         }
     )

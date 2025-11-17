@@ -66,14 +66,17 @@ final class MyListingsStore {
 
     /// Fetch all listings where user has claimed at least one activity AND has acknowledged
     func fetchMyListings() async {
+        Logger.database.info("📱 MyListingsStore.fetchMyListings() starting...")
         isLoading = true
         errorMessage = nil
 
         do {
-            let currentUserId = authClient.currentUserId()
+            let currentUserId = await authClient.currentUserId()
+            Logger.database.info("👤 Current user ID: \(currentUserId)")
 
             // Get activities claimed by this staff member directly from repository
             let userListingTasks = try await taskRepository.fetchActivitiesByStaff(currentUserId)
+            Logger.database.info("📋 User has \(userListingTasks.count) claimed activities")
 
             // Extract unique listing IDs and build category mapping
             var listingIds = Set<String>()
@@ -90,16 +93,25 @@ final class MyListingsStore {
                 categoryMapping[listingId]?.insert(activityWithDetails.task.taskCategory)
             }
 
+            Logger.database.info("🏠 User has activities for \(listingIds.count) unique listings: \(listingIds)")
+
             // Fetch all listings
             let allListings = try await listingRepository.fetchListings()
+            Logger.database.info("📚 Total listings in database: \(allListings.count)")
 
             // Filter to only listings where:
             // 1. User has claimed activities AND
             // 2. User has acknowledged the listing
             var acknowledgedListingIds: Set<String> = []
-            for listingId in listingIds where try await listingRepository.hasAcknowledged(listingId, currentUserId) {
-                acknowledgedListingIds.insert(listingId)
+            for listingId in listingIds {
+                let hasAck = try await listingRepository.hasAcknowledged(listingId, currentUserId)
+                Logger.database.info("Listing \(listingId): acknowledged=\(hasAck)")
+                if hasAck {
+                    acknowledgedListingIds.insert(listingId)
+                }
             }
+
+            Logger.database.info("✅ User has acknowledged \(acknowledgedListingIds.count) listings: \(acknowledgedListingIds)")
 
             listings = allListings.filter { listing in
                 acknowledgedListingIds.contains(listing.id)
@@ -130,7 +142,7 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            try await listingRepository.deleteListing(listing.id, authClient.currentUserId())
+            try await listingRepository.deleteListing(listing.id, await authClient.currentUserId())
 
             await refresh()
         } catch {

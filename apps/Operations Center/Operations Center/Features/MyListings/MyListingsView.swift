@@ -61,6 +61,7 @@ struct MyListingsView: View {
                 Text("Marketing").tag(TaskCategory.marketing as TaskCategory?)
             }
             .pickerStyle(.segmented)
+            .fixedSize(horizontal: false, vertical: true)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
         }

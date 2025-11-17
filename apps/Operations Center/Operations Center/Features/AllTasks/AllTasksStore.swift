@@ -53,6 +53,7 @@ final class AllTasksStore {
 
     /// Fetch all claimed tasks
     func fetchAllTasks() async {
+        Logger.tasks.info("📊 AllTasksStore.fetchAllTasks() starting...")
         isLoading = true
         errorMessage = nil
 
@@ -62,19 +63,22 @@ final class AllTasksStore {
 
             let (stray, listing) = try await (tasksFetch, activitiesFetch)
 
+            Logger.tasks.info("📥 Received \(stray.count) agent tasks, \(listing.count) activities from repository")
+
             // Filter only claimed tasks
             tasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
 
             Logger.tasks.info(
-                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activities"
+                "✂️ After filtering for claimed/in-progress: \(self.tasks.count) agent tasks and \(self.activities.count) activities"
             )
         } catch {
-            Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
+            Logger.tasks.error("❌ Failed to fetch all tasks: \(error.localizedDescription)")
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
         }
 
         isLoading = false
+        Logger.tasks.info("📊 AllTasksStore.fetchAllTasks() completed")
     }
 
     /// Refresh data
@@ -90,7 +94,7 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, authClient.currentUserId())
+            _ = try await repository.claimTask(task.id, await authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -102,7 +106,7 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
-            _ = try await repository.claimActivity(task.id, authClient.currentUserId())
+            _ = try await repository.claimActivity(task.id, await authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -114,7 +118,7 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, authClient.currentUserId())
+            try await repository.deleteTask(task.id, await authClient.currentUserId())
 
             await refresh()
         } catch {
@@ -126,7 +130,7 @@ final class AllTasksStore {
     /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
-            try await repository.deleteActivity(task.id, authClient.currentUserId())
+            try await repository.deleteActivity(task.id, await authClient.currentUserId())
 
             await refresh()
         } catch {

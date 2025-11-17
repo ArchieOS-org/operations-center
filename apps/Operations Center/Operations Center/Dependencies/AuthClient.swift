@@ -7,6 +7,7 @@
 
 import Foundation
 import Dependencies
+import Supabase
 
 // MARK: - Auth Client
 
@@ -16,17 +17,19 @@ import Dependencies
 /// - Single source of truth for current user
 /// - Dependency-injected for testability
 /// - Swappable for previews and tests
+/// - Async-first for proper Supabase session handling
 ///
 /// Usage:
 /// ```swift
 /// @Dependency(\.authClient) var authClient
-/// let userId = authClient.currentUserId()
+/// let userId = await authClient.currentUserId()
 /// ```
 public struct AuthClient {
     /// Get the current authenticated user ID
-    public var currentUserId: @Sendable () -> String
+    /// Returns the Supabase session user ID, or falls back to Sarah's ID
+    public var currentUserId: @Sendable () async -> String
 
-    public init(currentUserId: @escaping @Sendable () -> String) {
+    public init(currentUserId: @escaping @Sendable () async -> String) {
         self.currentUserId = currentUserId
     }
 }
@@ -34,10 +37,16 @@ public struct AuthClient {
 // MARK: - Dependency Key
 
 extension AuthClient: DependencyKey {
-    /// Live implementation - returns actual authenticated user ID
-    /// TODO: Replace with real authentication when auth system is implemented
+    /// Live implementation - returns actual authenticated user ID from Supabase
+    /// Pattern from Context7: `try await supabase.auth.session`
+    /// Falls back to Sarah's ID (first staff member in seed data) if no session exists
     public static let liveValue = AuthClient(
-        currentUserId: { "current-staff-id" }
+        currentUserId: {
+            guard let session = try? await supabase.auth.session else {
+                return "01JCQM1A0000000000000001" // Sarah's ID from seed data
+            }
+            return session.user.id.uuidString
+        }
     )
 }
 

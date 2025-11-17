@@ -63,15 +63,20 @@ final class AllListingsStore {
 
     /// Fetch all listings
     func fetchAllListings() async {
+        Logger.database.info("🏠 AllListingsStore.fetchAllListings() starting...")
         isLoading = true
         errorMessage = nil
 
         do {
+            Logger.database.info("📡 Fetching listings and activities in parallel...")
+
             // Fetch both listings and activities in parallel
             async let listingsResult = listingRepository.fetchListings()
             async let activitiesResult = taskRepository.fetchActivities()
 
             let (allListings, allActivities) = try await (listingsResult, activitiesResult)
+
+            Logger.database.info("✅ Received \(allListings.count) listings and \(allActivities.count) activities")
 
             // Build category mapping from activities
             var categoryMapping: [String: Set<TaskCategory?>] = [:]
@@ -87,13 +92,17 @@ final class AllListingsStore {
             listings = allListings
             listingCategories = categoryMapping
 
-            Logger.database.info("Fetched \(self.listings.count) listings with category mapping")
+            Logger.database.info("🏁 AllListingsStore now has \(self.listings.count) listings")
+            if !listings.isEmpty {
+                Logger.database.info("📋 Listing IDs: \(self.listings.map { $0.id })")
+            }
         } catch {
-            Logger.database.error("Failed to fetch all listings: \(error.localizedDescription)")
+            Logger.database.error("❌ Failed to fetch all listings: \(error.localizedDescription)")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"
         }
 
         isLoading = false
+        Logger.database.info("🏠 AllListingsStore.fetchAllListings() completed")
     }
 
     /// Refresh data
@@ -104,7 +113,7 @@ final class AllListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            try await listingRepository.deleteListing(listing.id, authClient.currentUserId())
+            try await listingRepository.deleteListing(listing.id, await authClient.currentUserId())
 
             await refresh()
         } catch {

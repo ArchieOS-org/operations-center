@@ -72,7 +72,7 @@ final class MarketingTeamStore {
     }
 
     func claimTask(_ task: AgentTask) async {
-        let userId = authClient.currentUserId()
+        let userId = await authClient.currentUserId()
 
         do {
             _ = try await taskRepository.claimTask(task.id, userId)
@@ -83,7 +83,7 @@ final class MarketingTeamStore {
     }
 
     func claimActivity(_ activity: Activity) async {
-        let userId = authClient.currentUserId()
+        let userId = await authClient.currentUserId()
 
         do {
             _ = try await taskRepository.claimActivity(activity.id, userId)
@@ -94,7 +94,7 @@ final class MarketingTeamStore {
     }
 
     func deleteTask(_ task: AgentTask) async {
-        let userId = authClient.currentUserId()
+        let userId = await authClient.currentUserId()
 
         do {
             try await taskRepository.deleteTask(task.id, userId)
@@ -105,7 +105,7 @@ final class MarketingTeamStore {
     }
 
     func deleteActivity(_ activity: Activity) async {
-        let userId = authClient.currentUserId()
+        let userId = await authClient.currentUserId()
 
         do {
             try await taskRepository.deleteActivity(activity.id, userId)

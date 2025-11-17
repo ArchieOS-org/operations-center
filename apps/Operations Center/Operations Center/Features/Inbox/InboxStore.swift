@@ -56,7 +56,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            let currentUserId = authClient.currentUserId()
+            let currentUserId = await authClient.currentUserId()
 
             // Fetch agent tasks, activities, and unacknowledged listings concurrently
             async let agentTasks = taskRepository.fetchTasks()
@@ -67,8 +67,13 @@ final class InboxStore {
             let activities = try await activityDetails
             let unacknowledgedIds = Set(try await unacknowledgedListingIds.map { $0.id })
 
+            Logger.database.info("📊 InboxStore: \(self.tasks.count) agent tasks, \(activities.count) activities")
+            Logger.database.info("🔔 Unacknowledged listing IDs: \(unacknowledgedIds)")
+
             // Filter activities to only show those from unacknowledged listings
             let filteredActivities = activities.filter { unacknowledgedIds.contains($0.listing.id) }
+
+            Logger.database.info("✂️ After acknowledgment filter: \(filteredActivities.count) activities (dropped \(activities.count - filteredActivities.count))")
 
             // Group activities by listing
             let groupedByListing = Dictionary(grouping: filteredActivities) { $0.listing.id }
@@ -162,7 +167,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimTask(task.id, authClient.currentUserId())
+            _ = try await taskRepository.claimTask(task.id, await authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -175,7 +180,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteTask(task.id, authClient.currentUserId())
+            try await taskRepository.deleteTask(task.id, await authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -190,7 +195,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimActivity(activity.id, authClient.currentUserId())
+            _ = try await taskRepository.claimActivity(activity.id, await authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -203,7 +208,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteActivity(activity.id, authClient.currentUserId())
+            try await taskRepository.deleteActivity(activity.id, await authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()
@@ -218,7 +223,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await noteRepository.createNote(listingId, content, authClient.currentUserId())
+            _ = try await noteRepository.createNote(listingId, content, await authClient.currentUserId())
 
             // Refresh to get updated notes
             await fetchTasks()
@@ -233,7 +238,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            _ = try await listingRepository.acknowledgeListing(listingId, authClient.currentUserId())
+            _ = try await listingRepository.acknowledgeListing(listingId, await authClient.currentUserId())
 
             // Refresh the list
             await fetchTasks()

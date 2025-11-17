@@ -141,7 +141,7 @@ final class ListingDetailStore {
         }
 
         do {
-            let createdNote = try await noteRepository.createNote(listingId, trimmedText, authClient.currentUserId())
+            let createdNote = try await noteRepository.createNote(listingId, trimmedText, await authClient.currentUserId())
 
             // Add new note to beginning of list
             notes.insert(createdNote, at: 0)
@@ -184,7 +184,7 @@ final class ListingDetailStore {
 
     /// Claim an activity
     func claimActivity(_ activity: Activity) async {
-        let userId = authClient.currentUserId()
+        let userId = await authClient.currentUserId()
 
         do {
             _ = try await taskRepository.claimActivity(activity.id, userId)
@@ -197,7 +197,7 @@ final class ListingDetailStore {
     /// Delete an activity
     func deleteActivity(_ activity: Activity) async {
         do {
-            try await taskRepository.deleteActivity(activity.id, authClient.currentUserId())
+            try await taskRepository.deleteActivity(activity.id, await authClient.currentUserId())
             await fetchListingData() // Refresh
         } catch {
             errorMessage = "Failed to delete activity: \(error.localizedDescription)"

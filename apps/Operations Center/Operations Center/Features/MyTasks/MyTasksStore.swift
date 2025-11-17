@@ -52,13 +52,16 @@ final class MyTasksStore {
         defer { isLoading = false }
 
         do {
+            // Get current user ID for filtering
+            let currentUserId = await authClient.currentUserId()
+
             // Fetch agent tasks and filter for current user
             let tasksResults = try await repository.fetchTasks()
 
-            // Filter for agent tasks claimed by me - break up for type-checker
+            // Filter for agent tasks claimed by me
             let allAgentTasks = tasksResults.map(\.task)
             tasks = allAgentTasks.filter { task in
-                task.assignedStaffId == authClient.currentUserId() &&
+                task.assignedStaffId == currentUserId &&
                 (task.status == .claimed || task.status == .inProgress)
             }
 
@@ -77,7 +80,7 @@ final class MyTasksStore {
     /// Per spec line 428: "Press: Claim for yourself"
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, authClient.currentUserId())
+            _ = try await repository.claimTask(task.id, await authClient.currentUserId())
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
@@ -87,7 +90,7 @@ final class MyTasksStore {
     /// Delete a task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, authClient.currentUserId())
+            try await repository.deleteTask(task.id, await authClient.currentUserId())
             await fetchMyTasks()
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"

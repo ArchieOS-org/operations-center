@@ -8,6 +8,7 @@
 
 import Foundation
 import OperationsCenterKit
+import OSLog
 import Supabase
 
 @Observable
@@ -100,18 +101,27 @@ final class AppState {
         isLoading = true
         errorMessage = nil
 
+        Logger.database.info("AppState.fetchTasks() starting...")
+
         do {
             // Use TaskRepositoryClient (production or preview based on init)
+            Logger.database.info("Calling taskRepository.fetchActivities()...")
             let taskData = try await taskRepository.fetchActivities()
+            Logger.database.info("Received \(taskData.count) activities from repository")
+
             allTasks = taskData.map(\.task)  // Extract just the activities
+            Logger.database.info("AppState now has \(self.allTasks.count) tasks")
 
             // Save to cache
             saveCachedData()
         } catch {
+            Logger.database.error("❌ fetchTasks failed: \(error.localizedDescription)")
+            Logger.database.error("Error details: \(String(describing: error))")
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+        Logger.database.info("AppState.fetchTasks() completed. isLoading=false")
     }
 
     // MARK: - Real-time Sync

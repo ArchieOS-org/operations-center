@@ -140,7 +140,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimTask(task.id, authClient.currentUserId())
+            _ = try await taskRepository.claimTask(task.id, await authClient.currentUserId())
 
             Logger.tasks.info("Claimed agent task: \(task.id)")
 
@@ -156,7 +156,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteTask(task.id, authClient.currentUserId())
+            try await taskRepository.deleteTask(task.id, await authClient.currentUserId())
 
             Logger.tasks.info("Deleted agent task: \(task.id)")
 
@@ -172,7 +172,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            _ = try await taskRepository.claimActivity(task.id, authClient.currentUserId())
+            _ = try await taskRepository.claimActivity(task.id, await authClient.currentUserId())
 
             Logger.tasks.info("Claimed activity: \(task.id)")
 
@@ -188,7 +188,7 @@ final class AgentDetailStore {
         errorMessage = nil
 
         do {
-            try await taskRepository.deleteActivity(task.id, authClient.currentUserId())
+            try await taskRepository.deleteActivity(task.id, await authClient.currentUserId())
 
             Logger.tasks.info("Deleted activity: \(task.id)")
 

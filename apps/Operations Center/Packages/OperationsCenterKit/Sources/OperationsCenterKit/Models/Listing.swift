@@ -45,7 +45,7 @@ public struct Listing: Identifiable, Codable, Sendable {
     public let dueDate: Date?
     public let progress: Decimal?
     public let type: String?
-    public let notes: String
+    public let notes: String?
     public let createdAt: Date
     public let updatedAt: Date
     public let completedAt: Date?
@@ -63,7 +63,7 @@ public struct Listing: Identifiable, Codable, Sendable {
         dueDate: Date? = nil,
         progress: Decimal? = nil,
         type: String? = nil,
-        notes: String,
+        notes: String? = nil,
         createdAt: Date,
         updatedAt: Date,
         completedAt: Date? = nil,

@@ -60,7 +60,7 @@ private struct ActivityResponse: Decodable {
     let realtorId: String?
     let name: String
     let description: String?
-    let taskCategory: String
+    let taskCategory: String?  // Optional - can be NULL in database
     let status: String
     let priority: Int
     let visibilityGroup: String
@@ -116,7 +116,7 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         realtorId: row.realtorId,
         name: row.name,
         description: row.description,
-        taskCategory: TaskCategory(rawValue: row.taskCategory),  // Optional: admin, marketing, or nil
+        taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),  // Optional: admin, marketing, or nil
         status: Activity.TaskStatus(rawValue: row.status) ?? .open,
         priority: row.priority,
         visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
@@ -154,17 +154,35 @@ extension TaskRepositoryClient {
                 return response.map { TaskWithMessages(task: $0, messages: []) }
             },
             fetchActivities: {
-                // Query activities with nested listings join
-                let response: [ActivityResponse] = try await supabase
-                    .from("activities")
-                    .select("*, listings(*)")
-                    .is("deleted_at", value: nil)
-                    .order("priority", ascending: false)
-                    .order("created_at", ascending: false)
-                    .execute()
-                    .value
+                Logger.database.info("🔍 TaskRepository.fetchActivities() - Starting Supabase query...")
 
-                return response.compactMap(mapActivityResponse)
+                do {
+                    // Query activities with nested listings join
+                    let response: [ActivityResponse] = try await supabase
+                        .from("activities")
+                        .select("*, listings(*)")
+                        .is("deleted_at", value: nil)
+                        .order("priority", ascending: false)
+                        .order("created_at", ascending: false)
+                        .execute()
+                        .value
+
+                    Logger.database.info("✅ Supabase returned \(response.count) activity records")
+
+                    let mapped = response.compactMap(mapActivityResponse)
+                    Logger.database.info("📊 After mapping: \(mapped.count) activities (dropped \(response.count - mapped.count) due to missing listings)")
+
+                    return mapped
+                } catch let error as URLError {
+                    Logger.database.error("❌ Network error connecting to Supabase")
+                    Logger.database.error("Error code: \(error.errorCode), Description: \(error.localizedDescription)")
+                    Logger.database.error("Failing URL: \(error.failingURL?.absoluteString ?? "unknown")")
+                    throw error
+                } catch {
+                    Logger.database.error("❌ Supabase query failed: \(String(describing: error))")
+                    Logger.database.error("Error type: \(type(of: error))")
+                    throw error
+                }
             },
             fetchDeletedTasks: {
                 Logger.database.info("Fetching deleted tasks")
