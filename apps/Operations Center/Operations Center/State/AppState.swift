@@ -84,7 +84,7 @@ final class AppState {
         // Listen for auth state changes
         authStateTask = Task.detached { [weak self] in
             guard let self else { return }
-            for await state in await self.supabase.auth.authStateChanges
+            for await state in self.supabase.auth.authStateChanges
                 where [.initialSession, .signedIn, .signedOut].contains(state.event) {
                 await MainActor.run {
                     self.currentUser = state.session?.user
@@ -134,7 +134,7 @@ final class AppState {
             do {
                 // Setup listener BEFORE subscribing
                 let listenerTask = Task {
-                    for await change in await channel.postgresChange(AnyAction.self, table: "activities") {
+                    for await change in channel.postgresChange(AnyAction.self, table: "activities") {
                         await handleRealtimeChange(change)
                     }
                 }
