@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Auth
+import Supabase
 
 // MARK: - App View
 
@@ -42,6 +44,19 @@ struct AppView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: authStore.isRestoring)
         .animation(.easeInOut(duration: 0.3), value: authStore.isAuthenticated)
+        .onOpenURL { url in
+            // Handle OAuth callback from Google
+            Task {
+                do {
+                    try await supabase.auth.session(from: url)
+                    // Session automatically updated, AppView will react to auth state change
+                } catch let authError as Auth.AuthError {
+                    authStore.error = .oauthFailed(authError)
+                } catch {
+                    authStore.error = .unknown(error)
+                }
+            }
+        }
         .task {
             // Restore session on app launch
             await authStore.restoreSession()

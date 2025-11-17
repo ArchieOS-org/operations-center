@@ -95,19 +95,47 @@ final class AuthenticationStore {
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
             // Map Supabase errors to friendly signup errors
-            // Check message content for duplicate email indicators
-            let message = authError.localizedDescription.lowercased()
-            let isDuplicateEmail = message.contains("already registered") ||
-                message.contains("already exists") ||
-                message.contains("user already exists")
+            // Check structured error code for duplicate email
+            let errorCode = authError.errorCode
 
-            if isDuplicateEmail {
+            if errorCode == .emailExists || errorCode == .userAlreadyExists {
                 self.error = .emailAlreadyInUse
             } else {
-                self.error = .supabaseError(authError)
+                // Defensive fallback: check message content if error code isn't available
+                let message = authError.localizedDescription.lowercased()
+                let isDuplicateEmail = message.contains("already registered") ||
+                    message.contains("already exists") ||
+                    message.contains("user already exists")
+
+                if isDuplicateEmail {
+                    self.error = .emailAlreadyInUse
+                } else {
+                    self.error = .supabaseError(authError)
+                }
             }
         } catch {
             // Consistent error mapping with login
+            self.error = .unknown(error)
+        }
+
+        isLoading = false
+    }
+
+    /// Sign in with Google OAuth
+    func signInWithGoogle() async {
+        isLoading = true
+        error = nil
+
+        do {
+            // Supabase will open Safari for OAuth flow
+            // Callback handled by .onOpenURL in AppView
+            try await supabaseClient.auth.signInWithOAuth(
+                provider: .google,
+                redirectTo: URL(string: "Noah.Operations-Center://callback")
+            )
+        } catch let authError as Auth.AuthError {
+            self.error = .oauthFailed(authError)
+        } catch {
             self.error = .unknown(error)
         }
 
@@ -140,6 +168,15 @@ final class AuthenticationStore {
             currentUser = session.user
             isAuthenticated = true
         } catch {
+            // TEMPORARY DEBUG - Use NSLog for physical device
+            NSLog("🔍 Session restoration failed:")
+            NSLog("   Error: \(error)")
+            NSLog("   Type: \(type(of: error))")
+            if let authError = error as? Auth.AuthError {
+                NSLog("   Auth Error: \(authError)")
+                NSLog("   Localized: \(authError.localizedDescription)")
+            }
+
             // No valid session - user needs to sign in
             isAuthenticated = false
         }
@@ -180,6 +217,8 @@ enum AuthError: LocalizedError {
     case signupFailed
     case networkError
     case logoutFailed
+    case oauthFailed(Auth.AuthError)
+    case oauthCancelled
     case supabaseError(Auth.AuthError)
     case unknown(Error)
 
@@ -201,6 +240,10 @@ enum AuthError: LocalizedError {
             return "Network connection failed"
         case .logoutFailed:
             return "Failed to sign out"
+        case .oauthFailed(let error):
+            return "Google sign-in failed: \(error.localizedDescription)"
+        case .oauthCancelled:
+            return "Sign-in cancelled"
         case .supabaseError(let error):
             return error.localizedDescription
         case .unknown(let error):
@@ -224,6 +267,10 @@ enum AuthError: LocalizedError {
             return "Check your email and password, then try again"
         case .networkError:
             return "Check your internet connection"
+        case .oauthFailed:
+            return "Try again or use email sign-in"
+        case .oauthCancelled:
+            return "Tap Google sign-in to try again"
         default:
             return nil
         }
@@ -242,8 +289,11 @@ extension AuthError: Equatable {
              (.emailAlreadyInUse, .emailAlreadyInUse),
              (.signupFailed, .signupFailed),
              (.networkError, .networkError),
-             (.logoutFailed, .logoutFailed):
+             (.logoutFailed, .logoutFailed),
+             (.oauthCancelled, .oauthCancelled):
             return true
+        case let (.oauthFailed(lhs), .oauthFailed(rhs)):
+            return lhs.localizedDescription == rhs.localizedDescription
         case let (.supabaseError(lhs), .supabaseError(rhs)):
             return lhs.localizedDescription == rhs.localizedDescription
         case let (.unknown(lhs), .unknown(rhs)):

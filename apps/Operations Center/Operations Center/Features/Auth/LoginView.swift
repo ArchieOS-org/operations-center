@@ -53,6 +53,12 @@ struct LoginView: View {
                         // Sign In Button
                         signInButton
 
+                        // OAuth Divider
+                        oauthDivider
+
+                        // Google Sign In
+                        googleSignInButton
+
                         // Create Account Link
                         createAccountLink
 
@@ -211,6 +217,42 @@ struct LoginView: View {
         }
     }
 
+    private var oauthDivider: some View {
+        HStack(spacing: Spacing.md) {
+            Rectangle()
+                .fill(.secondary.opacity(0.3))
+                .frame(height: 1)
+
+            Text("Or continue with")
+                .font(Typography.cardMeta)
+                .foregroundStyle(.secondary)
+
+            Rectangle()
+                .fill(.secondary.opacity(0.3))
+                .frame(height: 1)
+        }
+        .padding(.vertical, Spacing.sm)
+    }
+
+    private var googleSignInButton: some View {
+        Button(
+            action: { Task { await handleGoogleSignIn() } },
+            label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "g.circle.fill")
+                        .font(.title3)
+                    Text("Sign in with Google")
+                        .font(Typography.cardTitle)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
+            }
+        )
+        .buttonStyle(.bordered)
+        .tint(.primary)
+        .disabled(store.isLoading)
+    }
+
     private var createAccountLink: some View {
         Button(
             action: { showingSignup = true },
@@ -292,6 +334,10 @@ struct LoginView: View {
 
     private func handleSignIn() async {
         await store.login(email: email, password: password)
+    }
+
+    private func handleGoogleSignIn() async {
+        await store.signInWithGoogle()
     }
 }
 
