@@ -20,13 +20,29 @@ final class MyListingsStore {
     // MARK: - Properties
 
     /// All listings where user has claimed activities
-    private(set) var listings: [Listing] = []
+    private(set) var listings: [Listing] = [] {
+        didSet {
+            updateFilteredListings()
+        }
+    }
 
     /// Category filter selection (nil = "All")
-    var selectedCategory: TaskCategory?
+    var selectedCategory: TaskCategory? {
+        didSet {
+            updateFilteredListings()
+        }
+    }
 
     /// Mapping of listing ID to categories of tasks user has claimed
-    private var listingCategories: [String: Set<TaskCategory?>] = [:]
+    private var listingCategories: [String: Set<TaskCategory?>] = [:] {
+        didSet {
+            updateFilteredListings()
+        }
+    }
+
+    /// Cached filtered listings - updated when listings, category, or mapping changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredListings: [Listing] = []
 
     /// Currently expanded listing ID (only one can be expanded at a time)
     var expandedListingId: String?
@@ -44,13 +60,17 @@ final class MyListingsStore {
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
-    // MARK: - Computed Properties
+    // MARK: - Private Methods
 
-    /// Filtered listings based on selected category
-    var filteredListings: [Listing] {
-        guard let selectedCategory else { return listings } // "All" selected
+    /// Update cached filtered listings when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredListings() {
+        guard let selectedCategory else {
+            filteredListings = listings
+            return
+        }
 
-        return listings.filter { listing in
+        filteredListings = listings.filter { listing in
             listingCategories[listing.id]?.contains(selectedCategory) ?? false
         }
     }
@@ -102,21 +122,13 @@ final class MyListingsStore {
             // Filter to only listings where:
             // 1. User has claimed activities AND
             // 2. User has acknowledged the listing
-            var acknowledgedListingIds: Set<String> = []
-            for listingId in listingIds {
-                let hasAck = try await listingRepository.hasAcknowledged(listingId, currentUserId)
-                Logger.database.info("Listing \(listingId): acknowledged=\(hasAck)")
-                if hasAck {
-                    acknowledgedListingIds.insert(listingId)
-                }
-            }
-
-            Logger.database.info(
-                """
-                ✅ User has acknowledged \(acknowledgedListingIds.count) listings: \
-                \(acknowledgedListingIds)
-                """
+            // Batch query - single network call instead of N sequential calls
+            let acknowledgedListingIds = try await listingRepository.fetchAcknowledgedListingIds(
+                Array(listingIds),
+                currentUserId
             )
+
+            Logger.database.info("✅ User has acknowledged \(acknowledgedListingIds.count) listings")
 
             listings = allListings.filter { listing in
                 acknowledgedListingIds.contains(listing.id)

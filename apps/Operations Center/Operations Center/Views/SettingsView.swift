@@ -73,31 +73,37 @@ struct SettingsView: View {
             }
 
             Section {
-                Link(destination: URL(string: "https://conductor.app/privacy")!) {
-                    HStack {
-                        Text("Privacy Policy")
-                        Spacer()
-                        Image(systemName: "arrow.up.forward")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                if let privacyURL = URL(string: "https://conductor.app/privacy") {
+                    Link(destination: privacyURL) {
+                        HStack {
+                            Text("Privacy Policy")
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                Link(destination: URL(string: "https://conductor.app/terms")!) {
-                    HStack {
-                        Text("Terms of Service")
-                        Spacer()
-                        Image(systemName: "arrow.up.forward")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                if let termsURL = URL(string: "https://conductor.app/terms") {
+                    Link(destination: termsURL) {
+                        HStack {
+                            Text("Terms of Service")
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                Link(destination: URL(string: "https://conductor.app/support")!) {
-                    HStack {
-                        Text("Support")
-                        Spacer()
-                        Image(systemName: "arrow.up.forward")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                if let supportURL = URL(string: "https://conductor.app/support") {
+                    Link(destination: supportURL) {
+                        HStack {
+                            Text("Support")
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }

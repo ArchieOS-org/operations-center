@@ -162,9 +162,7 @@ struct AllTasksView: View {
 
             FloatingActionButton(
                 systemImage: "plus",
-                action: {
-                    // NOTE: Implement create new task
-                }
+                action: {}
             )
             .padding(.trailing, Spacing.md)
             .padding(.bottom, Spacing.md)

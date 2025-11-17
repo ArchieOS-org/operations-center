@@ -9,6 +9,25 @@ import Foundation
 import Dependencies
 import Supabase
 
+// MARK: - Auth Errors
+
+public enum AuthError: Error, LocalizedError {
+    case noSession
+    case sessionExpired
+    case invalidSession
+
+    public var errorDescription: String? {
+        switch self {
+        case .noSession:
+            return "No active session found. Please sign in."
+        case .sessionExpired:
+            return "Your session has expired. Please sign in again."
+        case .invalidSession:
+            return "Invalid session. Please sign in again."
+        }
+    }
+}
+
 // MARK: - Auth Client
 
 /// Authentication client for managing current user ID
@@ -18,18 +37,23 @@ import Supabase
 /// - Dependency-injected for testability
 /// - Swappable for previews and tests
 /// - Async-first for proper Supabase session handling
+/// - **Explicit error handling** - Never fakes authentication
 ///
 /// Usage:
 /// ```swift
 /// @Dependency(\.authClient) var authClient
-/// let userId = await authClient.currentUserId()
+/// do {
+///     let userId = try await authClient.currentUserId()
+/// } catch {
+///     // Handle auth error
+/// }
 /// ```
 public struct AuthClient {
     /// Get the current authenticated user ID
-    /// Returns the Supabase session user ID, or falls back to Sarah's ID
-    public var currentUserId: @Sendable () async -> String
+    /// Throws AuthError if no valid session exists
+    public var currentUserId: @Sendable () async throws -> String
 
-    public init(currentUserId: @escaping @Sendable () async -> String) {
+    public init(currentUserId: @escaping @Sendable () async throws -> String) {
         self.currentUserId = currentUserId
     }
 }
@@ -38,14 +62,21 @@ public struct AuthClient {
 
 extension AuthClient: DependencyKey {
     /// Live implementation - returns actual authenticated user ID from Supabase
-    /// Pattern from Context7: `try await supabase.auth.session`
-    /// Falls back to Sarah's ID (first staff member in seed data) if no session exists
+    /// Throws AuthError.noSession if user is not authenticated
+    /// Never returns a fake/fallback ID - fails explicitly
     public static let liveValue = AuthClient(
         currentUserId: {
-            guard let session = try? await supabase.auth.session else {
-                return "01JCQM1A0000000000000001" // Sarah's ID from seed data
+            do {
+                guard let session = try await supabase.auth.session else {
+                    throw AuthError.noSession
+                }
+                return session.user.id.uuidString
+            } catch let error as AuthError {
+                throw error
+            } catch {
+                // Wrap Supabase errors in AuthError
+                throw AuthError.invalidSession
             }
-            return session.user.id.uuidString
         }
     )
 }
@@ -54,11 +85,13 @@ extension AuthClient: DependencyKey {
 
 extension AuthClient: TestDependencyKey {
     /// Preview implementation - returns preview user ID
+    /// Never throws for previews to keep UI working
     public static let previewValue = AuthClient(
         currentUserId: { "preview-staff-id" }
     )
 
     /// Test implementation - returns test user ID
+    /// Never throws for tests unless explicitly configured
     public static let testValue = AuthClient(
         currentUserId: { "test-staff-id" }
     )

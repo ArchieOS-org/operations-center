@@ -20,7 +20,11 @@ final class AllTasksStore {
     // MARK: - Properties
 
     /// All agent tasks (standalone tasks)
-    private(set) var tasks: [TaskWithMessages] = []
+    private(set) var tasks: [TaskWithMessages] = [] {
+        didSet {
+            updateFilteredTasks()
+        }
+    }
 
     /// All activities (property-linked tasks)
     private(set) var activities: [ActivityWithDetails] = []
@@ -29,7 +33,15 @@ final class AllTasksStore {
     var expandedTaskId: String?
 
     /// Filter by team: marketing, admin, or all
-    var teamFilter: OperationsCenterKit.TeamFilter = .all
+    var teamFilter: OperationsCenterKit.TeamFilter = .all {
+        didSet {
+            updateFilteredTasks()
+        }
+    }
+
+    /// Cached filtered tasks - updated when tasks or filter changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredTasks: [TaskWithMessages] = []
 
     /// Error message to display
     var errorMessage: String?
@@ -53,7 +65,6 @@ final class AllTasksStore {
 
     /// Fetch all claimed tasks
     func fetchAllTasks() async {
-        Logger.tasks.info("📊 AllTasksStore.fetchAllTasks() starting...")
         isLoading = true
         errorMessage = nil
 
@@ -63,25 +74,15 @@ final class AllTasksStore {
 
             let (stray, listing) = try await (tasksFetch, activitiesFetch)
 
-            Logger.tasks.info("📥 Received \(stray.count) agent tasks, \(listing.count) activities from repository")
-
             // Filter only claimed tasks
             tasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
-
-            Logger.tasks.info(
-                """
-                ✂️ After filtering for claimed/in-progress: \(self.tasks.count) agent tasks \
-                and \(self.activities.count) activities
-                """
-            )
         } catch {
-            Logger.tasks.error("❌ Failed to fetch all tasks: \(error.localizedDescription)")
+            Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
         }
 
         isLoading = false
-        Logger.tasks.info("📊 AllTasksStore.fetchAllTasks() completed")
     }
 
     /// Refresh data
@@ -142,19 +143,22 @@ final class AllTasksStore {
         }
     }
 
-    // MARK: - Computed Properties
+    // MARK: - Private Methods
 
-    /// Filtered agent tasks based on team filter
-    var filteredTasks: [TaskWithMessages] {
+    /// Update cached filtered tasks when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredTasks() {
         switch teamFilter {
         case .all:
-            return tasks
+            filteredTasks = tasks
         case .marketing:
-            return tasks.filter { $0.task.taskCategory == .marketing }
+            filteredTasks = tasks.filter { $0.task.taskCategory == .marketing }
         case .admin:
-            return tasks.filter { $0.task.taskCategory == .admin }
+            filteredTasks = tasks.filter { $0.task.taskCategory == .admin }
         }
     }
+
+    // MARK: - Computed Properties
 
     /// Filtered activities based on team filter
     var filteredActivities: [ActivityWithDetails] {

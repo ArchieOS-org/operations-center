@@ -10,7 +10,7 @@ import OperationsCenterKit
 import Dependencies
 
 @Observable @MainActor
-final class AdminTeamStore {
+final class AdminTeamStore: TeamViewStore {
     // MARK: - Observable State
 
     var tasks: [TaskWithMessages] = []
@@ -39,7 +39,7 @@ final class AdminTeamStore {
 
     // MARK: - Data Loading
 
-    func loadAdminTasks() async {
+    func loadTasks() async {
         isLoading = true
         errorMessage = nil
 
@@ -76,7 +76,7 @@ final class AdminTeamStore {
 
         do {
             _ = try await taskRepository.claimTask(task.id, userId)
-            await loadAdminTasks() // Refresh
+            await loadTasks() // Refresh
         } catch {
             errorMessage = "Failed to claim task: \(error.localizedDescription)"
         }
@@ -87,7 +87,7 @@ final class AdminTeamStore {
 
         do {
             _ = try await taskRepository.claimActivity(activity.id, userId)
-            await loadAdminTasks() // Refresh
+            await loadTasks() // Refresh
         } catch {
             errorMessage = "Failed to claim activity: \(error.localizedDescription)"
         }
@@ -98,7 +98,7 @@ final class AdminTeamStore {
 
         do {
             try await taskRepository.deleteTask(task.id, userId)
-            await loadAdminTasks() // Refresh
+            await loadTasks() // Refresh
         } catch {
             errorMessage = "Failed to delete task: \(error.localizedDescription)"
         }
@@ -109,7 +109,7 @@ final class AdminTeamStore {
 
         do {
             try await taskRepository.deleteActivity(activity.id, userId)
-            await loadAdminTasks() // Refresh
+            await loadTasks() // Refresh
         } catch {
             errorMessage = "Failed to delete activity: \(error.localizedDescription)"
         }

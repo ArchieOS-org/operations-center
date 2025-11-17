@@ -18,23 +18,27 @@ final class AllListingsStore {
     /// All listings
     private(set) var listings: [Listing] = [] {
         didSet {
-            Logger.database.info("📦 AllListingsStore.listings updated: \(self.listings.count) items")
+            updateFilteredListings()
         }
     }
 
     /// Category filter selection (nil = "All")
     var selectedCategory: TaskCategory? {
         didSet {
-            Logger.database.info("🔄 Category filter changed to: \(String(describing: self.selectedCategory))")
+            updateFilteredListings()
         }
     }
 
     /// Mapping of listing ID to categories of all tasks for that listing
     private var listingCategories: [String: Set<TaskCategory?>] = [:] {
         didSet {
-            Logger.database.info("🗺️ Category mapping updated: \(self.listingCategories.count) listings mapped")
+            updateFilteredListings()
         }
     }
+
+    /// Cached filtered listings - updated when listings or category changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredListings: [Listing] = []
 
     /// Error message to display
     var errorMessage: String?
@@ -49,49 +53,40 @@ final class AllListingsStore {
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
-    /// Filtered listings based on selected category
-    var filteredListings: [Listing] {
-        let result: [Listing]
-        
-        if self.selectedCategory == nil {
-            result = self.listings
-            Logger.database.info("🔍 Filter: All (\(result.count) listings)")
-        } else {
-            result = self.listings.filter { listing in
-                self.listingCategories[listing.id]?.contains(selectedCategory) ?? false
-            }
-            Logger.database.info("🔍 Filter: \(String(describing: selectedCategory)) (\(result.count) listings)")
-        }
-        
-        return result
-    }
-
     // MARK: - Initialization
 
     init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
         self.listingRepository = listingRepository
         self.taskRepository = taskRepository
-        Logger.database.info("🏗️ AllListingsStore initialized")
+    }
+
+    // MARK: - Private Methods
+
+    /// Update cached filtered listings when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredListings() {
+        if selectedCategory == nil {
+            filteredListings = listings
+        } else {
+            filteredListings = listings.filter { listing in
+                listingCategories[listing.id]?.contains(selectedCategory) ?? false
+            }
+        }
     }
 
     // MARK: - Actions
 
     /// Fetch all listings
     func fetchAllListings() async {
-        Logger.database.info("🏠 AllListingsStore.fetchAllListings() starting...")
         isLoading = true
         errorMessage = nil
 
         do {
-            Logger.database.info("📡 Fetching listings and activities in parallel...")
-
             // Fetch both listings and activities in parallel
             async let listingsResult = listingRepository.fetchListings()
             async let activitiesResult = taskRepository.fetchActivities()
 
             let (allListings, allActivities) = try await (listingsResult, activitiesResult)
-
-            Logger.database.info("✅ Received \(allListings.count) listings and \(allActivities.count) activities")
 
             // Build category mapping from activities
             var categoryMapping: [String: Set<TaskCategory?>] = [:]
@@ -106,20 +101,12 @@ final class AllListingsStore {
 
             listings = allListings
             listingCategories = categoryMapping
-
-            Logger.database.info("🏁 AllListingsStore now has \(self.listings.count) listings")
-            if !listings.isEmpty {
-                Logger.database.info("📋 Listing IDs: \(self.listings.map { $0.id })")
-            }
         } catch {
-            Logger.database.error("❌ Failed to fetch all listings: \(error.localizedDescription)")
-            Logger.database.error("   Error type: \(type(of: error))")
-            Logger.database.error("   Error details: \(String(describing: error))")
+            Logger.database.error("Failed to fetch all listings: \(error.localizedDescription)")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"
         }
 
         isLoading = false
-        Logger.database.info("🏠 AllListingsStore.fetchAllListings() completed")
     }
 
     /// Refresh listings

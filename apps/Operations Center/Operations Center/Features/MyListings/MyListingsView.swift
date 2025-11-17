@@ -52,19 +52,8 @@ struct MyListingsView: View {
         .errorAlert($store.errorMessage)
     }
 
-    @ViewBuilder
     private var categoryFilterSection: some View {
-        Section {
-            Picker("Category", selection: $store.selectedCategory) {
-                Text("All").tag(nil as TaskCategory?)
-                Text("Admin").tag(TaskCategory.admin as TaskCategory?)
-                Text("Marketing").tag(TaskCategory.marketing as TaskCategory?)
-            }
-            .pickerStyle(.segmented)
-            .fixedSize(horizontal: false, vertical: true)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-        }
+        CategoryFilterPicker(selection: $store.selectedCategory)
     }
 
     @ViewBuilder
