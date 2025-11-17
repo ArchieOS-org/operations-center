@@ -95,23 +95,17 @@ final class AuthenticationStore {
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
             // Map Supabase errors to friendly signup errors
-            // Check structured error code for duplicate email
-            let errorCode = authError.errorCode
+            // Check message content for duplicate email
+            let message = authError.localizedDescription.lowercased()
+            let isDuplicateEmail = message.contains("already registered") ||
+                message.contains("already exists") ||
+                message.contains("user already exists") ||
+                message.contains("duplicate")
 
-            if errorCode == .emailExists || errorCode == .userAlreadyExists {
+            if isDuplicateEmail {
                 self.error = .emailAlreadyInUse
             } else {
-                // Defensive fallback: check message content if error code isn't available
-                let message = authError.localizedDescription.lowercased()
-                let isDuplicateEmail = message.contains("already registered") ||
-                    message.contains("already exists") ||
-                    message.contains("user already exists")
-
-                if isDuplicateEmail {
-                    self.error = .emailAlreadyInUse
-                } else {
-                    self.error = .supabaseError(authError)
-                }
+                self.error = .supabaseError(authError)
             }
         } catch {
             // Consistent error mapping with login
@@ -127,14 +121,15 @@ final class AuthenticationStore {
         error = nil
 
         do {
-            // Supabase handles OAuth flow:
-            // 1. Opens Safari for Google authentication
-            // 2. Google redirects to Supabase HTTPS endpoint (not custom scheme)
+            // OAuth flow requires explicit redirectTo for mobile apps:
+            // 1. Safari opens Google OAuth
+            // 2. Google redirects to Supabase HTTPS endpoint
             // 3. Supabase processes OAuth response
-            // 4. Supabase deep links back to app via operationscenter://
-            // NO redirectTo parameter - let Supabase use its default HTTPS callback
+            // 4. Supabase deep links to operationscenter://auth-callback
+            // 5. .onOpenURL handler exchanges callback for session
             try await supabaseClient.auth.signInWithOAuth(
-                provider: .google
+                provider: .google,
+                redirectTo: URL(string: "operationscenter://")!
             )
         } catch let authError as Auth.AuthError {
             self.error = .oauthFailed(authError)
@@ -170,17 +165,18 @@ final class AuthenticationStore {
             let session = try await supabaseClient.auth.session
             currentUser = session.user
             isAuthenticated = true
-        } catch {
-            // TEMPORARY DEBUG - Use NSLog for physical device
-            NSLog("🔍 Session restoration failed:")
-            NSLog("   Error: \(error)")
-            NSLog("   Type: \(type(of: error))")
-            if let authError = error as? Auth.AuthError {
-                NSLog("   Auth Error: \(authError)")
-                NSLog("   Localized: \(authError.localizedDescription)")
+            NSLog("✅ Session restored successfully")
+        } catch let authError as Auth.AuthError {
+            // Check if this is expected (no session) vs actual error
+            let message = authError.localizedDescription.lowercased()
+            if message.contains("sessionmissing") || message.contains("session missing") {
+                NSLog("ℹ️ No existing session - showing login screen")
+            } else {
+                NSLog("⚠️ Session restoration error: \(authError.localizedDescription)")
             }
-
-            // No valid session - user needs to sign in
+            isAuthenticated = false
+        } catch {
+            NSLog("⚠️ Unexpected session error: \(error.localizedDescription)")
             isAuthenticated = false
         }
     }
