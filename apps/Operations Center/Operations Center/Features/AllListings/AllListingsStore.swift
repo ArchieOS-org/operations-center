@@ -2,31 +2,39 @@
 //  AllListingsStore.swift
 //  Operations Center
 //
-//  All Listings screen store - shows all listings system-wide
-//  Per TASK_MANAGEMENT_SPEC.md lines 238-253
+//  All Listings store - manages all listings system-wide
 //
 
-import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
-import SwiftUI
+import Dependencies
 
-/// Store for All Listings screen - all active listings across the entire system
-/// Per spec: "All Listings - Displays all active listings in the system"
 @Observable
 @MainActor
 final class AllListingsStore {
     // MARK: - Properties
 
     /// All listings
-    private(set) var listings: [Listing] = []
+    private(set) var listings: [Listing] = [] {
+        didSet {
+            Logger.database.info("📦 AllListingsStore.listings updated: \(listings.count) items")
+        }
+    }
 
     /// Category filter selection (nil = "All")
-    var selectedCategory: TaskCategory?
+    var selectedCategory: TaskCategory? {
+        didSet {
+            Logger.database.info("🔄 Category filter changed to: \(String(describing: selectedCategory))")
+        }
+    }
 
     /// Mapping of listing ID to categories of all tasks for that listing
-    private var listingCategories: [String: Set<TaskCategory?>] = [:]
+    private var listingCategories: [String: Set<TaskCategory?>] = [:] {
+        didSet {
+            Logger.database.info("🗺️ Category mapping updated: \(listingCategories.count) listings mapped")
+        }
+    }
 
     /// Error message to display
     var errorMessage: String?
@@ -41,15 +49,21 @@ final class AllListingsStore {
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
-    // MARK: - Computed Properties
-
     /// Filtered listings based on selected category
     var filteredListings: [Listing] {
-        guard let selectedCategory else { return listings } // "All" selected
-
-        return listings.filter { listing in
-            listingCategories[listing.id]?.contains(selectedCategory) ?? false
+        let result: [Listing]
+        
+        if selectedCategory == nil {
+            result = listings
+            Logger.database.info("🔍 Filter: All (\(result.count) listings)")
+        } else {
+            result = listings.filter { listing in
+                listingCategories[listing.id]?.contains(selectedCategory) ?? false
+            }
+            Logger.database.info("🔍 Filter: \(String(describing: selectedCategory)) (\(result.count) listings)")
         }
+        
+        return result
     }
 
     // MARK: - Initialization
@@ -57,6 +71,7 @@ final class AllListingsStore {
     init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
         self.listingRepository = listingRepository
         self.taskRepository = taskRepository
+        Logger.database.info("🏗️ AllListingsStore initialized")
     }
 
     // MARK: - Actions
@@ -98,6 +113,8 @@ final class AllListingsStore {
             }
         } catch {
             Logger.database.error("❌ Failed to fetch all listings: \(error.localizedDescription)")
+            Logger.database.error("   Error type: \(type(of: error))")
+            Logger.database.error("   Error details: \(String(describing: error))")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"
         }
 
@@ -105,20 +122,8 @@ final class AllListingsStore {
         Logger.database.info("🏠 AllListingsStore.fetchAllListings() completed")
     }
 
-    /// Refresh data
+    /// Refresh listings
     func refresh() async {
         await fetchAllListings()
-    }
-
-    /// Delete a listing
-    func deleteListing(_ listing: Listing) async {
-        do {
-            try await listingRepository.deleteListing(listing.id, await authClient.currentUserId())
-
-            await refresh()
-        } catch {
-            Logger.database.error("Failed to delete listing: \(error.localizedDescription)")
-            errorMessage = "Failed to delete listing: \(error.localizedDescription)"
-        }
     }
 }
