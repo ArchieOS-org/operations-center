@@ -116,7 +116,8 @@ public struct TaskCard: View {
         }
     }
 
-    // MARK: - Helper Methods
+    /// Builds chip data representing the task's assigned agent and category.
+    /// - Returns: An array of `ChipData` containing an agent chip when the task has an assigned staff ID and a category chip when the task has a category.
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []
@@ -137,6 +138,9 @@ public struct TaskCard: View {
         return chips
     }
 
+    /// Maps a task category to the color used for that category in the UI.
+    /// - Parameter category: The task category to map.
+    /// - Returns: The `Color` associated with the provided task category.
     private func categoryColor(for category: TaskCategory) -> Color {
         switch category {
         case .admin: return Colors.categoryAdmin

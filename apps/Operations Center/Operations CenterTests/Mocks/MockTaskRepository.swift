@@ -49,6 +49,8 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
             }
     }
 
+    /// Fetches activities that are not deleted and pairs each with its corresponding listing.
+    /// - Returns: An array of `ActivityWithDetails` for activities whose `deletedAt` is nil and that have a matching `Listing`; activities without a matching listing are omitted.
     func fetchActivities() async throws -> [ActivityWithDetails] {
         return activities
             .filter { $0.deletedAt == nil }
@@ -150,6 +152,11 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         tasks[index] = updated
     }
 
+    /// Marks an activity as deleted without removing it from storage by recording deletion metadata.
+    /// - Parameters:
+    ///   - taskId: The identifier of the activity to delete.
+    ///   - deletedBy: Identifier of the user who performed the deletion.
+    /// - Throws: `MockRepositoryError.taskNotFound` if no activity with `taskId` exists.
     func deleteActivity(taskId: String, deletedBy: String) async throws {
         guard let index = activities.firstIndex(where: { $0.id == taskId }) else {
             throw MockRepositoryError.taskNotFound

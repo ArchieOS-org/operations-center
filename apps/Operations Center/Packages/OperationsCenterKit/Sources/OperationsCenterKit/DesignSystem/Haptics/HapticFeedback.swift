@@ -12,31 +12,45 @@ import SwiftUI
 
 extension View {
     /// Adds selection haptic feedback (for toggles, pickers, segmented controls)
-    /// Use when: User changes a value in a multi-option control
+    /// Attaches selection-style haptic feedback that fires when the provided trigger changes.
+    /// - Parameters:
+    ///   - trigger: A value whose change (compared by equality) causes the selection haptic to be emitted.
+    /// - Returns: A view that emits a selection haptic each time `trigger` changes.
     public func selectionFeedback<T: Equatable>(trigger: T) -> some View {
         self.sensoryFeedback(.selection, trigger: trigger)
     }
 
     /// Adds tap haptic feedback (for buttons, cards, standard interactions)
-    /// Use when: User taps a button or interactive element
+    /// Adds a medium-weight impact haptic that fires when the provided trigger value changes.
+    /// - Parameter trigger: A value whose change will cause the medium impact haptic to fire.
+    /// - Returns: A view that emits a medium impact haptic when `trigger` changes.
     public func tapFeedback(trigger: some Equatable) -> some View {
         self.sensoryFeedback(.impact(weight: .medium), trigger: trigger)
     }
 
     /// Adds light haptic feedback (for subtle interactions)
-    /// Use when: Card expansion, minor state changes, incremental actions
+    /// Adds a light-impact haptic feedback to the view when the provided trigger changes.
+    /// - Parameters:
+    ///   - trigger: The value whose change causes a light-impact haptic to be emitted.
+    /// - Returns: A view that emits a light-impact haptic when `trigger` changes.
     public func lightFeedback(trigger: some Equatable) -> some View {
         self.sensoryFeedback(.impact(weight: .light), trigger: trigger)
     }
 
     /// Adds heavy haptic feedback (for destructive or important actions)
-    /// Use when: Delete confirmation, major state transitions, errors
+    /// Attaches a heavy impact haptic feedback to the view that fires when the provided trigger changes.
+    /// - Parameter trigger: A value whose changes (compared by `Equatable`) cause the heavy haptic to be emitted.
+    /// - Returns: A view that emits a heavy impact haptic when `trigger` changes.
     public func heavyFeedback(trigger: some Equatable) -> some View {
         self.sensoryFeedback(.impact(weight: .heavy), trigger: trigger)
     }
 
     /// Adds result-based haptic feedback (success or error)
-    /// Use when: Operation completes with success/failure outcome
+    /// Adds result-based haptic feedback driven by changes to `trigger`.
+    /// - Parameters:
+    ///   - trigger: The value to observe; changes to this value cause feedback to be evaluated.
+    ///   - isSuccess: A closure that receives the updated `trigger` value and returns `true` when the update represents a successful result.
+    /// - Returns: A view that emits a `.success` haptic when `isSuccess` returns `true` for the updated trigger value, or `.error` otherwise.
     public func resultFeedback<T>(
         trigger: T,
         isSuccess: @escaping (T) -> Bool
@@ -47,7 +61,12 @@ extension View {
     }
 
     /// Adds conditional haptic feedback
-    /// Use when: Haptic should only fire under certain conditions
+    /// Attaches conditional haptic feedback to the view that fires when a change in `trigger` satisfies the given condition.
+    /// - Parameters:
+    ///   - trigger: The value to observe for changes; the closure receives the previous and new values when a change occurs.
+    ///   - shouldFire: A closure that receives the previous and new `trigger` values and returns `true` when feedback should be emitted.
+    ///   - feedback: The `SensoryFeedback` to emit when the condition is met. Defaults to a medium impact.
+    /// - Returns: A view that emits the specified haptic feedback when `shouldFire` returns `true` for a change in `trigger`.
     public func conditionalFeedback<T: Equatable>(
         trigger: T,
         shouldFire: @escaping (T, T) -> Bool,
@@ -66,6 +85,8 @@ public struct HapticTrigger: Equatable {
 
     public init() {}
 
+    /// Create a new `HapticTrigger` to programmatically fire haptic feedback.
+    /// - Returns: A fresh `HapticTrigger` instance that can be used to trigger haptic feedback.
     public static func fire() -> HapticTrigger {
         HapticTrigger()
     }

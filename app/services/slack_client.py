@@ -23,14 +23,15 @@ async def send_task_acknowledgment(
     channel: str,
     thread_ts: Optional[str] = None
 ) -> bool:
-    """Send task detection acknowledgment to Slack.
-
-    Args:
-        channel: Slack channel ID (e.g., "C0XXXXXX")
-        thread_ts: Optional thread timestamp for threaded reply
-
+    """
+    Post an acknowledgment message for a detected task to a Slack channel.
+    
+    Parameters:
+        channel (str): Slack channel ID to post the message to (e.g., "C0XXXXXX").
+        thread_ts (Optional[str]): Optional thread timestamp to post the message as a threaded reply.
+    
     Returns:
-        True if successful, False otherwise
+        True if the message was posted successfully, False otherwise.
     """
     try:
         response = slack_client.chat_postMessage(

@@ -127,7 +127,14 @@ public struct ActivityCard: View {
         }
     }
 
-    // MARK: - Helper Methods
+    /// Builds the header chips for the activity card.
+    /// 
+    /// The resulting array may include:
+    /// - an agent chip when the task has an assigned staff ID,
+    /// - a listing type chip when the listing's type is present,
+    /// - a category chip when the task has a category,
+    /// - a visibility chip when the task's visibility is restricted.
+    /// - Returns: An array of `ChipData` representing the chips to display in the card header.
 
     private func buildChips() -> [ChipData] {
         var chips: [ChipData] = []
@@ -164,6 +171,9 @@ public struct ActivityCard: View {
         return chips
     }
 
+    /// Maps a task category to the color used for its UI representation (chips, labels).
+    /// - Parameter category: The task category to map.
+    /// - Returns: The `Color` used to represent the provided category in the UI.
     private func categoryColor(for category: TaskCategory) -> Color {
         switch category {
         case .admin: return Colors.categoryAdmin

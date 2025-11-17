@@ -67,7 +67,9 @@ final class TaskListStore {
         }
     }
 
-    /// Delete a activity (soft delete)
+    /// Deletes the specified activity and refreshes the store's activity list.
+    /// Attempts to delete the provided activity; on success triggers a refresh of the store's activities. On failure, sets the store's `errorMessage` with a descriptive message.
+    /// - Parameter task: The activity to delete.
     func deleteTask(_ task: Activity) async {
         do {
             // Get current user ID for audit trail
@@ -85,7 +87,7 @@ final class TaskListStore {
         }
     }
 
-    /// Refresh tasks (for pull-to-refresh)
+    /// Refreshes the store's activities by fetching the latest tasks from the repository and updating observable state.
     func refresh() async {
         await fetchTasks()
     }

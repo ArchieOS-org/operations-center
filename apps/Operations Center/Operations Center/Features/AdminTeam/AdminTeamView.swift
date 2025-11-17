@@ -96,6 +96,9 @@ struct AdminTeamView: View {
         )
     }
 
+    /// Builds a bottom-aligned context menu for the task or property activity matching the provided identifier.
+    /// - Parameter taskId: The identifier of the task to show actions for.
+    /// - Returns: A view containing a bottom context menu with actions for the matching task or activity, or an empty view if no matching item is found.
     @ViewBuilder
     private func contextMenu(for taskId: String) -> some View {
         // Find the task or activity
@@ -112,7 +115,9 @@ struct AdminTeamView: View {
         }
     }
 
-    // MARK: - Helper Methods
+    /// Builds the context menu actions for a standalone admin task.
+    /// - Parameter task: The `AgentTask` to produce actions for.
+    /// - Returns: An array of `DSContextAction` providing actions to claim or delete the given task; invoking these actions performs the corresponding asynchronous store operations.
 
     private func buildTaskActions(for task: AgentTask) -> [DSContextAction] {
         DSContextAction.standardTaskActions(
@@ -125,6 +130,10 @@ struct AdminTeamView: View {
         )
     }
 
+    /// Creates the context menu actions for a property-linked admin activity.
+    /// - Parameters:
+    ///   - activity: The activity to build actions for; actions will operate on this activity.
+    /// - Returns: An array of `DSContextAction` including claim and delete actions for the provided activity.
     private func buildActivityActions(for activity: Activity) -> [DSContextAction] {
         DSContextAction.standardTaskActions(
             onClaim: {

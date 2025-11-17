@@ -96,6 +96,10 @@ struct MarketingTeamView: View {
         )
     }
 
+    /// Presents a bottom-aligned context menu for the task or activity matching `taskId`.
+    /// - Parameters:
+    ///   - taskId: The identifier of the task or activity to display actions for.
+    /// - Returns: A view containing a context menu with actions for the matching task or activity, or an empty view if no match is found.
     @ViewBuilder
     private func contextMenu(for taskId: String) -> some View {
         // Find the task or activity
@@ -112,7 +116,9 @@ struct MarketingTeamView: View {
         }
     }
 
-    // MARK: - Helper Methods
+    /// Creates the context menu actions for the given marketing task.
+    /// - Parameter task: The `AgentTask` to create actions for.
+    /// - Returns: An array of `DSContextAction` containing claim and delete actions for the provided task.
 
     private func buildTaskActions(for task: AgentTask) -> [DSContextAction] {
         DSContextAction.standardTaskActions(
@@ -125,6 +131,8 @@ struct MarketingTeamView: View {
         )
     }
 
+    /// Builds the context menu actions for a property marketing activity.
+    /// - Returns: An array of `DSContextAction` configured with handlers that claim or delete the provided activity.
     private func buildActivityActions(for activity: Activity) -> [DSContextAction] {
         DSContextAction.standardTaskActions(
             onClaim: {

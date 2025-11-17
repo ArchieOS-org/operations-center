@@ -122,12 +122,16 @@ class ChatRequest(BaseModel):
 @app.post("/webhooks/slack")
 async def slack_webhook(payload: SlackWebhookPayload, request: Request):
     """
-    Slack Events API webhook with smart message queueing.
-
-    Receives messages from Slack and enqueues them for batching.
-    Rapid consecutive messages from the same user/channel are batched together.
-
-    Returns 200 immediately to avoid Slack's 3-second timeout.
+    Handle Slack Events API webhooks by enqueuing user messages for batched processing.
+    
+    Processes URL verification challenges by returning the provided challenge. For event callbacks, ignores bot-generated messages, extracts user/channel/text, and enqueues the event for batch processing; responds immediately to Slack to avoid retries. If enqueuing fails, responds with an error indicator while still returning success to Slack. Unknown event types yield an error response.
+    
+    Returns:
+        dict: JSON payload for Slack:
+            - On URL verification: {"challenge": <str>}
+            - On successful handling: {"ok": True}
+            - On enqueue failure: {"ok": True, "error": "enqueue_failed"}
+            - On unknown event type: {"ok": False, "error": "unknown_event_type"}
     """
     logger.info(f"📨 Slack webhook received: type={payload.type}")
 

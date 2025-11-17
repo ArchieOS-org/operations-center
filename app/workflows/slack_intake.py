@@ -33,17 +33,18 @@ async def process_batched_slack_messages(
     channel_id: str
 ) -> dict:
     """
-    Main entry point for processing batched Slack messages.
-
-    Called by the message queue timer after accumulation timeout.
-
-    Args:
-        messages: List of queued messages from same user/channel
-        user_id: Slack user ID
-        channel_id: Slack channel ID
-
+    Process a batch of Slack messages: validate, classify, persist the classification, create related entities, and send a Slack acknowledgment when appropriate.
+    
+    Parameters:
+        messages (List[QueuedMessage]): Queued messages from the same Slack user/channel to process as a single batch.
+        user_id (str): Slack user ID associated with the messages.
+        channel_id (str): Slack channel ID where the messages were posted.
+    
     Returns:
-        Dict with processing status
+        dict: A summary of processing outcome. Typical shapes:
+            - {"status": "success", "message_id": "<ulid>", "entity_result": {...}}
+            - {"status": "skipped", "reason": "<validation_reason>"}
+            - {"status": "error", "reason": "<error_message>"}
     """
     logger.info(
         f"Processing {len(messages)} batched message(s) from "
@@ -116,18 +117,16 @@ async def validate_messages(
     user_id: str
 ) -> bool:
     """
-    Validate messages before processing.
-
-    Checks:
-    - Messages exist
-    - User is not a bot
-
-    Args:
-        messages: List of queued messages
-        user_id: Slack user ID
-
+    Validate a batch of queued Slack messages for processing.
+    
+    Performs basic checks to ensure there are messages and that the sender is not a bot (Slack bot IDs start with 'B').
+    
+    Parameters:
+        messages (List[QueuedMessage]): The queued Slack messages to validate.
+        user_id (str): Slack user ID of the message sender.
+    
     Returns:
-        True if validation passes, False otherwise
+        True if the batch should be processed, False otherwise.
     """
     if not messages:
         logger.warning("No messages to validate")
@@ -146,15 +145,13 @@ async def validate_messages(
 
 async def classify_batched_messages(batched_text: str) -> Optional[ClassificationV1]:
     """
-    Classify batched message text using the MessageClassifier agent.
-
-    Reuses existing classification logic - does NOT modify the prompt.
-
-    Args:
-        batched_text: Combined message text
-
+    Classify combined Slack message text and return a ClassificationV1 describing the determined type and confidence.
+    
+    Parameters:
+        batched_text (str): Combined text from a batch of Slack messages to classify.
+    
     Returns:
-        ClassificationV1 object or None on error
+        ClassificationV1 or None: A ClassificationV1 instance containing classification details (e.g., message_type, confidence) on success, `None` if classification failed.
     """
     try:
         classifier = get_agent("classifier")
@@ -192,19 +189,17 @@ async def store_classification(
     batched_text: str
 ) -> Optional[str]:
     """
-    Store classification in slack_messages table.
-
-    CRITICAL: Column names MUST match database EXACTLY (snake_case).
-
-    Args:
-        messages: Original queued messages
-        user_id: Slack user ID
-        channel_id: Slack channel ID
-        classification: Classification result
-        batched_text: Combined message text
-
+    Persist a classification and associated batch metadata to the slack_messages table and return the created message ULID.
+    
+    Parameters:
+        messages (List[QueuedMessage]): Original queued Slack messages that comprise the batch.
+        user_id (str): Slack user ID of the message sender.
+        channel_id (str): Slack channel ID where the messages were posted.
+        classification (ClassificationV1): Classification result to store (serialized as JSON).
+        batched_text (str): Combined text of the batched messages to store as message_text.
+    
     Returns:
-        message_id (ULID string) or None on error
+        Optional[str]: The generated message_id (ULID string) if the database insert succeeded, or `None` on failure.
     """
     try:
         client = get_supabase()

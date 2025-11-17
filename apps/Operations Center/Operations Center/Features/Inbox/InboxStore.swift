@@ -49,7 +49,9 @@ final class InboxStore {
         self.listings = initialListings
     }
 
-    // MARK: - Public Methods
+    /// Fetches agent tasks, activity details, and unacknowledged listings, then updates the store's task and listing state.
+    /// 
+    /// Concurrently retrieves agent tasks, activity details, and the current user's unacknowledged listing IDs, filters activities to only those tied to unacknowledged listings, groups activities by listing, and for each listing fetches notes and realtor details to build `ListingWithDetails`. Updates `tasks`, `listings`, `isLoading`, and `errorMessage` to reflect the operation's outcome. Sets `errorMessage` to the error's localized description if any part fails.
 
     func fetchTasks() async {
         isLoading = true
@@ -156,7 +158,9 @@ final class InboxStore {
         expandedTaskId == taskId
     }
 
-    // MARK: - Agent Task Actions
+    /// Claims the specified agent task on behalf of the current user and refreshes the inbox.
+    /// - Parameter task: The `AgentTask` to claim. On success the store's task list is refreshed.
+    /// - Note: If claiming fails, `errorMessage` is set to the error's localized description.
 
     func claimTask(_ task: AgentTask) async {
         errorMessage = nil
@@ -171,6 +175,9 @@ final class InboxStore {
         }
     }
 
+    /// Deletes the specified agent task for the current user and refreshes the inbox data.
+    /// - Parameter task: The agent task to delete; deletion is performed on behalf of the current authenticated user.
+    /// - Note: On failure, `errorMessage` is set to the error's `localizedDescription`.
     func deleteTask(_ task: AgentTask) async {
         errorMessage = nil
 
@@ -184,7 +191,10 @@ final class InboxStore {
         }
     }
 
-    // MARK: - Activity Actions
+    /// Claims the specified activity for the current user and refreshes the inbox listing.
+    /// 
+    /// On failure, sets `errorMessage` to the error's localized description and leaves the store state unchanged aside from the error.
+    /// - Parameter activity: The activity to claim.
 
     func claimActivity(_ activity: Activity) async {
         errorMessage = nil
@@ -199,6 +209,9 @@ final class InboxStore {
         }
     }
 
+    /// Deletes the specified activity on behalf of the current user and refreshes the inbox data.
+    /// Clears any existing error message before attempting deletion; if deletion fails, sets `errorMessage` to the error's localized description.
+    /// - Parameter activity: The activity to delete.
     func deleteActivity(_ activity: Activity) async {
         errorMessage = nil
 
@@ -212,7 +225,11 @@ final class InboxStore {
         }
     }
 
-    // MARK: - Note Actions
+    /// Adds a new note to the specified listing and refreshes inbox data.
+    /// - Parameters:
+    ///   - listingId: The identifier of the listing to add the note to.
+    ///   - content: The text content of the note.
+    /// - Note: On failure, sets `errorMessage` to the error's localized description.
 
     func addNote(to listingId: String, content: String) async {
         errorMessage = nil
@@ -227,7 +244,10 @@ final class InboxStore {
         }
     }
 
-    // MARK: - Listing Actions
+    /// Acknowledges the specified listing for the current user and refreshes the store state.
+    /// - Parameters:
+    ///   - listingId: The identifier of the listing to acknowledge.
+    /// - Note: On failure, `errorMessage` is set to the error's localized description.
 
     func acknowledgeListing(_ listingId: String) async {
         errorMessage = nil

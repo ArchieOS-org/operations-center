@@ -40,7 +40,11 @@ public struct DSLoadingState: View {
 // MARK: - View Extension
 
 public extension View {
-    /// Add a loading overlay that appears when isLoading is true
+    /// Displays a centered loading overlay with an optional message over the view when enabled.
+    /// - Parameters:
+    ///   - isLoading: Whether the loading overlay is shown.
+    ///   - message: An optional message displayed beneath the spinner.
+    /// - Returns: A view that overlays the original content with `DSLoadingState(message:)` if `isLoading` is true, otherwise the original content.
     func loadingOverlay(_ isLoading: Bool, message: String? = nil) -> some View {
         overlay {
             if isLoading {

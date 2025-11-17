@@ -87,7 +87,8 @@ final class AllTasksStore {
         expandedTaskId = expandedTaskId == taskId ? nil : taskId
     }
 
-    /// Claim a agent task
+    /// Claims the specified agent task for the current user and refreshes the store.
+    /// - Parameter task: The agent task to claim; on success the store reloads its tasks and activities, and on failure the store's `errorMessage` is updated.
     func claimTask(_ task: AgentTask) async {
         do {
             _ = try await repository.claimTask(task.id, authClient.currentUserId())
@@ -99,7 +100,10 @@ final class AllTasksStore {
         }
     }
 
-    /// Claim a activity
+    /// Claims the given activity on behalf of the current user and refreshes the store.
+    /// 
+    /// On success the store's data is refreshed; on failure the store's `errorMessage` is updated with the failure description.
+    /// - Parameter task: The activity to claim.
     func claimActivity(_ task: Activity) async {
         do {
             _ = try await repository.claimActivity(task.id, authClient.currentUserId())
@@ -111,7 +115,9 @@ final class AllTasksStore {
         }
     }
 
-    /// Delete a agent task
+    /// Deletes the specified agent task from the repository and refreshes the store state.
+    /// On failure, sets `errorMessage` with a user-visible description of the error.
+    /// - Parameter task: The agent task to delete.
     func deleteTask(_ task: AgentTask) async {
         do {
             try await repository.deleteTask(task.id, authClient.currentUserId())
@@ -123,7 +129,10 @@ final class AllTasksStore {
         }
     }
 
-    /// Delete a activity
+    /// Deletes the provided activity from the repository and refreshes the store.
+    /// On failure, updates `errorMessage` with the failure reason.
+    /// - Parameters:
+    ///   - task: The `Activity` to delete (identified by its `id`).
     func deleteActivity(_ task: Activity) async {
         do {
             try await repository.deleteActivity(task.id, authClient.currentUserId())
