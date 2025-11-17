@@ -14,25 +14,30 @@ import SwiftUI
 ///     title: "No listings",
 ///     message: "Listings will appear here when they're added"
 /// )
+///
+/// // With action
+/// DSEmptyState(
+///     icon: "tray",
+///     title: "No tasks",
+///     message: "New tasks will appear here",
+///     action: (title: "Create Task", handler: { createTask() })
+/// )
 /// ```
 public struct DSEmptyState: View {
     private let icon: String
     private let title: String
     private let message: String
-    private let action: (() -> Void)?
-    private let actionTitle: String?
+    private let action: (title: String, handler: () -> Void)?
 
     public init(
         icon: String,
         title: String,
         message: String,
-        actionTitle: String? = nil,
-        action: (() -> Void)? = nil
+        action: (title: String, handler: () -> Void)? = nil
     ) {
         self.icon = icon
         self.title = title
         self.message = message
-        self.actionTitle = actionTitle
         self.action = action
     }
 
@@ -41,6 +46,7 @@ public struct DSEmptyState: View {
             Image(systemName: icon)
                 .font(.system(size: IconSizes.emptyState))
                 .foregroundStyle(.secondary)
+                .accessibilityLabel("Empty state")
 
             VStack(spacing: Spacing.xs) {
                 Text(title)
@@ -53,8 +59,8 @@ public struct DSEmptyState: View {
                     .multilineTextAlignment(.center)
             }
 
-            if let actionTitle, let action {
-                Button(actionTitle, action: action)
+            if let action {
+                Button(action.title, action: action.handler)
                     .buttonStyle(.bordered)
                     .padding(.top, Spacing.sm)
             }
@@ -81,8 +87,7 @@ public struct DSEmptyState: View {
             icon: "tray",
             title: "No tasks",
             message: "New tasks will appear here",
-            actionTitle: "Create Task",
-            action: { print("Create task") }
+            action: (title: "Create Task", handler: { print("Create task") })
         )
     }
     .listStyle(.plain)

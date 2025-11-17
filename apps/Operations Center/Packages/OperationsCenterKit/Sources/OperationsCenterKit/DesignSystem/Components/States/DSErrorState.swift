@@ -35,6 +35,7 @@ public struct DSErrorState: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: IconSizes.emptyState))
                 .foregroundStyle(Colors.actionDestructive)
+                .accessibilityLabel("Error")
 
             VStack(spacing: Spacing.xs) {
                 Text(title)
