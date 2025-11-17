@@ -11,7 +11,7 @@ Processes batched messages from the queue:
 No orchestrator, no routing - just straight processing.
 """
 
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime, timezone
 import logging
 from ulid import ULID
@@ -255,7 +255,7 @@ async def store_classification(
             "received_at": datetime.now(timezone.utc).isoformat(),
             "processing_status": "pending",  # Will update later
             "metadata": {"batch_size": len(messages), "all_timestamps": all_timestamps},
-        }
+        }  # type: dict[str, Any]
 
         result = client.table("slack_messages").insert(message_data).execute()
 
