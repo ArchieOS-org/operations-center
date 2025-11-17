@@ -104,7 +104,7 @@ extension ListingRepositoryClient {
             let listings: [Listing] = try await supabase
                 .from("listings")
                 .select()
-                .not("completed_at", operator: .is, value: "null")
+                .not("completed_at", operator: .is, value: nil)
                 .is("deleted_at", value: nil)
                 .order("completed_at", ascending: false)
                 .execute()

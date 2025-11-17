@@ -79,7 +79,7 @@ public struct NotesSection: View {
                     .onChange(of: lastNoteIdToScroll) { id in
                         guard let id else { return }
                         // Defer to next runloop so views are laid out
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             withAnimation {
                                 proxy.scrollTo(id, anchor: .bottom)
                             }
