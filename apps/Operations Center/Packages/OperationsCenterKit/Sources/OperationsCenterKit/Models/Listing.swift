@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftUI
 
 // MARK: - ListingStatus
 
@@ -16,15 +15,13 @@ public enum ListingStatus: String, Codable, Sendable {
     case pending = "PENDING"
     case completed = "COMPLETED"
 
-    /// Color associated with this status
-    public var color: Color {
+    /// Semantic color name - maps to design token in view layer
+    /// Use `Colors.semantic(status.semanticColorName)` to resolve
+    public var semanticColorName: String {
         switch self {
-        case .active:
-            return .green
-        case .pending:
-            return .orange
-        case .completed:
-            return .blue
+        case .active: return "success"
+        case .pending: return "warning"
+        case .completed: return "info"
         }
     }
 

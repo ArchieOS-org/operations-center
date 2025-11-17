@@ -267,4 +267,25 @@ public enum Colors {
         return Color(nsColor: .systemGray).opacity(0.1)
         #endif
     }()
+
+    // MARK: - Semantic Color Resolution
+
+    /// Resolves a semantic color name to an actual Color token
+    /// Used by models that return semantic names (e.g., ListingStatus.semanticColorName)
+    ///
+    /// Example:
+    /// ```swift
+    /// let status: ListingStatus = .active
+    /// let color = Colors.semantic(status.semanticColorName)  // Returns .statusCompleted (green)
+    /// ```
+    public static func semantic(_ name: String) -> Color {
+        switch name {
+        case "success": return statusCompleted     // Green - active, successful states
+        case "warning": return statusClaimed       // Orange - pending, attention needed
+        case "info": return statusInProgress       // Blue - informational, in-progress
+        case "error": return statusFailed          // Red - errors, failures
+        case "neutral": return statusCancelled     // Gray - cancelled, neutral
+        default: return Color.gray                 // Fallback
+        }
+    }
 }
