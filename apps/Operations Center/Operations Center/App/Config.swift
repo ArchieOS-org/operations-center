@@ -44,42 +44,41 @@ enum AppConfig {
 
     static var supabaseURL: URL {
         get throws {
-            // Try environment variable first (for development)
+            // Primary: Info.plist (works on simulator AND physical devices)
+            // Values are populated from xcconfig at build time
+            if let urlString = Bundle.main.infoDictionary?["SUPABASE_URL"] as? String,
+               !urlString.isEmpty,
+               let url = URL(string: urlString) {
+                return url
+            }
+
+            // Fallback: Environment variable override (simulator testing only)
             if let urlString = ProcessInfo.processInfo.environment["SUPABASE_URL"],
                !urlString.isEmpty,
                let url = URL(string: urlString) {
                 return url
             }
 
-            // Fall back to Info.plist (for production builds)
-            guard let urlString = Bundle.main.infoDictionary?["SUPABASE_URL"] as? String,
-                  !urlString.isEmpty else {
-                throw ConfigError.missingConfiguration("SUPABASE_URL")
-            }
-
-            guard let url = URL(string: urlString) else {
-                throw ConfigError.invalidURL(urlString)
-            }
-
-            return url
+            throw ConfigError.missingConfiguration("SUPABASE_URL")
         }
     }
 
     static var supabaseAnonKey: String {
         get throws {
-            // Try environment variable first (for development)
+            // Primary: Info.plist (works on simulator AND physical devices)
+            // Values are populated from xcconfig at build time
+            if let key = Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String,
+               !key.isEmpty {
+                return key
+            }
+
+            // Fallback: Environment variable override (simulator testing only)
             if let key = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"],
                !key.isEmpty {
                 return key
             }
 
-            // Fall back to Info.plist (for production builds)
-            guard let key = Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String,
-                  !key.isEmpty else {
-                throw ConfigError.missingConfiguration("SUPABASE_ANON_KEY")
-            }
-
-            return key
+            throw ConfigError.missingConfiguration("SUPABASE_ANON_KEY")
         }
     }
 
@@ -87,24 +86,22 @@ enum AppConfig {
 
     static var fastAPIURL: URL {
         get throws {
-            // Try environment variable first
+            // Primary: Info.plist (works on simulator AND physical devices)
+            // Values are populated from xcconfig at build time
+            if let urlString = Bundle.main.infoDictionary?["FASTAPI_URL"] as? String,
+               !urlString.isEmpty,
+               let url = URL(string: urlString) {
+                return url
+            }
+
+            // Fallback: Environment variable override (simulator testing only)
             if let urlString = ProcessInfo.processInfo.environment["FASTAPI_URL"],
                !urlString.isEmpty,
                let url = URL(string: urlString) {
                 return url
             }
 
-            // Fall back to Info.plist
-            guard let urlString = Bundle.main.infoDictionary?["FASTAPI_URL"] as? String,
-                  !urlString.isEmpty else {
-                throw ConfigError.missingConfiguration("FASTAPI_URL")
-            }
-
-            guard let url = URL(string: urlString) else {
-                throw ConfigError.invalidURL(urlString)
-            }
-
-            return url
+            throw ConfigError.missingConfiguration("FASTAPI_URL")
         }
     }
 
