@@ -109,6 +109,11 @@ public struct ListingCard: View {
         return chips
     }
 
+    /// Renders a tappable row representing an activity task.
+    /// 
+    /// The row shows the task's status, name, and an optional category badge; tapping the row invokes the configured `onTaskTap` action.
+    /// - Parameter task: The `Activity` to display in the row.
+    /// - Returns: A view representing the task row that triggers `onTaskTap` when tapped.
     @ViewBuilder
     private func listingTaskRow(for task: Activity) -> some View {
         Button {
@@ -156,6 +161,11 @@ public struct ListingCard: View {
         }
     }
 
+    /// Constructs an accessibility label that describes a task for assistive technologies.
+    /// 
+    /// The returned label contains the task's name, its status display name, and either the task category's raw value or the literal "Uncategorized" when no category is set.
+    /// - Parameter task: The activity to describe.
+    /// - Returns: A single `String` combining the task name, status display name, and category (or "Uncategorized").
     private func activityAccessibilityLabel(for task: Activity) -> String {
         let statusName = task.status.displayName
         if let category = task.taskCategory {

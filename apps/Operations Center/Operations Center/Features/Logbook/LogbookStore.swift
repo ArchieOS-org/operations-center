@@ -40,7 +40,9 @@ final class LogbookStore {
     // MARK: - Data Fetching
 
     /// Fetch completed items and deleted items from repositories in parallel
-    /// Per Context7: Use async let for parallel fetching
+    /// Fetches archived data for the logbook and updates the store's state.
+    /// 
+    /// Performs concurrent fetches for completed listings, completed tasks, deleted tasks, and deleted activities, then assigns the results to `completedListings`, `completedTasks`, `deletedTasks`, and `deletedActivities`. Sets `isLoading` to `true` for the duration of the operation and clears `errorMessage` before fetching; on failure `errorMessage` is set with a descriptive message.
     func fetchCompletedItems() async {
         isLoading = true
         defer { isLoading = false }

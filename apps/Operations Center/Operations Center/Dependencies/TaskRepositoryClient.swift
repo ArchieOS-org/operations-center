@@ -103,7 +103,9 @@ private struct ActivityResponse: Decodable {
 // MARK: - Helper Functions
 
 /// Map an ActivityResponse to ActivityWithDetails
-/// Shared by fetchActivities and fetchActivitiesByRealtor
+/// Creates an ActivityWithDetails from a decoded ActivityResponse, requiring a non-nil listing.
+/// - Parameter row: The decoded database row representing an activity and its nested listing.
+/// - Returns: An `ActivityWithDetails` built from `row` if `row.listing` is present, `nil` otherwise.
 nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> ActivityWithDetails? {
     guard let listing = row.listing else {
         // Logging removed to avoid introducing MainActor isolation in this pure mapping function

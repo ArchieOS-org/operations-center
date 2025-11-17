@@ -12,13 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 def batch_messages_for_classification(messages: List[QueuedMessage]) -> str:
-    """Combine multiple messages into single classification input.
-
-    Args:
-        messages: List of queued messages from same user/channel
-
+    """
+    Create a single classification input by batching consecutive messages from the same user/channel.
+    
+    If `messages` is empty, returns an empty string. If `messages` contains exactly one item, returns that message's text unchanged. If `messages` contains multiple items, returns a combined string starting with a header indicating the messages should be classified as a single unit, followed by each message on its own line in the form "Message i [timestamp]: text".
+    
+    Parameters:
+        messages (List[QueuedMessage]): Ordered list of queued messages (expected to be from the same user/channel and in chronological order).
+    
     Returns:
-        Combined text for classification, with context about message sequence
+        str: The combined classification input: empty string for no messages, the single message text for one message, or a header plus enumerated messages with their Slack timestamps for multiple messages.
     """
     if not messages:
         return ""
@@ -43,25 +46,27 @@ def batch_messages_for_classification(messages: List[QueuedMessage]) -> str:
 
 
 def extract_all_message_timestamps(messages: List[QueuedMessage]) -> List[str]:
-    """Extract all slack timestamps from batched messages.
-
-    Args:
-        messages: List of queued messages
-
+    """
+    Return a list of Slack message timestamps extracted from the input messages.
+    
+    Parameters:
+        messages (List[QueuedMessage]): Queued messages to extract timestamps from.
+    
     Returns:
-        List of slack_ts values for database linkage
+        List[str]: The `slack_ts` value from each message, in input order.
     """
     return [msg.slack_ts for msg in messages]
 
 
 def get_primary_thread_ts(messages: List[QueuedMessage]) -> str | None:
-    """Get thread timestamp if any message is in a thread.
-
-    Args:
-        messages: List of queued messages
-
+    """
+    Return the thread timestamp from the first message that belongs to a thread.
+    
+    Parameters:
+        messages (List[QueuedMessage]): Messages to scan for a thread timestamp.
+    
     Returns:
-        thread_ts from first threaded message, or None
+        str | None: The `thread_ts` of the first message with a thread timestamp, or `None` if no threaded message is found.
     """
     for msg in messages:
         if msg.thread_ts:

@@ -177,18 +177,15 @@ async def create_listing_record(
     message_text: str
 ) -> Optional[str]:
     """
-    Create a listing record from GROUP classification.
-
-    Context7 Pattern: Supabase insert with .execute()
-    Source: /supabase/supabase-py insert examples
-
-    Args:
-        classification: ClassificationV1 object
-        realtor_id: Resolved realtor UUID
-        message_text: Original message for reference
-
+    Create a listing record in the database from a GROUP classification.
+    
+    Parameters:
+        classification (ClassificationV1): Classification data containing listing details and due date.
+        realtor_id (Optional[str]): Resolved realtor UUID to set as assignee/agent; may be None to leave unassigned.
+        message_text (str): Original message text for reference (stored externally or used for context).
+    
     Returns:
-        listing_id (UUID string) or None on error
+        Optional[str]: The created listing's UUID string if successful, `None` on failure.
     """
     try:
         client = get_supabase()
@@ -229,21 +226,18 @@ async def create_activity_record(
     visibility_group: str
 ) -> Optional[str]:
     """
-    Create an activity (listing task) record.
-
-    CRITICAL: Column names MUST match database EXACTLY (snake_case).
-    Context7 Pattern: Supabase insert with .execute()
-
-    Args:
-        listing_id: Parent listing UUID
-        realtor_id: Assigned realtor UUID (nullable)
-        name: Activity name
-        priority: Priority value (0-100+, higher = more urgent)
-        task_category: ADMIN | MARKETING | NULL
-        visibility_group: BOTH | AGENT | MARKETING
-
+    Create a listing activity (task) record and return its new task_id.
+    
+    Parameters:
+        listing_id (str): UUID of the parent listing.
+        realtor_id (Optional[str]): UUID of the assigned realtor, or None if unassigned.
+        name (str): Human-readable activity name.
+        priority (int): Priority value; larger numbers indicate higher urgency.
+        task_category (str): Task category such as "ADMIN" or "MARKETING" (or None).
+        visibility_group (str): Visibility scope, e.g. "BOTH", "AGENT", or "MARKETING".
+    
     Returns:
-        activity task_id (UUID string) or None on error
+        Optional[str]: The created activity's `task_id` (UUID string) if successful, `None` on failure.
     """
     try:
         client = get_supabase()
@@ -287,18 +281,15 @@ async def create_listing_with_activities(
     message_text: str
 ) -> Optional[str]:
     """
-    Create listing record + auto-attach activities based on group_key.
-
-    This replaces create_listing_record for GROUP message types,
-    adding automatic activity creation based on listing type.
-
-    Args:
-        classification: ClassificationV1 object
-        realtor_id: Resolved realtor UUID
-        message_text: Original message for reference
-
+    Create a listing and attach predefined activities based on the classification's group_key.
+    
+    Parameters:
+    	classification (ClassificationV1): Classification data describing the listing and its group_key.
+    	realtor_id (Optional[str]): Resolved realtor UUID to assign to the listing and activities, or None if unknown.
+    	message_text (str): Original message text for reference and logging.
+    
     Returns:
-        listing_id (UUID string) or None on error
+    	listing_id (str | None): UUID string of the created listing on success, or None if creation failed.
     """
     # First, create the listing
     listing_id = await create_listing_record(
@@ -356,19 +347,18 @@ async def create_agent_task_record(
     is_info_request: bool = False
 ) -> Optional[str]:
     """
-    Create an agent_task record from STRAY or INFO_REQUEST classification.
-
-    Context7 Pattern: Supabase insert with .execute()
-    Source: /supabase/supabase-py insert examples
-
-    Args:
-        classification: ClassificationV1 object
-        realtor_id: Resolved realtor UUID
-        message_text: Original message for description
-        is_info_request: True if message_type is INFO_REQUEST
-
+    Create an agent task record for STRAY or INFO_REQUEST classifications.
+    
+    The task's status will be set to "NEEDS_INFO" when is_info_request is True, otherwise "OPEN".
+    
+    Parameters:
+        classification (ClassificationV1): Classification data containing task metadata (task_key, task_title, due_date, explanations).
+        realtor_id (Optional[str]): Resolved realtor UUID to assign the task to (or None).
+        message_text (str): Original message text used as the task description.
+        is_info_request (bool): If True, mark the task as needing more information.
+    
     Returns:
-        task_id (UUID string) or None on error
+        Optional[str]: The created task's UUID string on success, or None on failure.
     """
     try:
         client = get_supabase()
@@ -468,26 +458,26 @@ async def create_entities_from_classification(
     message_text: str
 ) -> Dict[str, Any]:
     """
-    Main entity creation logic - routes by message_type.
-
-    Decision tree:
-    - GROUP → Create listing
-    - STRAY → Create stray task
-    - INFO_REQUEST → Create stray task with NEEDS_INFO status
-    - IGNORE → Skip entity creation, mark as skipped
-
-    Context7 Patterns:
-    - Pydantic validation (ClassificationV1 already validated)
-    - Supabase insert/update operations
-    - Error handling with try/except
-
-    Args:
-        classification: Validated ClassificationV1 object
-        message_id: ID of slack_messages record to update
-        message_text: Original Slack message text
-
+    Orchestrates creation of database entities from a validated classification and updates the corresponding Slack message record with processing results.
+    
+    Routes by classification.message_type:
+    - IGNORE: marks the Slack message as skipped.
+    - GROUP: creates a listing and associated activities, then records the created listing ID.
+    - STRAY or INFO_REQUEST: creates an agent task (INFO_REQUEST sets task status to NEEDS_INFO) and records the created task ID.
+    Always updates the slack_messages row identified by message_id with processing_status and any created entity IDs.
+    
+    Parameters:
+        classification (ClassificationV1): Validated classification data describing the message and desired entity.
+        message_id (str): Identifier of the slack_messages row to update with processing status and created entity IDs.
+        message_text (str): Original Slack message text to include in created records.
+    
     Returns:
-        Dict with status, entity_type, entity_id
+        dict: Result summary containing at minimum a "status" key with values like "success", "skipped", or "error". On success includes:
+            - "message_type": original message type value,
+            - "entity_type": "listing" or "agent_task",
+            - "entity_id": the created listing or task ID,
+            - "realtor_id": resolved realtor ID when available.
+        On error includes a "reason" key with an error description.
     """
     message_type = classification.message_type
 

@@ -61,7 +61,9 @@ final class AllListingsStore {
 
     // MARK: - Actions
 
-    /// Fetch all listings
+    /// Loads all listings and the categories represented by their tasks, updating the store's state.
+    /// 
+    /// Fetches listing and activity data, builds a mapping from listing IDs to the set of `TaskCategory?` values present among that listing's tasks, and assigns the results to `listings` and `listingCategories`. Clears any previous `errorMessage` before starting, sets `isLoading` while the operation is in progress, and on error sets `errorMessage` with a descriptive message.
     func fetchAllListings() async {
         isLoading = true
         errorMessage = nil
@@ -101,7 +103,10 @@ final class AllListingsStore {
         await fetchAllListings()
     }
 
-    /// Delete a listing
+    /// Attempts to delete the specified listing.
+    /// On successful deletion the store refreshes its listings; on failure the store's `errorMessage` is set with a description of the error.
+    /// - Parameters:
+    ///   - listing: The listing to delete.
     func deleteListing(_ listing: Listing) async {
         do {
             try await listingRepository.deleteListing(listing.id, authClient.currentUserId())

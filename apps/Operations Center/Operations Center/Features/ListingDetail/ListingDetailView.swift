@@ -174,6 +174,9 @@ struct ListingDetailView: View {
         }
     }
 
+    /// Renders an activity as an interactive card that reflects completion and expansion state.
+    /// - Parameter activity: The activity to display in the card.
+    /// - Returns: A view representing the activity; shows a strikethrough and reduced opacity when the activity is completed, and toggles the card's expanded state when tapped.
     @ViewBuilder
     private func activityCard(_ activity: Activity) -> some View {
         if let listing = store.listing {
@@ -193,6 +196,10 @@ struct ListingDetailView: View {
         }
     }
 
+    /// Renders a section header with a title on the left and a rounded count badge on the right.
+    /// - Parameters:
+    ///   - title: The header text to display.
+    ///   - count: The numeric value shown inside the count badge.
     @ViewBuilder
     private func sectionHeader(title: String, count: Int) -> some View {
         HStack {
@@ -214,12 +221,19 @@ struct ListingDetailView: View {
         .background(Colors.surfacePrimary)
     }
 
-    // MARK: - Helper Methods
+    /// Finds the activity with the specified id in the store's activities.
+    /// - Parameter id: The activity identifier to locate.
+    /// - Returns: The matching `Activity` if found, `nil` otherwise.
 
     private func findExpandedActivity(id: String) -> Activity? {
         store.activities.first(where: { $0.id == id })
     }
 
+    /// Builds the context menu actions for the given activity.
+    /// 
+    /// The returned actions provide handlers to claim or delete the activity using the view's store.
+    /// - Parameter activity: The activity for which to create context actions.
+    /// - Returns: An array of `DSContextAction` containing claim and delete actions for the activity.
     private func buildActivityActions(for activity: Activity) -> [DSContextAction] {
         DSContextAction.standardTaskActions(
             onClaim: {

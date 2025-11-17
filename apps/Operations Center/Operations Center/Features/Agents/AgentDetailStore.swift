@@ -134,7 +134,9 @@ final class AgentDetailStore {
         }
     }
 
-    // MARK: - Task Actions
+    /// Claims the specified agent task for the current authenticated user and refreshes the agent's data.
+    /// - Parameters:
+    ///   - task: The `AgentTask` to claim. On success the store reloads agent-related data; on failure `errorMessage` is set with a human-readable description.
 
     func claimTask(_ task: AgentTask) async {
         errorMessage = nil
@@ -152,6 +154,9 @@ final class AgentDetailStore {
         }
     }
 
+    /// Deletes the given agent task and refreshes the agent's data.
+    /// - Parameter task: The task to delete; deletion is performed on behalf of the currently authenticated user.
+    /// - Note: On success the store refreshes its data. On failure `errorMessage` is set to a human-readable description.
     func deleteTask(_ task: AgentTask) async {
         errorMessage = nil
 
@@ -168,6 +173,9 @@ final class AgentDetailStore {
         }
     }
 
+    /// Claims the specified activity on behalf of the current authenticated user and refreshes the agent data.
+    /// - Parameter task: The `Activity` to claim; its `id` is used to perform the claim.
+    /// - Note: On success the store refreshes its data. On failure `errorMessage` is set with a descriptive message.
     func claimActivity(_ task: Activity) async {
         errorMessage = nil
 
@@ -184,6 +192,10 @@ final class AgentDetailStore {
         }
     }
 
+    /// Deletes the provided activity on behalf of the current user and refreshes the agent's data.
+    /// 
+    /// If the deletion fails, `errorMessage` is set with the failure description and an error is logged.
+    /// - Parameter task: The activity to delete.
     func deleteActivity(_ task: Activity) async {
         errorMessage = nil
 

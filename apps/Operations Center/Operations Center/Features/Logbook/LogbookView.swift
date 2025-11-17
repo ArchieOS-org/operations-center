@@ -249,7 +249,9 @@ struct LogbookView: View {
         .padding(.vertical, Spacing.md)
     }
 
-    // MARK: - Helper Methods
+    /// Maps a task category to the corresponding SF Symbol name used for UI badges.
+    /// - Parameter category: The task category to map.
+    /// - Returns: The SF Symbol name to represent the given category.
 
     private func categoryIcon(for category: TaskCategory) -> String {
         switch category {

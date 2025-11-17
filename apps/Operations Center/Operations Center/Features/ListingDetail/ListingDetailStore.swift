@@ -95,7 +95,12 @@ final class ListingDetailStore {
 
     // MARK: - Actions
 
-    /// Fetch listing data, activities, and notes
+    /// Loads the listing, its activities, and its notes into the store, updating loading and error state.
+    /// 
+    /// This method fetches the listing, activities, and notes concurrently, filters activities to those
+    /// belonging to the current `listingId`, and assigns the results to the store's `listing`, `activities`,
+    /// and `notes` properties. It sets `isLoading` while the operation is in progress and populates
+    /// `errorMessage` if a fetch fails.
     func fetchListingData() async {
         isLoading = true
         errorMessage = nil
@@ -130,7 +135,9 @@ final class ListingDetailStore {
     }
 
     /// Create a new note
-    /// Per spec: "Type, press Enter to save" (lines 353)
+    /// Creates a new note for the current listing from `newNoteText`, prepends the created note to `notes`, and clears `newNoteText` on success.
+    /// - Note: If `newNoteText` is empty after trimming whitespace and newlines, no note is created.
+    /// - Postconditions: On success a new `ListingNote` is inserted at the start of `notes` and `newNoteText` is set to an empty string. On failure `errorMessage` is set with the failure description.
     func createNote() async {
         // Trim whitespace
         let trimmedText = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -156,7 +163,9 @@ final class ListingDetailStore {
         }
     }
 
-    /// Delete a note
+    /// Deletes the given note from the repository and removes it from the store's in-memory notes.
+    /// - Parameter note: The listing note to delete.
+    /// - Note: If deletion fails, `errorMessage` is set with a descriptive message.
     func deleteNote(_ note: ListingNote) async {
         do {
             try await noteRepository.deleteNote(note.id)
@@ -173,7 +182,8 @@ final class ListingDetailStore {
 
     // MARK: - Activity Actions
 
-    /// Toggle expansion state for an activity
+    /// Toggles the expanded/collapsed state for the specified activity in the UI.
+    /// - Parameter activityId: The identifier of the activity whose expansion state should be toggled.
     func toggleExpansion(for activityId: String) {
         if expandedActivityId == activityId {
             expandedActivityId = nil
@@ -182,7 +192,10 @@ final class ListingDetailStore {
         }
     }
 
-    /// Claim an activity
+    /// Attempts to claim the provided activity for the current user and refreshes the listing data on success.
+    /// On failure, sets `errorMessage` with a descriptive message.
+    /// - Parameters:
+    ///   - activity: The activity to claim. The function uses the current authenticated user as the claimant.
     func claimActivity(_ activity: Activity) async {
         let userId = authClient.currentUserId()
 
@@ -194,7 +207,10 @@ final class ListingDetailStore {
         }
     }
 
-    /// Delete an activity
+    /// Deletes the specified activity and refreshes the listing data.
+    /// 
+    /// If the deletion fails, sets `errorMessage` with a descriptive message.
+    /// - Parameter activity: The `Activity` to delete.
     func deleteActivity(_ activity: Activity) async {
         do {
             try await taskRepository.deleteActivity(activity.id, authClient.currentUserId())

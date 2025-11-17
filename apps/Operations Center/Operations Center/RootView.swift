@@ -62,6 +62,12 @@ struct RootView: View {
         }
     }
 
+    /// Provide the destination view for a given navigation route.
+    /// 
+    /// Selects preview or live repositories based on the presence of the `--use-preview-data` launch argument and constructs the view corresponding to `route`, configured with those repositories.
+    /// - Parameters:
+    ///   - route: The navigation route to present.
+    /// - Returns: A view configured as the destination for the specified route.
     @ViewBuilder
     private func destinationView(for route: Route) -> some View {
         let usePreviewData = CommandLine.arguments.contains("--use-preview-data")

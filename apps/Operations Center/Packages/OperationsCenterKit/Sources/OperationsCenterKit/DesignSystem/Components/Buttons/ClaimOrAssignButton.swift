@@ -65,6 +65,9 @@ public struct ClaimOrAssignButton: View {
         .accessibilityHint("Tap to claim for yourself, hold to assign to someone else")
     }
 
+    /// Begins a claim operation and updates local state to reflect progress.
+    /// 
+    /// Sets `isClaiming` to `true`, invokes the stored `onClaim` closure, then sets `isClaiming` back to `false`.
     @MainActor
     private func handleClaim() async {
         isClaiming = true
@@ -72,11 +75,18 @@ public struct ClaimOrAssignButton: View {
         isClaiming = false
     }
 
+    /// Reset the long-press progress and invoke the assign action.
+    /// 
+    /// Sets the visual long-press progress back to zero and calls the `onAssignTapped` closure.
     private func handleAssign() {
         pressProgress = 0
         onAssignTapped()
     }
 
+    /// Updates UI state when the button's pressing state changes and animates the press progress ring accordingly.
+    /// 
+    /// When `pressing` is `true` the view's `isPressing` state is animated and `pressProgress` is driven from its current value to `1.0` with a linear animation lasting `longPressDuration`. When `pressing` is `false` `isPressing` is animated and `pressProgress` is reset to `0` with a short ease-out animation.
+    /// - Parameter pressing: `true` when the control is being pressed (touch/hold began), `false` when the press ends.
     private func handlePressingChange(_ pressing: Bool) {
         withAnimation(.easeInOut(duration: 0.2)) {
             isPressing = pressing

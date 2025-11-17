@@ -64,7 +64,9 @@ final class MyListingsStore {
 
     // MARK: - Actions
 
-    /// Fetch all listings where user has claimed at least one activity AND has acknowledged
+    /// Fetches listings that the current user both has claimed activities for and has acknowledged, then updates the store state accordingly.
+/// 
+/// On success, updates `listings` with acknowledged listings that contain the user's claimed activities and populates `listingCategories` with the per-listing set of claimed task categories. On failure, sets `errorMessage`. Always updates `isLoading` to reflect the fetch lifecycle.
     func fetchMyListings() async {
         isLoading = true
         errorMessage = nil
@@ -127,7 +129,9 @@ final class MyListingsStore {
         expandedListingId = expandedListingId == listingId ? nil : listingId
     }
 
-    /// Delete a listing
+    /// Deletes the provided listing on behalf of the current user and refreshes the store on success.
+    /// - Parameter listing: The listing to delete.
+    /// - Note: On failure the method logs the error and stores an error message in `errorMessage`.
     func deleteListing(_ listing: Listing) async {
         do {
             try await listingRepository.deleteListing(listing.id, authClient.currentUserId())

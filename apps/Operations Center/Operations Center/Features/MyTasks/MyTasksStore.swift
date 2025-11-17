@@ -46,7 +46,9 @@ final class MyTasksStore {
 
     /// Fetch tasks claimed by current user
     /// Per spec line 173, 176: "See all Tasks I've claimed"
-    /// Shows standalone agent tasks only (listing-backed tasks shown in My Listings)
+    /// Loads tasks assigned to the current user and updates the store state.
+    /// 
+    /// Filters fetched agent tasks to those whose `assignedStaffId` matches the current user ID and whose status is `.claimed` or `.inProgress`. Sets `isLoading` to true for the duration of the operation. On success updates `tasks` and clears `errorMessage`; on failure sets `errorMessage` to `Failed to load tasks: <underlying description>`.
     func fetchMyTasks() async {
         isLoading = true
         defer { isLoading = false }
@@ -74,7 +76,9 @@ final class MyTasksStore {
     }
 
     /// Claim a task for current user
-    /// Per spec line 428: "Press: Claim for yourself"
+    /// Claims the provided task on behalf of the current user and refreshes the store's task list.
+    /// - Parameter task: The task to claim; its `id` will be used for the claim operation.
+    /// - Note: If the claim fails, `errorMessage` is set with a descriptive message.
     func claimTask(_ task: AgentTask) async {
         do {
             _ = try await repository.claimTask(task.id, authClient.currentUserId())
@@ -84,7 +88,10 @@ final class MyTasksStore {
         }
     }
 
-    /// Delete a task
+    /// Deletes the provided task and refreshes the current user's task list.
+    /// 
+    /// Attempts to remove `task` from the repository for the current authenticated user. On success, the store reloads the user's tasks; on failure, `errorMessage` is set with a descriptive failure message.
+    /// - Parameter task: The `AgentTask` to delete; deletion is performed on behalf of the current authenticated user.
     func deleteTask(_ task: AgentTask) async {
         do {
             try await repository.deleteTask(task.id, authClient.currentUserId())

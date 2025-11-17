@@ -137,6 +137,10 @@ struct InboxView: View {
         )
     }
 
+    /// Builds context menu actions for a listing, providing acknowledge and delete options.
+    /// - Parameters:
+    ///   - listingWithDetails: The listing along with its associated activities and metadata.
+    /// - Returns: An array of `DSContextAction` containing an "Acknowledge" action that marks the listing acknowledged and a destructive "Delete" action that deletes all activities for the listing.
     private func buildListingActions(for listingWithDetails: ListingWithDetails) -> [DSContextAction] {
         [
             DSContextAction(
@@ -160,7 +164,11 @@ struct InboxView: View {
         ]
     }
 
-    // MARK: - Subviews
+    /// Renders a horizontal section header with a title on the left and a rounded count badge on the right.
+    /// - Parameters:
+    ///   - title: The section title text.
+    ///   - count: The numeric count displayed inside the badge.
+    /// - Returns: A view containing the title and a capsule-styled count badge.
 
     private func sectionHeader(title: String, count: Int) -> some View {
         HStack {
