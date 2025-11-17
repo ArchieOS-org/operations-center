@@ -108,7 +108,7 @@ final class AppState {
             // Use TaskRepositoryClient (production or preview based on init)
             Logger.database.info("AppState.fetchTasks() starting...")
             let taskData = try await taskRepository.fetchActivities()
-            allTasks = taskData.map(\.task)  // Extract just the activities
+            self.allTasks = taskData.map(\.task)  // Extract just the activities
             Logger.database.info("AppState now has \(self.allTasks.count) tasks")
 
             // Save to cache
@@ -134,7 +134,7 @@ final class AppState {
             do {
                 // Setup listener BEFORE subscribing
                 let listenerTask = Task {
-                    for await change in channel.postgresChange(AnyAction.self, table: "activities") {
+                    for await change in await channel.postgresChange(AnyAction.self, table: "activities") {
                         await handleRealtimeChange(change)
                     }
                 }
@@ -158,7 +158,7 @@ final class AppState {
         Logger.database.info("Handling realtime change...")
         do {
             let taskData = try await taskRepository.fetchActivities()
-            allTasks = taskData.map(\.task)  // Extract just the activities
+            self.allTasks = taskData.map(\.task)  // Extract just the activities
             Logger.database.info("Updated \(allTasks.count) tasks from realtime change")
 
             // Save to cache
