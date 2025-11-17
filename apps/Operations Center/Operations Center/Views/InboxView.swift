@@ -18,71 +18,35 @@ struct InboxView: View {
     }
 
     var body: some View {
-        Group {
-            if store.isLoading {
-                ProgressView("Loading inbox...")
-            } else if let error = store.errorMessage {
-                InboxErrorView(message: error) {
-                    Task { await store.refresh() }
-                }
-            } else if store.tasks.isEmpty && store.listings.isEmpty {
-                EmptyInboxView()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        // Listings Section
-                        if !store.listings.isEmpty {
-                            sectionHeader(title: "Listings", count: store.listings.count)
-
-                            ForEach(store.listings) { item in
-                                ListingCard(
-                                    listing: item.listing,
-                                    realtor: item.realtor,
-                                    tasks: item.activities,
-                                    notes: item.notes,
-                                    isExpanded: store.isExpanded(item.listing.id),
-                                    onTap: {
-                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
-                                            store.toggleExpansion(for: item.listing.id)
-                                        }
-                                    },
-                                    onTaskTap: { _ in
-                                        // Activity tap - could navigate to detail or expand inline
-                                    },
-                                    onAddNote: { content in
-                                        Task { await store.addNote(to: item.listing.id, content: content) }
-                                    }
-                                )
-                                .id(item.listing.id)
-                            }
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if store.isLoading {
+                    ProgressView("Loading inbox...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = store.errorMessage {
+                    InboxErrorView(message: error) {
+                        Task { await store.refresh() }
+                    }
+                } else {
+                    OCListScaffold(
+                        onRefresh: {
+                            await store.refresh()
                         }
-
-                        // Tasks Section
-                        if !store.tasks.isEmpty {
-                            sectionHeader(title: "Tasks", count: store.tasks.count)
-
-                            ForEach(store.tasks, id: \.task.id) { item in
-                                TaskCard(
-                                    task: item.task,
-                                    messages: item.messages,
-                                    isExpanded: store.isExpanded(item.task.id),
-                                    onTap: {
-                                        withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
-                                            store.toggleExpansion(for: item.task.id)
-                                        }
-                                    }
-                                )
-                                .id(item.task.id)
-                            }
+                    ) {
+                        if store.tasks.isEmpty && store.listings.isEmpty {
+                            OCEmptyState.noActivity
+                                .listRowSeparator(.hidden)
+                        } else {
+                            listingsSection
+                            tasksSection
                         }
                     }
-                    .padding()
                 }
             }
-        }
-        .floatingActionButton(isHidden: store.expandedTaskId != nil) {
-            // Per TASK_MANAGEMENT_SPEC.md line 453: "Opens new Task modal"
-            // NOTE: Implement new task modal
+            .floatingActionButton(isHidden: store.expandedTaskId != nil) {
+                // Per TASK_MANAGEMENT_SPEC.md line 453: "Opens new Task modal"
+                // NOTE: Implement new task modal
+            }
         }
         .overlay(alignment: .bottom) {
             // Floating context menu - appears at screen bottom when card is expanded
@@ -101,9 +65,6 @@ struct InboxView: View {
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
         .navigationTitle("Inbox")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchTasks()
         }
@@ -158,23 +119,48 @@ struct InboxView: View {
 
     // MARK: - Subviews
 
-    private func sectionHeader(title: String, count: Int) -> some View {
-        HStack {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            Text("\(count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.2))
-                .clipShape(Capsule())
+    @ViewBuilder
+    private var listingsSection: some View {
+        if !store.listings.isEmpty {
+            Section {
+                ForEach(store.listings) { item in
+                    OCListingRow(listing: item.listing)
+                        .onTapGesture {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
+                                store.toggleExpansion(for: item.listing.id)
+                            }
+                        }
+                        .listRowSeparator(.hidden)
+                }
+            } header: {
+                OCSectionHeader(
+                    title: "Listings",
+                    count: store.listings.count
+                )
+            }
         }
-        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var tasksSection: some View {
+        if !store.tasks.isEmpty {
+            Section {
+                ForEach(store.tasks, id: \.task.id) { item in
+                    OCTaskRow(task: item.task)
+                        .onTapGesture {
+                            withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
+                                store.toggleExpansion(for: item.task.id)
+                            }
+                        }
+                        .listRowSeparator(.hidden)
+                }
+            } header: {
+                OCSectionHeader(
+                    title: "Tasks",
+                    count: store.tasks.count
+                )
+            }
+        }
     }
 }
 

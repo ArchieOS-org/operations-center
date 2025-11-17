@@ -162,7 +162,7 @@ cd apps/operations-center
 
 # Build for iOS
 xcodebuild -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   build -quiet
 
 # Build for macOS
@@ -173,7 +173,7 @@ xcodebuild -scheme "Operations Center" \
 # Test iOS
 xcodebuild test \
   -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -quiet
 
 # Test macOS

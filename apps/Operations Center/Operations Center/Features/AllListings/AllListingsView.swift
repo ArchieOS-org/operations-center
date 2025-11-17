@@ -26,21 +26,15 @@ struct AllListingsView: View {
     // MARK: - Body
 
     var body: some View {
-        listingsList
-    }
-
-    // MARK: - Subviews
-
-    private var listingsList: some View {
-        List {
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
+            }
+        ) {
             listingsSection
             emptyStateSection
         }
-        .listStyle(.plain)
         .navigationTitle("All Listings")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchAllListings()
         }
@@ -63,20 +57,18 @@ struct AllListingsView: View {
         }
     }
 
+    // MARK: - Subviews
+
     @ViewBuilder
     private var listingsSection: some View {
         if !store.listings.isEmpty {
             Section {
                 ForEach(store.listings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
-                        ListingCollapsedContent(listing: listing)
+                        OCListingRow(listing: listing)
                     }
-                    .listRowInsets(EdgeInsets(
-                        top: Spacing.listRowVertical,
-                        leading: Spacing.listRowHorizontal,
-                        bottom: Spacing.listRowVertical,
-                        trailing: Spacing.listRowHorizontal
-                    ))
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             }
         }
@@ -85,21 +77,8 @@ struct AllListingsView: View {
     @ViewBuilder
     private var emptyStateSection: some View {
         if store.listings.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "house.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No listings")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("Listings will appear here when they're added to the system")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
-            .listRowSeparator(.hidden)
+            OCEmptyState.noListings
+                .listRowSeparator(.hidden)
         }
     }
 }

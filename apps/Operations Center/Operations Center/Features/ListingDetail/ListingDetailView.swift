@@ -34,15 +34,15 @@ struct ListingDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
+            }
+        ) {
             notesSection
             placeholderSections
         }
-        .listStyle(.plain)
         .navigationTitle(store.listing?.title ?? "Listing")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchListingData()
         }
@@ -80,46 +80,36 @@ struct ListingDetailView: View {
                     }
                 }
                 .submitLabel(.done)
+                .listRowSeparator(.hidden)
 
             // Existing notes
             // Per spec: "Shows author name per note. Unlimited notes" (lines 354-355)
             if !store.notes.isEmpty {
                 ForEach(store.notes) { note in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(note.content)
-                            .font(.body)
-
-                        HStack {
-                            if let author = note.createdBy {
-                                Text(author)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    OCMessageRow(note: note, showBackground: false)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await store.deleteNote(note)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
-
-                            Text(note.createdAt, style: .relative)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task {
-                                await store.deleteNote(note)
-                            }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+                        .listRowSeparator(.hidden)
                 }
             } else {
                 Text("No notes yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
             }
         } header: {
-            Text("Notes")
-                .font(.headline)
+            OCSectionHeader(
+                title: "Notes",
+                count: store.notes.isEmpty ? nil : store.notes.count
+            )
         }
     }
 
@@ -131,34 +121,37 @@ struct ListingDetailView: View {
         Section {
             Text("Marketing Activities")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
-            Text("Marketing Activities")
-                .font(.headline)
+            OCSectionHeader(title: "Marketing Activities")
         }
 
         Section {
             Text("Admin Activities")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
-            Text("Admin Activities")
-                .font(.headline)
+            OCSectionHeader(title: "Admin Activities")
         }
 
         Section {
             Text("Tasks")
                 .foregroundStyle(.secondary)
+                .listRowSeparator(.hidden)
             Text("Coming soon")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .listRowSeparator(.hidden)
         } header: {
-            Text("Tasks")
-                .font(.headline)
+            OCSectionHeader(title: "Tasks")
         }
     }
 }

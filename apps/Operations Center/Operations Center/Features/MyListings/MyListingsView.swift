@@ -29,21 +29,15 @@ struct MyListingsView: View {
     // MARK: - Body
 
     var body: some View {
-        listingsList
-    }
-
-    // MARK: - Subviews
-
-    private var listingsList: some View {
-        List {
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
+            }
+        ) {
             listingsSection
             emptyStateSection
         }
-        .listStyle(.plain)
         .navigationTitle("My Listings")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchMyListings()
         }
@@ -66,16 +60,18 @@ struct MyListingsView: View {
         }
     }
 
+    // MARK: - Subviews
+
     @ViewBuilder
     private var listingsSection: some View {
         if !store.listings.isEmpty {
             Section {
                 ForEach(store.listings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
-                        ListingBrowseCard(listing: listing)
+                        OCListingRow(listing: listing)
                     }
+                    .buttonStyle(.plain)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
             }
         }
@@ -84,20 +80,11 @@ struct MyListingsView: View {
     @ViewBuilder
     private var emptyStateSection: some View {
         if store.listings.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "house.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No listings with claimed activities")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("Listings will appear here when you claim activities")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+            OCEmptyState(
+                title: "No listings with claimed activities",
+                systemImage: "house.circle",
+                description: "Listings will appear here when you claim activities"
+            )
             .listRowSeparator(.hidden)
         }
     }

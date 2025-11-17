@@ -32,21 +32,16 @@ struct LogbookView: View {
     // MARK: - Body
 
     var body: some View {
-        archiveList
-    }
-
-    // MARK: - Subviews
-
-    private var archiveList: some View {
-        List {
+        OCListScaffold(
+            onRefresh: {
+                await store.refresh()
+            }
+        ) {
             completedListingsSection
             completedTasksSection
+            emptyStateSection
         }
-        .listStyle(.plain)
         .navigationTitle("Logbook")
-        .refreshable {
-            await store.refresh()
-        }
         .task {
             await store.fetchCompletedItems()
         }
@@ -69,120 +64,52 @@ struct LogbookView: View {
         }
     }
 
-    // MARK: - Completed Listings Section
+    // MARK: - Sections
 
     @ViewBuilder
     private var completedListingsSection: some View {
-        Section {
-            if !store.completedListings.isEmpty {
+        if !store.completedListings.isEmpty {
+            Section {
                 ForEach(store.completedListings) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
-                        ListingBrowseCard(listing: listing)
+                        OCListingRow(listing: listing)
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .buttonStyle(.plain)
                     .listRowSeparator(.hidden)
                 }
-            } else if !store.isLoading {
-                emptyListingsState
+            } header: {
+                OCSectionHeader(
+                    title: "Completed Listings",
+                    count: store.completedListings.count
+                )
             }
-        } header: {
-            Text("Completed Listings")
-                .font(.headline)
         }
     }
-
-    @ViewBuilder
-    private var emptyListingsState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text("No completed listings")
-                .font(.body)
-                .foregroundStyle(.secondary)
-            Text("Listings will appear here when all activities are complete")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Completed Tasks Section
 
     @ViewBuilder
     private var completedTasksSection: some View {
-        Section {
-            if !store.completedTasks.isEmpty {
+        if !store.completedTasks.isEmpty {
+            Section {
                 ForEach(store.completedTasks) { task in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text(task.name)
-                                .font(.headline)
-                        }
-
-                        if let description = task.description {
-                            Text(description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-
-                        HStack {
-                            Label(task.taskCategory.rawValue, systemImage: categoryIcon(for: task.taskCategory))
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-
-                            if let completedAt = task.completedAt {
-                                Spacer()
-                                Text(completedAt, style: .relative)
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 4)
+                    OCTaskRow(task: task)
+                        .listRowSeparator(.hidden)
                 }
-            } else if !store.isLoading {
-                emptyTasksState
+            } header: {
+                OCSectionHeader(
+                    title: "Completed Tasks",
+                    count: store.completedTasks.count
+                )
             }
-        } header: {
-            Text("Completed Tasks")
-                .font(.headline)
         }
     }
+
+    // MARK: - Empty State
 
     @ViewBuilder
-    private var emptyTasksState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.square")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text("No completed tasks")
-                .font(.body)
-                .foregroundStyle(.secondary)
-            Text("Tasks will appear here when marked as done")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Helper Methods
-
-    private func categoryIcon(for category: AgentTask.TaskCategory) -> String {
-        switch category {
-        case .admin: return "gearshape"
-        case .marketing: return "megaphone"
-        case .photo: return "camera"
-        case .staging: return "house"
-        case .inspection: return "checklist"
-        case .other: return "ellipsis.circle"
+    private var emptyStateSection: some View {
+        if store.completedListings.isEmpty && store.completedTasks.isEmpty && !store.isLoading {
+            OCEmptyState.noActivity
+                .listRowSeparator(.hidden)
         }
     }
 }

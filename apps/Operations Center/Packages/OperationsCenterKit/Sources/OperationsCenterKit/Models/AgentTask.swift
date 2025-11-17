@@ -33,6 +33,17 @@ public struct AgentTask: Identifiable, Codable, Sendable {
         case staging = "STAGING"
         case inspection = "INSPECTION"
         case other = "OTHER"
+
+        public var displayName: String {
+            switch self {
+            case .admin: return "Admin"
+            case .marketing: return "Marketing"
+            case .photo: return "Photo"
+            case .staging: return "Staging"
+            case .inspection: return "Inspection"
+            case .other: return "Other"
+            }
+        }
     }
 
     public enum TaskStatus: String, Codable, Sendable {
