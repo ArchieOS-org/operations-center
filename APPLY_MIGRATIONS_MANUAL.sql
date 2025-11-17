@@ -23,6 +23,9 @@ BEGIN;
 -- Drop malformed audit_log if it exists
 DROP TABLE IF EXISTS audit_log CASCADE;
 
+-- NOTE: audit_log table is created here for schema completeness from migration 003,
+-- but the audit trail feature is not currently implemented. This table is intentionally
+-- removed in migration 019 below.
 -- Create audit_log with correct schema
 CREATE TABLE IF NOT EXISTS audit_log (
     event_id TEXT PRIMARY KEY,
