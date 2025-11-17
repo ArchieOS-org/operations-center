@@ -16,6 +16,8 @@ import OperationsCenterKit
 struct AgentsView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: AgentsStore
 
     // MARK: - Initialization

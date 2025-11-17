@@ -10,11 +10,13 @@ import OperationsCenterKit
 import SwiftUI
 
 struct InboxView: View {
-    @State private var store: InboxStore
+    /// Store is @Observable - SwiftUI tracks changes automatically
+    /// No @State wrapper needed for @Observable objects
+    let store: InboxStore
 
     /// Accepts pre-configured store
     init(store: InboxStore) {
-        _store = State(initialValue: store)
+        self.store = store
     }
 
     var body: some View {

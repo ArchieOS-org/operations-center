@@ -40,9 +40,22 @@
 		0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0A3F0ED62ECBA62A0040FE76 /* Exceptions for "Operations Center" folder in "Operations Center" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Operations-Center-Info.plist",
+			);
+			target = 0A911C852EC4311900E23DA7 /* Operations Center */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0A911C882EC4311900E23DA7 /* Operations Center */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0A3F0ED62ECBA62A0040FE76 /* Exceptions for "Operations Center" folder in "Operations Center" target */,
+			);
 			path = "Operations Center";
 			sourceTree = "<group>";
 		};
@@ -100,15 +113,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		0ACONFIG32EC4444400E23DA7 /* Configs */ = {
-			isa = PBXGroup;
-			children = (
-				0ACONFIG12EC4444400E23DA7 /* Development.xcconfig */,
-				0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */,
-			);
-			path = Configs;
-			sourceTree = "<group>";
-		};
 		0A911C872EC4311900E23DA7 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -117,6 +121,15 @@
 				0A911C9D2EC4311B00E23DA7 /* Operations CenterUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		0ACONFIG32EC4444400E23DA7 /* Configs */ = {
+			isa = PBXGroup;
+			children = (
+				0ACONFIG12EC4444400E23DA7 /* Development.xcconfig */,
+				0ACONFIG22EC4444400E23DA7 /* Production.xcconfig */,
+			);
+			path = Configs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -446,6 +459,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Operations-Center-Info.plist";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -501,6 +515,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Operations-Center-Info.plist";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

@@ -83,32 +83,44 @@ final class InboxStore {
             // Group activities by listing
             let groupedByListing = Dictionary(grouping: filteredActivities) { $0.listing.id }
 
-            // Build ListingWithDetails for each listing
-            var listingDetails: [ListingWithDetails] = []
-            for (listingId, activityGroup) in groupedByListing {
-                guard let firstActivity = activityGroup.first else { continue }
-                let listing = firstActivity.listing
+            // Build ListingWithDetails for each listing - PARALLEL EXECUTION
+            // Use task group to fetch notes and realtors concurrently for all listings
+            listings = await withTaskGroup(of: ListingWithDetails.self) { group in
+                for (listingId, activityGroup) in groupedByListing {
+                    guard let firstActivity = activityGroup.first else { continue }
+                    let listing = firstActivity.listing
 
-                // Fetch notes and realtor
-                let (fetchedNotes, notesError) = await fetchNotes(for: listingId)
-                var realtor: Realtor?
-                var realtorError = false
-                if let realtorId = listing.realtorId {
-                    (realtor, realtorError) = await fetchRealtor(for: realtorId, listingId: listingId)
+                    group.addTask {
+                        // Fetch notes and realtor in parallel for this listing
+                        async let fetchedNotesResult = self.fetchNotes(for: listingId)
+                        async let realtorResult: (Realtor?, Bool) = {
+                            if let realtorId = listing.realtorId {
+                                return await self.fetchRealtor(for: realtorId, listingId: listingId)
+                            }
+                            return (nil, false)
+                        }()
+
+                        let (fetchedNotes, notesError) = await fetchedNotesResult
+                        let (realtor, realtorError) = await realtorResult
+
+                        return ListingWithDetails(
+                            listing: listing,
+                            realtor: realtor,
+                            activities: activityGroup.map { $0.task },
+                            notes: fetchedNotes,
+                            hasNotesError: notesError,
+                            hasMissingRealtor: realtorError
+                        )
+                    }
                 }
 
-                let listingWithDetails = ListingWithDetails(
-                    listing: listing,
-                    realtor: realtor,
-                    activities: activityGroup.map { $0.task },
-                    notes: fetchedNotes,
-                    hasNotesError: notesError,
-                    hasMissingRealtor: realtorError
-                )
-                listingDetails.append(listingWithDetails)
+                // Collect results
+                var results: [ListingWithDetails] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results
             }
-
-            listings = listingDetails
 
         } catch {
             errorMessage = error.localizedDescription

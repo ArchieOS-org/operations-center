@@ -91,18 +91,25 @@ final class MyListingsStore {
         errorMessage = nil
 
         do {
+            // First: Get user ID (required for subsequent calls)
             let currentUserId = try await authClient.currentUserId()
             Logger.database.info("👤 Current user ID: \(currentUserId)")
 
-            // Get activities claimed by this staff member directly from repository
-            let userListingTasks = try await taskRepository.fetchActivitiesByStaff(currentUserId)
-            Logger.database.info("📋 User has \(userListingTasks.count) claimed activities")
+            // Then: Fetch activities and listings in PARALLEL
+            async let userListingTasks = taskRepository.fetchActivitiesByStaff(currentUserId)
+            async let allListings = listingRepository.fetchListings()
+
+            let activities = try await userListingTasks
+            let listings = try await allListings
+
+            Logger.database.info("📋 User has \(activities.count) claimed activities")
+            Logger.database.info("📚 Total listings in database: \(listings.count)")
 
             // Extract unique listing IDs and build category mapping
             var listingIds = Set<String>()
             var categoryMapping: [String: Set<TaskCategory?>] = [:]
 
-            for activityWithDetails in userListingTasks {
+            for activityWithDetails in activities {
                 let listingId = activityWithDetails.task.listingId
                 listingIds.insert(listingId)
 
@@ -115,10 +122,6 @@ final class MyListingsStore {
 
             Logger.database.info("🏠 User has activities for \(listingIds.count) unique listings: \(listingIds)")
 
-            // Fetch all listings
-            let allListings = try await listingRepository.fetchListings()
-            Logger.database.info("📚 Total listings in database: \(allListings.count)")
-
             // Filter to only listings where:
             // 1. User has claimed activities AND
             // 2. User has acknowledged the listing
@@ -130,7 +133,7 @@ final class MyListingsStore {
 
             Logger.database.info("✅ User has acknowledged \(acknowledgedListingIds.count) listings")
 
-            listings = allListings.filter { listing in
+            self.listings = listings.filter { listing in
                 acknowledgedListingIds.contains(listing.id)
             }
 

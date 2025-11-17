@@ -19,6 +19,8 @@ import OperationsCenterKit
 struct MyTasksView: View {
     // MARK: - State
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: MyTasksStore
     @State private var showingNewTask = false
     @State private var newTaskTitle = ""
@@ -26,7 +28,7 @@ struct MyTasksView: View {
     // MARK: - Initialization
 
     /// Initialize view with repository injection
-    /// Following Context7 @State initialization pattern
+    /// Store created once and tracked via @Observable macro + @State
     init(repository: TaskRepositoryClient) {
         _store = State(initialValue: MyTasksStore(repository: repository))
     }

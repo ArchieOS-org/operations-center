@@ -52,14 +52,15 @@ final class MyTasksStore {
         defer { isLoading = false }
 
         do {
-            // Get current user ID for filtering
-            let currentUserId = try await authClient.currentUserId()
+            // Fetch user ID and tasks in parallel
+            async let userId = authClient.currentUserId()
+            async let tasksResults = repository.fetchTasks()
 
-            // Fetch agent tasks and filter for current user
-            let tasksResults = try await repository.fetchTasks()
+            let currentUserId = try await userId
+            let allTasksWithMessages = try await tasksResults
 
             // Filter for agent tasks claimed by me
-            let allAgentTasks = tasksResults.map(\.task)
+            let allAgentTasks = allTasksWithMessages.map(\.task)
             tasks = allAgentTasks.filter { task in
                 task.assignedStaffId == currentUserId &&
                 (task.status == .claimed || task.status == .inProgress)

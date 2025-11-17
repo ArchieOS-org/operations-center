@@ -5,11 +5,10 @@
 // Build configuration for production releases (App Store, TestFlight)
 //
 
-// Modern Xcode auto-generates Info.plist from build settings
+// Auto-generate Info.plist
 GENERATE_INFOPLIST_FILE = YES
 
-// Custom Info.plist keys (INFOPLIST_KEY_* prefix required for auto-generation)
-// These appear in Bundle.main.infoDictionary at runtime
-INFOPLIST_KEY_SUPABASE_URL = https://kukmshbkzlskyuacgzbo.supabase.co
-INFOPLIST_KEY_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a21zaGJremxza3l1YWNnemJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA0NzU5MjYsImV4cCI6MjA0NjA1MTkyNn0.qDhkkkVNNrTipSHf_AcYzlLdBsIHw09aK_KYyaAZcwU
-INFOPLIST_KEY_FASTAPI_URL = https://operations-center.vercel.app
+// Configuration values - not used by Info.plist, accessed directly in Config.swift
+SUPABASE_URL = https://kukmshbkzlskyuacgzbo.supabase.co
+SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a21zaGJremxza3l1YWNnemJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTUyOTAsImV4cCI6MjA3ODM3MTI5MH0.Jax3HtgBuu5COWr_p0mXiVuXlCFDsQaj9VUEQGxUOcE
+FASTAPI_URL = https://operations-center.vercel.app

@@ -41,13 +41,15 @@ struct TeamViewConfiguration {
 struct TeamView<Store: TeamViewStore>: View {
     // MARK: - Properties
 
-    @State private var store: Store
+    /// Store is @Observable - SwiftUI tracks changes automatically
+    /// No @State wrapper needed for @Observable objects
+    let store: Store
     private let config: TeamViewConfiguration
 
     // MARK: - Initialization
 
     init(store: Store, config: TeamViewConfiguration) {
-        _store = State(initialValue: store)
+        self.store = store
         self.config = config
     }
 

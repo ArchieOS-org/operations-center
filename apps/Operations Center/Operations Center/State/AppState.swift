@@ -131,19 +131,14 @@ final class AppState {
         realtimeSubscription = Task { [weak self] in
             guard let self else { return }
             do {
-                // Setup listener BEFORE subscribing
-                let listenerTask = Task { [weak self] in
-                    guard let self else { return }
-                    for await change in channel.postgresChange(AnyAction.self, table: "activities") {
-                        await self.handleRealtimeChange(change)
-                    }
-                }
-
-                // Now subscribe to start receiving events
+                // Subscribe to start receiving events
                 try await channel.subscribeWithError()
 
-                // Keep listener running
-                await listenerTask.value
+                // Listen for changes directly - NO NESTED TASK
+                // Structured concurrency: task owns the loop, cancellation propagates automatically
+                for await change in channel.postgresChange(AnyAction.self, table: "activities") {
+                    await self.handleRealtimeChange(change)
+                }
             } catch {
                 self.errorMessage = "Realtime subscription error: \(error.localizedDescription)"
             }

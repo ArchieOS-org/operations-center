@@ -15,6 +15,8 @@ import OperationsCenterKit
 struct LogbookView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: LogbookStore
 
     // MARK: - Initialization

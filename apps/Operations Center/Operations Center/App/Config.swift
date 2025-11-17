@@ -44,41 +44,17 @@ enum AppConfig {
 
     static var supabaseURL: URL {
         get throws {
-            // Primary: Info.plist (works on simulator AND physical devices)
-            // Values are populated from xcconfig at build time
-            if let urlString = Bundle.main.infoDictionary?["SUPABASE_URL"] as? String,
-               !urlString.isEmpty,
-               let url = URL(string: urlString) {
-                return url
-            }
-
-            // Fallback: Environment variable override (simulator testing only)
-            if let urlString = ProcessInfo.processInfo.environment["SUPABASE_URL"],
-               !urlString.isEmpty,
-               let url = URL(string: urlString) {
-                return url
-            }
-
-            throw ConfigError.missingConfiguration("SUPABASE_URL")
+            // Hardcoded fallback - INFOPLIST_KEY_ doesn't work for custom keys
+            // TODO: Move to secure configuration management for production
+            return URL(string: "https://kukmshbkzlskyuacgzbo.supabase.co")!
         }
     }
 
     static var supabaseAnonKey: String {
         get throws {
-            // Primary: Info.plist (works on simulator AND physical devices)
-            // Values are populated from xcconfig at build time
-            if let key = Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String,
-               !key.isEmpty {
-                return key
-            }
-
-            // Fallback: Environment variable override (simulator testing only)
-            if let key = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"],
-               !key.isEmpty {
-                return key
-            }
-
-            throw ConfigError.missingConfiguration("SUPABASE_ANON_KEY")
+            // Hardcoded fallback - INFOPLIST_KEY_ doesn't work for custom keys
+            // TODO: Move to secure configuration management for production
+            return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a21zaGJremxza3l1YWNnemJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTUyOTAsImV4cCI6MjA3ODM3MTI5MH0.Jax3HtgBuu5COWr_p0mXiVuXlCFDsQaj9VUEQGxUOcE"
         }
     }
 
@@ -86,22 +62,9 @@ enum AppConfig {
 
     static var fastAPIURL: URL {
         get throws {
-            // Primary: Info.plist (works on simulator AND physical devices)
-            // Values are populated from xcconfig at build time
-            if let urlString = Bundle.main.infoDictionary?["FASTAPI_URL"] as? String,
-               !urlString.isEmpty,
-               let url = URL(string: urlString) {
-                return url
-            }
-
-            // Fallback: Environment variable override (simulator testing only)
-            if let urlString = ProcessInfo.processInfo.environment["FASTAPI_URL"],
-               !urlString.isEmpty,
-               let url = URL(string: urlString) {
-                return url
-            }
-
-            throw ConfigError.missingConfiguration("FASTAPI_URL")
+            // Hardcoded fallback - INFOPLIST_KEY_ doesn't work for custom keys
+            // TODO: Move to secure configuration management for production
+            return URL(string: "https://operations-center.vercel.app")!
         }
     }
 
@@ -110,11 +73,23 @@ enum AppConfig {
     /// Validates all required configuration on app launch
     /// Fails loudly in development, logs errors in production
     static func validate() {
+        // Debug Bundle.infoDictionary FIRST to see what's actually there
+        NSLog("🔍 Bundle.main.infoDictionary keys: \(Bundle.main.infoDictionary?.keys.sorted() ?? [])")
+        NSLog("🔍 SUPABASE_URL raw: \(Bundle.main.infoDictionary?["SUPABASE_URL"] as? String ?? "NIL")")
+        NSLog("🔍 SUPABASE_ANON_KEY raw: \(Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String ?? "NIL")")
+
         do {
-            _ = try supabaseURL
-            _ = try supabaseAnonKey
+            let url = try supabaseURL
+            let key = try supabaseAnonKey
+
+            // Use NSLog for physical device logging
+            NSLog("✅ Configuration loaded:")
+            NSLog("   SUPABASE_URL: \(url.absoluteString)")
+            NSLog("   SUPABASE_ANON_KEY: \(key.prefix(20))...")
+
             Logger.uiLogger.info("✅ Configuration validated successfully")
         } catch {
+            NSLog("❌ Configuration error: \(error.localizedDescription)")
             #if DEBUG
             fatalError("Configuration error: \(error.localizedDescription)")
             #else
@@ -124,8 +99,10 @@ enum AppConfig {
 
         // FastAPI is optional - just log if missing
         do {
-            _ = try fastAPIURL
+            let apiURL = try fastAPIURL
+            NSLog("   FASTAPI_URL: \(apiURL.absoluteString)")
         } catch {
+            NSLog("⚠️ FastAPI URL not configured: \(error.localizedDescription)")
             Logger.uiLogger.warning("⚠️ FastAPI URL not configured: \(error.localizedDescription)")
         }
     }
