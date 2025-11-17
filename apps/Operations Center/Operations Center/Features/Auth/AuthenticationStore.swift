@@ -22,7 +22,7 @@ import Auth
 ///
 /// Usage:
 /// ```swift
-/// @State private var authStore = AuthenticationStore()
+/// @State private var authStore = AuthenticationStore(supabaseClient: supabase)
 /// await authStore.login(email: "user@example.com", password: "password")
 /// ```
 @MainActor
