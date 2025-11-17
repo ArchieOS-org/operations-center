@@ -10,6 +10,6 @@ GENERATE_INFOPLIST_FILE = YES
 
 // Custom Info.plist keys (INFOPLIST_KEY_* prefix required for auto-generation)
 // These appear in Bundle.main.infoDictionary at runtime
-INFOPLIST_KEY_SUPABASE_URL = https:/$()/nfyrtinbdlbwrwrynuwe.supabase.co
+INFOPLIST_KEY_SUPABASE_URL = https://nfyrtinbdlbwrwrynuwe.supabase.co
 INFOPLIST_KEY_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5meXJ0aW5iZGxid3J3cnludXdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NzI5NjAsImV4cCI6MjA1MzE0ODk2MH0.JuH1C3BXqjGXl_aQQ4u9tEn_SiZuECvvU8s-u1Dx5GQ
-INFOPLIST_KEY_FASTAPI_URL = https:/$()/operations-center.vercel.app
+INFOPLIST_KEY_FASTAPI_URL = https://operations-center.vercel.app
