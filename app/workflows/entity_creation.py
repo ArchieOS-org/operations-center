@@ -10,7 +10,7 @@ Context7 References:
 - LangGraph: Workflow node patterns
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, cast
 from datetime import datetime
 import logging
 from uuid import uuid4
@@ -217,7 +217,7 @@ async def resolve_realtor(assignee_hint: Optional[str]) -> Optional[str]:
             )
             if result.data and len(result.data) > 0:
                 logger.info(f"Resolved realtor by email: {assignee_hint}")
-                return result.data[0]["realtor_id"]
+                return cast(dict, result.data[0]).get("realtor_id")
 
         # If looks like phone, try phone match (remove non-digits)
         if any(char.isdigit() for char in assignee_hint):
@@ -231,7 +231,7 @@ async def resolve_realtor(assignee_hint: Optional[str]) -> Optional[str]:
                 )
                 if result.data and len(result.data) > 0:
                     logger.info(f"Resolved realtor by phone: {phone_digits[-10:]}")
-                    return result.data[0]["realtor_id"]
+                    return cast(dict, result.data[0]).get("realtor_id")
 
         # Try exact name match
         result = (
@@ -242,7 +242,7 @@ async def resolve_realtor(assignee_hint: Optional[str]) -> Optional[str]:
         )
         if result.data and len(result.data) > 0:
             logger.info(f"Resolved realtor by exact name: {assignee_hint}")
-            return result.data[0]["realtor_id"]
+            return cast(dict, result.data[0]).get("realtor_id")
 
         # Try partial name match (case-insensitive)
         result = (
@@ -253,7 +253,7 @@ async def resolve_realtor(assignee_hint: Optional[str]) -> Optional[str]:
         )
         if result.data and len(result.data) > 0:
             logger.info(f"Resolved realtor by partial name: {assignee_hint}")
-            return result.data[0]["realtor_id"]
+            return cast(dict, result.data[0]).get("realtor_id")
 
         logger.warning(f"Could not resolve realtor for hint: {assignee_hint}")
         return None
@@ -286,8 +286,7 @@ def map_task_key_to_category(task_key: Optional[TaskKey]) -> str:
     mapping = {
         TaskKey.SALE_ACTIVE_TASKS: "MARKETING",
         TaskKey.LEASE_ACTIVE_TASKS: "MARKETING",
-        TaskKey.GENERAL_ADMIN: "ADMIN",
-        TaskKey.PHOTO_VIDEO: "PHOTO",
+        TaskKey.OPS_MISC_TASK: "ADMIN",
     }
 
     return mapping.get(task_key, "ADMIN")
@@ -337,7 +336,7 @@ async def create_listing_record(
         result = client.table("listings").insert(listing_data).execute()
 
         if result.data and len(result.data) > 0:
-            listing_id = result.data[0]["listing_id"]
+            listing_id = cast(dict, result.data[0]).get("listing_id")
             logger.info(
                 f"Created listing: {listing_id} at {listing_data['address_string']}"
             )
@@ -400,7 +399,7 @@ async def create_activity_record(
         result = client.table("activities").insert(activity_data).execute()
 
         if result.data and len(result.data) > 0:
-            activity_id = result.data[0]["task_id"]
+            activity_id = cast(dict, result.data[0]).get("task_id")
             logger.info(f"Created activity: {activity_id} - {name}")
             return activity_id
         else:
@@ -524,7 +523,7 @@ async def create_agent_task_record(
         result = client.table("agent_tasks").insert(task_data).execute()
 
         if result.data and len(result.data) > 0:
-            task_id = result.data[0]["task_id"]
+            task_id = cast(dict, result.data[0]).get("task_id")
             logger.info(f"Created agent task: {task_id} - {task_data['name']}")
             return task_id
         else:

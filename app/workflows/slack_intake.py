@@ -180,13 +180,6 @@ async def classify_batched_messages(batched_text: str) -> Optional[Classificatio
             )
             return None
 
-        if not isinstance(classification_dict, dict):
-            logger.error(
-                f"Classification data is not a dict: "
-                f"{type(classification_dict).__name__}"
-            )
-            return None
-
         # Convert dict to ClassificationV1 object
         classification = ClassificationV1(**classification_dict)
 
