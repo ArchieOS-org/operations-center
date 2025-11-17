@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Unified empty state component
+/// Unified empty state component with delightful animations
 ///
 /// Design Philosophy:
 /// - One consistent empty state across the app
 /// - Large icon, clear message, optional action
-/// - Semantic colors from design system
+/// - Subtle entrance animations (respects reduce motion)
+/// - Premium visual hierarchy with gradient accents
+/// - Accessible for VoiceOver and Dynamic Type
 ///
 /// Usage:
 /// ```swift
@@ -41,32 +43,63 @@ public struct DSEmptyState: View {
         self.action = action
     }
 
-    public var body: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: IconSizes.emptyState))
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Empty state")
+    @Environment(\.accessibilityReduceMotion) private var reduceMotionEnabled
 
-            VStack(spacing: Spacing.xs) {
+    public var body: some View {
+        VStack(spacing: 16) {
+            // Large, premium icon with gradient
+            Image(systemName: icon)
+                .font(.system(size: 56))
+                .fontWeight(.thin)
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.accentColor.opacity(0.8),
+                            Color.accentColor.opacity(0.4)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .opacity(0.6)
+                .accessibilityHidden(true)
+
+            // Title and message with improved hierarchy
+            VStack(spacing: 8) {
                 Text(title)
                     .font(Typography.title2)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
 
                 Text(message)
                     .font(Typography.body)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
                     .multilineTextAlignment(.center)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(title). \(message)")
 
+            // Optional action button with staggered entrance
             if let action {
                 Button(action.title, action: action.handler)
                     .buttonStyle(.bordered)
-                    .padding(.top, Spacing.sm)
+                    .padding(.top, 20)
+                    .accessibilityHint("Resolves the empty state")
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(
+                        reduceMotionEnabled ? .none : .easeOut(duration: 0.35).delay(0.1),
+                        value: action.title
+                    )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, Spacing.emptyStateVertical)
+        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+        .animation(
+            reduceMotionEnabled ? .none : .easeOut(duration: 0.35),
+            value: title
+        )
     }
 }
 
