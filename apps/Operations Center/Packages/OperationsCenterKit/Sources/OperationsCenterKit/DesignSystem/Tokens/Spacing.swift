@@ -54,7 +54,7 @@ public enum Spacing {
 
 public extension EdgeInsets {
     /// Standard list row insets for card-style rows (vertical: 4, horizontal: 16)
-    static let listCardInsets = EdgeInsets(
+    public static let listCardInsets = EdgeInsets(
         top: Spacing.xs,
         leading: Spacing.screenEdge,
         bottom: Spacing.xs,
@@ -62,7 +62,7 @@ public extension EdgeInsets {
     )
 
     /// Standard list row insets for standard rows (vertical: 8, horizontal: 16)
-    static let listRowInsets = EdgeInsets(
+    public static let listRowInsets = EdgeInsets(
         top: Spacing.listRowVertical,
         leading: Spacing.listRowHorizontal,
         bottom: Spacing.listRowVertical,
