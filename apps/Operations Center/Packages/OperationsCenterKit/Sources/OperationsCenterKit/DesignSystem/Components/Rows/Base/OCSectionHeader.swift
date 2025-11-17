@@ -22,7 +22,8 @@ public struct OCSectionHeader: View {
 
     public var body: some View {
         HStack(spacing: Spacing.sm) {
-            Text(title.uppercased())
+            Text(title)
+                .textCase(.uppercase)
                 .font(Typography.cardMeta)
                 .foregroundStyle(Color.secondary)
 

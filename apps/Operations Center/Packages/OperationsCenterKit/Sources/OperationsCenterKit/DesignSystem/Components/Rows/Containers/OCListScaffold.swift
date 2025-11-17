@@ -36,7 +36,6 @@ public struct OCListScaffold<Content: View, BottomOverlay: View>: View {
                     await onRefresh()
                 }
             }
-            .disabled(onRefresh == nil)
 
             // Bottom overlay (FAB, context menu, team toggle, etc.)
             bottomOverlay
@@ -95,7 +94,6 @@ public struct OCScrollScaffold<Content: View, BottomOverlay: View>: View {
                     await onRefresh()
                 }
             }
-            .disabled(onRefresh == nil)
 
             // Bottom overlay
             bottomOverlay

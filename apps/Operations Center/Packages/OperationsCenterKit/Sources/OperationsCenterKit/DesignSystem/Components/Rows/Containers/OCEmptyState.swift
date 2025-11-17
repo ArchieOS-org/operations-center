@@ -108,24 +108,24 @@ extension OCEmptyState {
         )
     }
 
-    /// Network error state
-    public static var networkError: OCEmptyState {
+    /// Network error state with retry action
+    public static func networkError(retry: @escaping () -> Void) -> OCEmptyState {
         OCEmptyState(
             title: "Connection Error",
             systemImage: "wifi.slash",
             description: "Check your internet connection and try again",
-            action: { },
+            action: retry,
             actionLabel: "Retry"
         )
     }
 
-    /// General error state
-    public static var loadingError: OCEmptyState {
+    /// General error state with retry action
+    public static func loadingError(retry: @escaping () -> Void) -> OCEmptyState {
         OCEmptyState(
             title: "Something Went Wrong",
             systemImage: "exclamationmark.triangle",
             description: "We couldn't load this content",
-            action: { },
+            action: retry,
             actionLabel: "Try Again"
         )
     }
