@@ -12,7 +12,7 @@ import SwiftUI
 /// DSErrorState(
 ///     title: "Error loading tasks",
 ///     message: "Please try again",
-///     retryAction: { await store.refresh() }
+///     retryAction: { store.refresh() }
 /// )
 /// ```
 public struct DSErrorState: View {
