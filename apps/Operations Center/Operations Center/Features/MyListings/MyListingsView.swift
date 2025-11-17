@@ -59,7 +59,6 @@ struct MyListingsView: View {
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingBrowseCard(listing: listing)
                     }
-                    .listRowSeparator(.hidden)
                     .standardListRowInsets()
                 }
             }

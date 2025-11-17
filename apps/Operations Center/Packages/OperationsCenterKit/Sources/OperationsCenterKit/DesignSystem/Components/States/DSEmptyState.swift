@@ -61,7 +61,6 @@ public struct DSEmptyState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.emptyStateVertical)
-        .listRowSeparator(.hidden)
     }
 }
 

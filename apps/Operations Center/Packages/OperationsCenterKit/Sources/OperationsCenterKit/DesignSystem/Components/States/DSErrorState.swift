@@ -57,7 +57,6 @@ public struct DSErrorState: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.emptyStateVertical)
-        .listRowSeparator(.hidden)
     }
 }
 

@@ -32,7 +32,6 @@ struct AgentsView: View {
                 NavigationLink(value: Route.agent(id: realtor.id)) {
                     RealtorRow(realtor: realtor)
                 }
-                .listRowSeparator(.hidden)
                 .standardListRowInsets()
             }
         }
