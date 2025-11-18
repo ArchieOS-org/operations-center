@@ -5,13 +5,12 @@
 // Build configuration for production releases (App Store, TestFlight)
 //
 
-// Use manual Info.plist for OAuth URL scheme configuration
-GENERATE_INFOPLIST_FILE = NO
-INFOPLIST_FILE = Info.plist
+// Use Xcode auto-generated Info.plist
+GENERATE_INFOPLIST_FILE = YES
 
 // OAuth URL Scheme: operationscenter://
 // Used for deep link callback after Supabase processes OAuth
-// Configured in Info.plist CFBundleURLTypes
+// Configured via INFOPLIST_KEY_CFBundleURLTypes in project.pbxproj
 
 // Configuration values - not used by Info.plist, accessed directly in Config.swift
 SUPABASE_URL = https://kukmshbkzlskyuacgzbo.supabase.co
