@@ -9,12 +9,10 @@ import SwiftUI
 import OperationsCenterKit
 
 struct MarketingTeamView: View {
-    /// Store is @Observable - SwiftUI tracks changes automatically
-    /// No @State wrapper needed for @Observable objects
-    let store: MarketingTeamStore
+    @State private var store: MarketingTeamStore
 
     init(repository: TaskRepositoryClient) {
-        self.store = MarketingTeamStore(taskRepository: repository)
+        _store = State(initialValue: MarketingTeamStore(taskRepository: repository))
     }
 
     var body: some View {
