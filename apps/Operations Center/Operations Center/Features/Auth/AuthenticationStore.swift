@@ -98,7 +98,7 @@ final class AuthenticationStore {
             switch authError {
             case .api(_, let errorCode, _, _):
                 // Check structured errorCode field for user_already_exists
-                if errorCode == "user_already_exists" {
+                if errorCode.rawValue == "user_already_exists" {
                     self.error = .emailAlreadyInUse
                 } else {
                     self.error = .supabaseError(authError)
@@ -168,7 +168,7 @@ final class AuthenticationStore {
         } catch let authError as Auth.AuthError {
             // Check if this is expected (no session) vs actual error
             switch authError {
-            case .api(let message, _, _, _) where message.contains("session_missing") || message.contains("SessionMissing"):
+            case .api(_, let errorCode, _, _) where errorCode.rawValue == "session_not_found":
                 NSLog("ℹ️ No existing session - ensuring clean anon state")
                 // Ensure we're truly anonymous for RLS policies to work
                 try? await supabaseClient.auth.signOut()

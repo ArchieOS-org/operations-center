@@ -145,7 +145,7 @@ public struct ListingCard: View {
         .buttonStyle(.plain)
     }
 
-    private func statusColor(for status: Activity.TaskStatus) -> Color {
+    private func statusColor(for status: TaskStatus) -> Color {
         switch status {
         case .open: return Colors.statusOpen
         case .claimed: return Colors.statusClaimed

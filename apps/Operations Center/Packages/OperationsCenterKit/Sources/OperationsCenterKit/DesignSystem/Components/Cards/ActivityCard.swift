@@ -14,6 +14,7 @@ public struct ActivityCard: View {
     let task: Activity
     let listing: Listing
     let isExpanded: Bool
+    let assigneeName: String?
     let onTap: () -> Void
 
     // MARK: - Initialization
@@ -22,11 +23,13 @@ public struct ActivityCard: View {
         task: Activity,
         listing: Listing,
         isExpanded: Bool,
+        assigneeName: String? = nil,
         onTap: @escaping () -> Void
     ) {
         self.task = task
         self.listing = listing
         self.isExpanded = isExpanded
+        self.assigneeName = assigneeName
         self.onTap = onTap
     }
 
@@ -41,7 +44,7 @@ public struct ActivityCard: View {
             // Card content
             CardHeader(
                 title: listing.addressString,
-                subtitle: task.assignedStaffId ?? "Unassigned",
+                subtitle: assigneeName ?? "Unassigned",
                 chips: buildChips(),
                 dueDate: task.dueDate,
                 isExpanded: isExpanded
@@ -222,6 +225,7 @@ public struct ActivityCard: View {
         task: task,
         listing: listing,
         isExpanded: false,
+        assigneeName: "Mike Torres",
         onTap: {}
     )
     .padding()
@@ -269,6 +273,7 @@ public struct ActivityCard: View {
         task: task,
         listing: listing,
         isExpanded: true,
+        assigneeName: "Mike Torres",
         onTap: {}
     )
     .padding()

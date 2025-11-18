@@ -15,6 +15,7 @@ public struct TaskCard: View {
     let task: AgentTask
     let messages: [SlackMessage]
     let isExpanded: Bool
+    let assigneeName: String?
     let onTap: () -> Void
 
     // MARK: - Initialization
@@ -23,11 +24,13 @@ public struct TaskCard: View {
         task: AgentTask,
         messages: [SlackMessage],
         isExpanded: Bool,
+        assigneeName: String? = nil,
         onTap: @escaping () -> Void
     ) {
         self.task = task
         self.messages = messages
         self.isExpanded = isExpanded
+        self.assigneeName = assigneeName
         self.onTap = onTap
     }
 
@@ -122,8 +125,8 @@ public struct TaskCard: View {
         var chips: [ChipData] = []
 
         // Assigned agent chip
-        if let staffId = task.assignedStaffId {
-            chips.append(.agent(name: staffId, style: .agentTask))
+        if let name = assigneeName {
+            chips.append(.agent(name: name, style: .agentTask))
         }
 
         // Category chip (if categorized)
@@ -156,6 +159,7 @@ public struct TaskCard: View {
         task: AgentTask.mock1,
         messages: [],
         isExpanded: false,
+        assigneeName: "Sarah Johnson",
         onTap: {}
     )
     .padding()
@@ -171,6 +175,7 @@ public struct TaskCard: View {
         task: AgentTask.mock2,
         messages: messages,
         isExpanded: true,
+        assigneeName: "Alex Chen",
         onTap: {}
     )
     .padding()

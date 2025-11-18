@@ -76,7 +76,6 @@ public struct ClaimOrAssignButton: View {
         await onClaim()
         isClaiming = false
     }
-    }
 
     private func handleAssign() {
         pressProgress = 0

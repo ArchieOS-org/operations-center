@@ -32,6 +32,9 @@ final class AppState {
     @ObservationIgnored
     private var authStateTask: Task<Void, Never>?
 
+    @ObservationIgnored
+    private var taskRefreshTask: Task<Void, Error>?
+
     // MARK: - Computed Properties
 
     /// Tasks that are unclaimed (Inbox)
@@ -42,7 +45,7 @@ final class AppState {
     /// Tasks assigned to the current user
     var myTasks: [Activity] {
         guard let userId = currentUser?.id else { return [] }
-        return allTasks.filter { $0.assignedStaffId == userId }
+        return allTasks.filter { $0.assignedStaffId == userId.uuidString }
     }
 
     // MARK: - Initialization
@@ -90,7 +93,15 @@ final class AppState {
 
                 // Refresh tasks when auth state changes
                 if state.session != nil {
-                    await self.fetchTasks()
+                    // Cancel any pending refresh to avoid race condition
+                    self.taskRefreshTask?.cancel()
+                    self.taskRefreshTask = Task {
+                        await self.fetchTasks()
+                    }
+                } else {
+                    // User logged out - cancel pending refresh
+                    self.taskRefreshTask?.cancel()
+                    self.taskRefreshTask = nil
                 }
             }
         }
@@ -176,7 +187,7 @@ final class AppState {
             let _: Activity = try await supabase
                 .from("activities")
                 .update([
-                    "assigned_staff_id": userId,
+                    "assigned_staff_id": userId.uuidString,
                     "claimed_at": ISO8601DateFormatter().string(from: Date()),
                     "status": "CLAIMED"
                 ])
