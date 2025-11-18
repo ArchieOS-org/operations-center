@@ -66,7 +66,6 @@ public struct Listing: Identifiable, Codable, Sendable {
     public let dueDate: Date?
     public let progress: Decimal?
     public let type: String?
-    public let notes: String?
     public let createdAt: Date
     public let updatedAt: Date
     public let completedAt: Date?
@@ -84,7 +83,6 @@ public struct Listing: Identifiable, Codable, Sendable {
         dueDate: Date? = nil,
         progress: Decimal? = nil,
         type: String? = nil,
-        notes: String? = nil,
         createdAt: Date,
         updatedAt: Date,
         completedAt: Date? = nil,
@@ -98,7 +96,6 @@ public struct Listing: Identifiable, Codable, Sendable {
         self.dueDate = dueDate
         self.progress = progress
         self.type = type
-        self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.completedAt = completedAt
@@ -139,7 +136,6 @@ public struct Listing: Identifiable, Codable, Sendable {
         case dueDate = "due_date"
         case progress
         case type
-        case notes
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case completedAt = "completed_at"
@@ -164,7 +160,6 @@ extension Listing {
             dueDate: Date().addingTimeInterval(86400 * 7), // 7 days from now
             progress: 0.45,
             type: "SALE",
-            notes: "Prime location, needs staging",
             createdAt: Date().addingTimeInterval(-86400 * 14), // 14 days ago
             updatedAt: Date().addingTimeInterval(-86400 * 1),
             completedAt: nil,
@@ -182,7 +177,6 @@ extension Listing {
             dueDate: Date().addingTimeInterval(86400 * 14), // 14 days from now
             progress: 0.20,
             type: "RENTAL",
-            notes: "Luxury rental, professional photos required",
             createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
             updatedAt: Date().addingTimeInterval(-86400 * 2),
             completedAt: nil,
@@ -200,7 +194,6 @@ extension Listing {
             dueDate: Date().addingTimeInterval(-86400 * 3), // 3 days ago
             progress: 1.0,
             type: "SALE",
-            notes: "Successfully sold above asking price",
             createdAt: Date().addingTimeInterval(-86400 * 30), // 30 days ago
             updatedAt: Date().addingTimeInterval(-86400 * 3),
             completedAt: Date().addingTimeInterval(-86400 * 3),

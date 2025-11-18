@@ -2,24 +2,18 @@
 //  NotesSection.swift
 //  OperationsCenterKit
 //
-//  Notes list with always-ready input field
+//  Notes list with input field - zero lag, zero complexity
 //
 
 import SwiftUI
 
-/// Section displaying notes with an always-visible input field
-/// Zero modes - type, hit return, note appears
+/// Notes section - type, submit, done
 public struct NotesSection: View {
-    // MARK: - Properties
-
     let notes: [ListingNote]
     let onAddNote: (String) -> Void
 
     @State private var newNoteText = ""
     @FocusState private var isInputFocused: Bool
-    @State private var lastNoteIdToScroll: String?
-
-    // MARK: - Initialization
 
     public init(
         notes: [ListingNote],
@@ -29,16 +23,12 @@ public struct NotesSection: View {
         self.onAddNote = onAddNote
     }
 
-    // MARK: - Body
-
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Section title
             Text("Notes")
                 .font(Typography.cardSubtitle)
                 .foregroundStyle(.secondary)
 
-            // Input field - always visible at top
             TextField("Add a note...", text: $newNoteText, axis: .vertical)
                 .font(Typography.body)
                 .lineLimit(1...3)
@@ -47,54 +37,19 @@ public struct NotesSection: View {
                 .cornerRadius(CornerRadius.sm)
                 .focused($isInputFocused)
                 .submitLabel(.done)
-                .onChange(of: newNoteText) { newValue in
-                    guard isInputFocused else { return }
-                    guard newValue.last == "\n" else { return }
-
-                    // Remove the newline before submitting
-                    newNoteText.removeLast()
+                .onSubmit {
                     submitNote()
                 }
 
-            // Notes list
             if !notes.isEmpty {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: Spacing.sm) {
-                            ForEach(notes) { note in
-                                NoteRow(note: note)
-                                    .id(note.id)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: Spacing.maxContentHeight)
-                    .task {
-                        // First render - scroll to bottom if needed
-                        lastNoteIdToScroll = notes.last?.id
-                    }
-                    .onChange(of: notes.last?.id) { newId in
-                        // Note added, edited, or reordered - scroll to latest
-                        lastNoteIdToScroll = newId
-                    }
-                    .onChange(of: lastNoteIdToScroll) { id in
-                        guard let id else { return }
-                        // Defer to next runloop so views are laid out
-                        Task { @MainActor in
-                            withAnimation {
-                                proxy.scrollTo(id, anchor: .bottom)
-                            }
-                        }
+                VStack(spacing: Spacing.sm) {
+                    ForEach(notes) { note in
+                        NoteRow(note: note)
                     }
                 }
             }
         }
-        .transition(.asymmetric(
-            insertion: .opacity.combined(with: .move(edge: .top)),
-            removal: .opacity
-        ))
     }
-
-    // MARK: - Helper Methods
 
     private func submitNote() {
         let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -102,8 +57,6 @@ public struct NotesSection: View {
 
         onAddNote(trimmed)
         newNoteText = ""
-
-        // Keep focus for rapid note-taking
         isInputFocused = true
     }
 }

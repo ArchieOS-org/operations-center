@@ -114,65 +114,10 @@ struct ListingDetailView: View {
 
     @ViewBuilder
     private var notesSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                // Note input field
-                TextField("Add a note...", text: $store.newNoteText, axis: .vertical)
-                    .lineLimit(1...3)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        Task {
-                            await store.createNote()
-                        }
-                    }
-                    .submitLabel(.done)
-
-                // Existing notes
-                if !store.notes.isEmpty {
-                    ForEach(store.notes) { note in
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(note.content)
-                                .font(.body)
-
-                            HStack {
-                                if let author = note.createdBy {
-                                    Text(author)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Text(note.createdAt, style: .relative)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-
-                                Spacer()
-
-                                Button(role: .destructive) {
-                                    Task {
-                                        await store.deleteNote(note)
-                                    }
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.vertical, Spacing.xs)
-
-                        if note.id != store.notes.last?.id {
-                            Divider()
-                        }
-                    }
-                } else {
-                    Text("No notes yet")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, Spacing.sm)
-                }
+        NotesSection(notes: store.notes) { content in
+            Task {
+                await store.addNote(content)
             }
-        } header: {
-            sectionHeader(title: "Notes", count: store.notes.count)
         }
     }
 

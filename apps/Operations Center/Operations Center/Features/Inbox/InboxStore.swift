@@ -244,8 +244,7 @@ final class InboxStore {
         errorMessage = nil
 
         do {
-            let userId = try await authClient.currentUserId()
-            _ = try await noteRepository.createNote(listingId, content, userId)
+            _ = try await noteRepository.createNote(listingId, content)
 
             // Refresh to get updated notes
             await fetchTasks()

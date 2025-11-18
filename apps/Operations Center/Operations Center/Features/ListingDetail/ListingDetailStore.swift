@@ -31,9 +31,6 @@ final class ListingDetailStore {
     /// Expanded activity ID for UI state
     var expandedActivityId: String?
 
-    /// New note input text
-    var newNoteText: String = ""
-
     /// Error message to display
     var errorMessage: String?
 
@@ -132,31 +129,11 @@ final class ListingDetailStore {
         await fetchListingData()
     }
 
-    /// Create a new note
-    /// Per spec: "Type, press Enter to save" (lines 353)
-    func createNote() async {
-        // Trim whitespace
-        let trimmedText = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Validate note has content
-        guard !trimmedText.isEmpty else {
-            return
-        }
-
+    /// Create a new note from NotesSection component
+    func addNote(_ content: String) async {
         do {
-            let userId = try await authClient.currentUserId()
-            let createdNote = try await noteRepository.createNote(
-                listingId,
-                trimmedText,
-                userId
-            )
-
-            // Add new note to beginning of list
-            notes.insert(createdNote, at: 0)
-
-            // Clear input
-            newNoteText = ""
-
+            let createdNote = try await noteRepository.createNote(listingId, content)
+            notes.append(createdNote)
             Logger.database.info("Created note for listing \(self.listingId)")
         } catch {
             Logger.database.error("Failed to create note: \(error.localizedDescription)")
