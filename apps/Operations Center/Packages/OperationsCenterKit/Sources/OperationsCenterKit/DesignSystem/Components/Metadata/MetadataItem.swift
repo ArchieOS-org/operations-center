@@ -35,17 +35,19 @@ public struct MetadataItem: View {
 // MARK: - Metadata Grid
 
 /// Grid layout for multiple metadata items
+/// - Parameter horizontalSpacing: Horizontal spacing between columns (default: Spacing.md)
+/// - Note: Vertical spacing between rows is fixed at Spacing.md
 public struct MetadataGrid<Content: View>: View {
     private let columns: [GridItem]
     private let content: Content
 
     public init(
         columnCount: Int = 2,
-        spacing: CGFloat = Spacing.md,
+        horizontalSpacing: CGFloat = Spacing.md,
         @ViewBuilder content: () -> Content
     ) {
         self.columns = Array(
-            repeating: GridItem(.flexible(), spacing: spacing),
+            repeating: GridItem(.flexible(), spacing: horizontalSpacing),
             count: columnCount
         )
         self.content = content()

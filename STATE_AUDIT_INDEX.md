@@ -134,10 +134,10 @@ Contains:
 
 ## Files to Audit
 
-- `/Users/noahdeskin/conductor/operations-center/.conductor/miami/STATE_AUDIT_SUMMARY.md`
-- `/Users/noahdeskin/conductor/operations-center/.conductor/miami/STATE_AUDIT_FINDINGS.md`
-- `/Users/noahdeskin/conductor/operations-center/.conductor/miami/STATE_MANAGEMENT_AUDIT_COMPREHENSIVE.md`
-- `/Users/noahdeskin/conductor/operations-center/.conductor/miami/STATE_AUDIT_ACTION_PLAN.md`
+- `.conductor/miami/STATE_AUDIT_SUMMARY.md`
+- `.conductor/miami/STATE_AUDIT_FINDINGS.md`
+- `.conductor/miami/STATE_MANAGEMENT_AUDIT_COMPREHENSIVE.md`
+- `.conductor/miami/STATE_AUDIT_ACTION_PLAN.md`
 
 ---
 

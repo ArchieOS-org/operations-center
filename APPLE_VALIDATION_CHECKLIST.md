@@ -183,13 +183,17 @@ grep -r "key" --include="*.swift" . | grep "return \""
 
 **Required Fix:**
 Use xcconfig files (Xcode Build Settings):
-```
+```swift
 // ✅ Config.xcconfig
 SUPABASE_URL = $(SUPABASE_URL_OVERRIDE:https://prod.supabase.co)
 SUPABASE_KEY = $(SUPABASE_KEY_OVERRIDE)
 
 // ✅ In Code:
-let url = URL(string: Bundle.main.infoDictionary?["SUPABASE_URL"] as? String ?? "")!
+guard let urlString = Bundle.main.infoDictionary?["SUPABASE_URL"] as? String,
+      let url = URL(string: urlString) else {
+    Logger.config.error("Missing or invalid SUPABASE_URL in configuration")
+    throw ConfigError.missingConfiguration("SUPABASE_URL")
+}
 ```
 
 ---
@@ -259,7 +263,7 @@ struct StatusIndicator { }  // Not just "Badge"
 **Validation Tool:**
 ```bash
 grep -r "DS[A-Z]" --include="*.swift" .  # Find DS prefix
-grep -r "struct.*{ }$" --include="*.swift" . | grep -v "View"  # Check for View suffix
+rg '^struct\s+[A-Z]\w*\s*(?:[:\{]|\s)' --type swift | grep -vE "(View|Preview|Style)"  # Check for View suffix (non-View structs)
 ```
 
 ---

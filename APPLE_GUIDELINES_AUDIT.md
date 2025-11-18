@@ -52,7 +52,7 @@
 **Swift Standard:** Clear, concise names. No abbreviations.
 
 **Violations Found:**
-```
+```text
 ❌ DSChip          → ❌ Design System prefix is redundant
 ❌ DSLoadingState  → Should be LoadingOverlay or ProgressOverlay
 ❌ TaskRow         → Missing "View" suffix (in ContentView)
@@ -150,7 +150,7 @@ This is exemplary SwiftUI code.
 **Apple's Pattern:** One folder = One feature. All files in that folder.
 
 **Violation:** Orphaned views in root `/Views/` folder
-```
+```text
 Features/Inbox/
 ├── InboxStore.swift
 
@@ -310,7 +310,7 @@ Button(action: { ... }) {
 **Apple Requirement:** Apps must have privacy policy, clear purpose, no crashes.
 
 **Pre-Launch Checklist:**
-```
+```text
 □ Remove all fatalError() calls (crash on review = rejection)
 □ Remove TestFlight-only features
 □ Privacy policy accessible in app

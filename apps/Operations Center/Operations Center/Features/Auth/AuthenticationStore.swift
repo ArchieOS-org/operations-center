@@ -96,9 +96,9 @@ final class AuthenticationStore {
         } catch let authError as Auth.AuthError {
             // Map Supabase errors using structured API fields
             switch authError {
-            case .api(let message, _, _, _):
-                // Check structured message field for user_already_exists
-                if message.contains("user_already_exists") || message.contains("already registered") {
+            case .api(_, let errorCode, _, _):
+                // Check structured errorCode field for user_already_exists
+                if errorCode == "user_already_exists" {
                     self.error = .emailAlreadyInUse
                 } else {
                     self.error = .supabaseError(authError)

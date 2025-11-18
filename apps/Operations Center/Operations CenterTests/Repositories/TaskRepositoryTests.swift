@@ -212,6 +212,9 @@ struct TaskRepositoryTests {
         // Submit multiple operations concurrently - @MainActor ensures serial execution
         var fetchCount = 0
         var claimSucceeded = false
+        var fetchTasksError: Error?
+        var fetchActivitiesError: Error?
+        var claimTaskError: Error?
 
         await withTaskGroup(of: Void.self) { group in
             // Task 1: Fetch tasks
@@ -220,8 +223,7 @@ struct TaskRepositoryTests {
                     let tasks = try await repository.fetchTasks()
                     fetchCount = tasks.count
                 } catch {
-                    // Fail test if operation throws
-                    fatalError("Fetch tasks failed: \(error)")
+                    fetchTasksError = error
                 }
             }
 
@@ -230,7 +232,7 @@ struct TaskRepositoryTests {
                 do {
                     _ = try await repository.fetchActivities()
                 } catch {
-                    fatalError("Fetch activities failed: \(error)")
+                    fetchActivitiesError = error
                 }
             }
 
@@ -243,9 +245,23 @@ struct TaskRepositoryTests {
                         claimSucceeded = (result.assignedStaffId == "staff-concurrent")
                     }
                 } catch {
-                    fatalError("Claim task failed: \(error)")
+                    claimTaskError = error
                 }
             }
+        }
+
+        // Assert on any errors that occurred during task execution
+        if let error = fetchTasksError {
+            Issue.record("Fetch tasks failed: \(error)")
+            #expect(false, "Fetch tasks failed: \(error)")
+        }
+        if let error = fetchActivitiesError {
+            Issue.record("Fetch activities failed: \(error)")
+            #expect(false, "Fetch activities failed: \(error)")
+        }
+        if let error = claimTaskError {
+            Issue.record("Claim task failed: \(error)")
+            #expect(false, "Claim task failed: \(error)")
         }
 
         // Verify all operations completed successfully

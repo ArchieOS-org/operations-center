@@ -113,10 +113,12 @@ public struct ActivityCard: View {
                         value: task.status.displayName
                     )
 
-                    MetadataItem(
-                        label: "Category",
-                        value: task.taskCategory.displayName
-                    )
+                    if let taskCategory = task.taskCategory {
+                        MetadataItem(
+                            label: "Category",
+                            value: taskCategory.displayName
+                        )
+                    }
                 }
             }
             .padding(Spacing.md)

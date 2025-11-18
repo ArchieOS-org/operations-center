@@ -27,26 +27,7 @@ public struct AgentTask: Identifiable, Codable, Sendable {
 
     // MARK: - Nested Types
     // TaskCategory is now imported from shared TaskCategory.swift
-
-    public enum TaskStatus: String, Codable, Sendable {
-        case open = "OPEN"
-        case claimed = "CLAIMED"
-        case inProgress = "IN_PROGRESS"
-        case done = "DONE"
-        case failed = "FAILED"
-        case cancelled = "CANCELLED"
-
-        public var displayName: String {
-            switch self {
-            case .open: return "Open"
-            case .claimed: return "Claimed"
-            case .inProgress: return "In Progress"
-            case .done: return "Done"
-            case .failed: return "Failed"
-            case .cancelled: return "Cancelled"
-            }
-        }
-    }
+    // TaskStatus is now imported from shared TaskStatus.swift
 
     // MARK: - Initialization
 

@@ -73,7 +73,7 @@ struct TaskRow: View {
 }
 
 struct StatusBadge: View {
-    let status: Activity.TaskStatus
+    let status: TaskStatus
 
     var body: some View {
         Text(status.rawValue)

@@ -102,7 +102,18 @@ struct MyTasksStoreFetchTests {
 
     @Test("Fetch sets loading state during operation")
     func fetchLoadingState() async {
-        let repo = TaskRepositoryClient.mock()
+        // Create a continuation to control when the mock fetch completes
+        var continuation: CheckedContinuation<Void, Never>?
+        var continuationReady = false
+
+        let repo = TaskRepositoryClient.mock(
+            onFetchTasks: {
+                continuationReady = true
+                await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                    continuation = cont
+                }
+            }
+        )
 
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
@@ -110,17 +121,28 @@ struct MyTasksStoreFetchTests {
             MyTasksStore(repository: repo)
         }
 
+        // Start the fetch in a Task
         let fetchTask = Task {
             await store.fetchMyTasks()
         }
 
-        // Give it a moment to start
-        try? await Task.sleep(nanoseconds: 1_000_000)
+        // Wait briefly for the continuation to be set up
+        var attempts = 0
+        while !continuationReady && attempts < 100 {
+            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+            attempts += 1
+        }
 
+        // Immediately assert loading state is true (fetch is in progress)
         #expect(store.isLoading == true)
 
+        // Resume the continuation to let the mock complete
+        continuation?.resume()
+
+        // Wait for fetch to complete
         await fetchTask.value
 
+        // Assert loading state is false after completion
         #expect(store.isLoading == false)
     }
 

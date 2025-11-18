@@ -118,7 +118,7 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         name: row.name,
         description: row.description,
         taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),  // Optional: admin, marketing, or nil
-        status: Activity.TaskStatus(rawValue: row.status) ?? .open,
+        status: TaskStatus(rawValue: row.status) ?? .open,
         priority: row.priority,
         visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
         assignedStaffId: row.assignedStaffId,
@@ -226,7 +226,7 @@ extension TaskRepositoryClient {
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": AgentTask.TaskStatus.claimed.rawValue
+                        "status": TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -244,7 +244,7 @@ extension TaskRepositoryClient {
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": Activity.TaskStatus.claimed.rawValue
+                        "status": TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -311,7 +311,7 @@ extension TaskRepositoryClient {
                 let tasks: [AgentTask] = try await supabase
                     .from("agent_tasks")
                     .select()
-                    .eq("status", value: AgentTask.TaskStatus.done.rawValue)
+                    .eq("status", value: TaskStatus.done.rawValue)
                     .is("deleted_at", value: nil)
                     .order("completed_at", ascending: false)
                     .execute()

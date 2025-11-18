@@ -40,6 +40,7 @@ extension TaskRepositoryClient {
         deletedTasks: [AgentTask] = [],
         deletedActivities: [ActivityWithDetails] = [],
         shouldThrow: Bool = false,
+        onFetchTasks: (@Sendable () async -> Void)? = nil,
         onClaimTask: @escaping (String) -> Void = { _ in },
         onClaimActivity: @escaping (String) -> Void = { _ in },
         onDeleteTask: @escaping (String) -> Void = { _ in },
@@ -47,6 +48,9 @@ extension TaskRepositoryClient {
     ) -> Self {
         Self(
             fetchTasks: {
+                if let onFetch = onFetchTasks {
+                    await onFetch()
+                }
                 if shouldThrow { throw TestError.mockFailure }
                 return tasks
             },
@@ -167,7 +171,7 @@ extension TaskWithMessages {
     /// Create mock TaskWithMessages for testing
     static func mock(
         id: String = UUID().uuidString,
-        status: AgentTask.TaskStatus = .open,
+        status: TaskStatus = .open,
         assignedStaffId: String? = nil,
         messages: [SlackMessage] = []
     ) -> TaskWithMessages {
@@ -230,7 +234,7 @@ extension ActivityWithDetails {
     static func mock(
         id: String = UUID().uuidString,
         listingId: String = "test-listing",
-        status: Activity.TaskStatus = .open,
+        status: TaskStatus = .open,
         assignedStaffId: String? = nil,
         listing: Listing? = nil
     ) -> ActivityWithDetails {

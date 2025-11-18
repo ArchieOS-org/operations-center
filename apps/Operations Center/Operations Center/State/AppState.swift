@@ -41,7 +41,7 @@ final class AppState {
 
     /// Tasks assigned to the current user
     var myTasks: [Activity] {
-        guard let userId = currentUser?.id.uuidString else { return [] }
+        guard let userId = currentUser?.id else { return [] }
         return allTasks.filter { $0.assignedStaffId == userId }
     }
 
@@ -167,7 +167,7 @@ final class AppState {
     func claimTask(_ task: Activity) async {
         errorMessage = nil
 
-        guard let userId = currentUser?.id.uuidString else {
+        guard let userId = currentUser?.id else {
             errorMessage = "Must be logged in to claim tasks"
             return
         }

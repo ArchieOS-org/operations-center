@@ -187,6 +187,13 @@ Both define same states: open, claimed, inProgress, done, failed, cancelled
 This violates DRY principle. Changes must be made in both places.
 Should be single shared enum in TaskCategory.swift or separate file.
 
+**RESOLUTION:** ✅ FIXED
+- Created shared TaskStatus.swift enum in OperationsCenterKit/Models/
+- Removed duplicate TaskStatus definitions from Activity.swift and AgentTask.swift
+- Updated all references (Activity.TaskStatus → TaskStatus, AgentTask.TaskStatus → TaskStatus)
+- Updated TaskRepositoryClient.swift, ContentView.swift, and test helpers
+- Single source of truth now maintained in TaskStatus.swift
+
 4. GENERIC PROGRAMMING MISSED OPPORTUNITIES
 ===========================================
 

@@ -527,8 +527,9 @@ git push origin main
 #### Hour 1:00 — Edge Config Flip
 ```bash
 # Switch API traffic to Dispatch endpoints
+# NOTE: Replace VERCEL_TOKEN_EXAMPLE with your actual Vercel token in production
 curl -X PATCH https://api.vercel.com/v1/edge-config/YOUR_ID/items \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer VERCEL_TOKEN_EXAMPLE" \
   -d '{
     "items": [{
       "operation": "upsert",
@@ -570,7 +571,9 @@ If issues detected during monitoring:
 #### Instant Rollback (< 10 seconds)
 ```bash
 # Revert Edge Config to /operations
+# NOTE: Replace VERCEL_TOKEN_EXAMPLE with your actual Vercel token in production
 curl -X PATCH https://api.vercel.com/v1/edge-config/YOUR_ID/items \
+  -H "Authorization: Bearer VERCEL_TOKEN_EXAMPLE" \
   -d '{ "items": [{ "operation": "upsert", "key": "api_version", "value": "operations" }] }'
 ```
 

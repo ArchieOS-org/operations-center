@@ -34,7 +34,8 @@ public struct ClaimOrAssignButton: View {
                 .stroke(Colors.accentPrimary, lineWidth: 3)
                 .frame(width: 44, height: 44)
                 .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 0.1), value: pressProgress)
+                .frame(width: 44, height: 44)
+                .rotationEffect(.degrees(-90))
 
             // Icon
             Group {
@@ -50,9 +51,13 @@ public struct ClaimOrAssignButton: View {
             }
         }
         .frame(width: 44, height: 44)
-        .contentShape(Circle())
         .onTapGesture {
-            Task { await handleClaim() }
+            guard !isClaiming else { return }
+            isClaiming = true
+            Task { 
+                await onClaim()
+                isClaiming = false
+            }
         }
         .onLongPressGesture(
             minimumDuration: longPressDuration,
@@ -70,6 +75,7 @@ public struct ClaimOrAssignButton: View {
         isClaiming = true
         await onClaim()
         isClaiming = false
+    }
     }
 
     private func handleAssign() {

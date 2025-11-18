@@ -109,6 +109,9 @@ Carthage/Build/
 *.pem
 secrets/
 
+# Xcode local configuration files (contain secrets)
+*.local.xcconfig
+
 # IDEs
 .vscode/
 .idea/

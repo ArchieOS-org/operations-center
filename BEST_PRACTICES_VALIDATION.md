@@ -211,7 +211,7 @@ import Testing
 
 #### Best Practice: SwiftUI Component Modularity
 **Context7 Evidence (Human Interface Guidelines + SwiftUI Best Practices):**
-```
+```text
 RECOMMENDED:
 - Maximum 200 lines per view
 - Maximum 3 nesting levels
@@ -220,6 +220,7 @@ RECOMMENDED:
 ```
 
 **File Examples from Audit:**
+
 | File | Lines | Violation |
 |------|-------|-----------|
 | LoginView | 279 | Business logic mixed in |
@@ -423,12 +424,13 @@ let all = try await results
 
 #### Best Practice: Don't Repeat Yourself (DRY)
 **Context7 Evidence (Airbnb Swift Style Guide):**
-```
+```text
 GUIDELINE: Extract any pattern used in 3+ places
 GUIDELINE: No code block >5 lines duplicated anywhere
 ```
 
 **Audit's Duplication Map:**
+
 | Pattern | Occurrences | Lines | Fix |
 |---------|-------------|-------|-----|
 | Category Filter | 2 views | 52 | Extract component |
@@ -452,7 +454,7 @@ GUIDELINE: No code block >5 lines duplicated anywhere
 
 #### Best Practice: Human Interface Guidelines Section 6
 **Context7 Evidence (Apple HIG):**
-```
+```text
 REQUIRED:
 - Every interactive element needs accessibilityLabel
 - Custom actions for complex gestures
@@ -483,7 +485,7 @@ REQUIRED:
 
 #### Best Practice: Modern SwiftUI Architecture
 **Context7 Evidence (Apple SwiftUI Documentation):**
-```
+```text
 PATTERN:
 View → Store (@Observable) → Repository → Supabase
 ```
@@ -527,7 +529,7 @@ public let category: TaskCategory  // Proper enum
 ```
 
 **Best Practice (Airbnb Style Guide):**
-```
+```text
 USE ENUMS for:
 - Status/state values
 - Category/type values
@@ -543,7 +545,7 @@ USE ENUMS for:
 
 ### Best Practice: Documentation Coverage
 **Context7 Evidence (Airbnb Style Guide):**
-```
+```text
 REQUIRED:
 - `///` comments on all public API
 - Comments explain WHY, not WHAT

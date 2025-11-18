@@ -13,12 +13,12 @@ TO authenticated
 USING (true);
 
 -- INSERT: Authenticated users can create notes
--- Note: created_by will be set by the application using auth.uid()
+-- Enforce that created_by equals auth.uid() to prevent ownership spoofing
 CREATE POLICY "Authenticated users can create notes"
 ON listing_notes
 FOR INSERT
 TO authenticated
-WITH CHECK (true);
+WITH CHECK (created_by = auth.uid()::text AND created_by IS NOT NULL);
 
 -- UPDATE: Users can only update their own notes
 CREATE POLICY "Users can update their own notes"
@@ -38,7 +38,7 @@ USING (created_by = (SELECT auth.uid()::text));
 COMMENT ON POLICY "Authenticated users can read all notes" ON listing_notes IS
   'All authenticated users can view all notes on all listings';
 COMMENT ON POLICY "Authenticated users can create notes" ON listing_notes IS
-  'Authenticated users can create notes - created_by is set by application';
+  'Authenticated users can create notes - created_by must equal auth.uid() and cannot be null';
 COMMENT ON POLICY "Users can update their own notes" ON listing_notes IS
   'Users can only modify notes they created';
 COMMENT ON POLICY "Users can delete their own notes" ON listing_notes IS

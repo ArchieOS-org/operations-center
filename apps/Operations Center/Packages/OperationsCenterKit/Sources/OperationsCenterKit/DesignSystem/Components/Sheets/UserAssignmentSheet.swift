@@ -115,6 +115,10 @@ private struct StaffRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(staff.name), \(staff.role.displayName)")
+        .accessibilityValue(isSelected ? "selected" : "not selected")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -122,9 +126,39 @@ private struct StaffRow: View {
 
 extension Staff {
     /// Get user initials from name
+    /// Handles edge cases: empty/whitespace-only names, multiple spaces, non-letter characters
     public var initials: String {
-        let components = name.components(separatedBy: " ")
-        let initials = components.compactMap { $0.first }.prefix(2)
+        // Trim whitespace and split into components
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return "?"
+        }
+        
+        // Split by whitespace and filter out empty components
+        let components = trimmed
+            .split(whereSeparator: { $0.isWhitespace })
+            .filter { !$0.isEmpty }
+        
+        guard !components.isEmpty else {
+            return "?"
+        }
+        
+        // Extract first letter/unicode scalar from up to 2 components
+        let initials = components.prefix(2).compactMap { component -> Character? in
+            // Find first letter character, or fall back to first unicode scalar
+            if let firstLetter = component.first(where: { $0.isLetter }) {
+                return firstLetter
+            } else if let firstScalar = component.first {
+                // Use first character even if not a letter (handles numbers, etc.)
+                return firstScalar
+            }
+            return nil
+        }
+        
+        guard !initials.isEmpty else {
+            return "?"
+        }
+        
         return String(initials).uppercased()
     }
 }
