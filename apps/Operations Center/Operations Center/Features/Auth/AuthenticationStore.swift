@@ -170,13 +170,19 @@ final class AuthenticationStore {
             // Check if this is expected (no session) vs actual error
             let message = authError.localizedDescription.lowercased()
             if message.contains("sessionmissing") || message.contains("session missing") {
-                NSLog("ℹ️ No existing session - showing login screen")
+                NSLog("ℹ️ No existing session - ensuring clean anon state")
+                // Ensure we're truly anonymous for RLS policies to work
+                try? await supabaseClient.auth.signOut()
             } else {
                 NSLog("⚠️ Session restoration error: \(authError.localizedDescription)")
+                // Clear any bad session
+                try? await supabaseClient.auth.signOut()
             }
             isAuthenticated = false
         } catch {
             NSLog("⚠️ Unexpected session error: \(error.localizedDescription)")
+            // Clear any bad session
+            try? await supabaseClient.auth.signOut()
             isAuthenticated = false
         }
     }
