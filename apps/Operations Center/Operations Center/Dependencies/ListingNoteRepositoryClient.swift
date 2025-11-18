@@ -45,18 +45,23 @@ extension ListingNoteRepositoryClient {
             createNote: { listingId, content in
                 Logger.database.info("Creating note for listing: \(listingId)")
 
-                // Get current authenticated user ID
+                // Get current authenticated user ID and email
                 let userId = try await authClient.currentUserId()
+                let session = try await supabase.auth.session
+                let userEmail = session.user.email ?? ""
 
-                // Fetch user's display name from staff table
+                Logger.database.info("Looking up staff by email: \(userEmail)")
+
+                // Fetch user's display name from staff table by email
                 let staff: [Staff] = try await supabase
                     .from("staff")
                     .select()
-                    .eq("staff_id", value: userId)
+                    .eq("email", value: userEmail)
                     .execute()
                     .value
 
                 let userName = staff.first?.name
+                Logger.database.info("Found staff name: \(userName ?? "nil")")
                 let noteId = UUID().uuidString
                 let now = Date()
 
