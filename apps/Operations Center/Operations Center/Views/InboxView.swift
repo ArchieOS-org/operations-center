@@ -49,6 +49,10 @@ struct InboxView: View {
                                     realtor: item.realtor,
                                     tasks: item.activities,
                                     notes: item.notes,
+                                    noteInputText: Binding(
+                                        get: { store.listingNoteInputs[item.listing.id] ?? "" },
+                                        set: { store.listingNoteInputs[item.listing.id] = $0 }
+                                    ),
                                     isExpanded: store.isExpanded(item.listing.id),
                                     onTap: {
                                         withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
@@ -58,8 +62,8 @@ struct InboxView: View {
                                     onTaskTap: { _ in
                                         // Activity tap - could navigate to detail or expand inline
                                     },
-                                    onAddNote: { content in
-                                        Task { await store.addNote(to: item.listing.id, content: content) }
+                                    onSubmitNote: {
+                                        store.submitNote(for: item.listing.id)
                                     }
                                 )
                                 .id(item.listing.id)

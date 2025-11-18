@@ -114,11 +114,11 @@ struct ListingDetailView: View {
 
     @ViewBuilder
     private var notesSection: some View {
-        NotesSection(notes: store.notes) { content in
-            Task {
-                await store.addNote(content)
-            }
-        }
+        NotesSection(
+            notes: store.notes,
+            inputText: $store.noteInputText,
+            onSubmit: store.submitNote
+        )
     }
 
     @ViewBuilder

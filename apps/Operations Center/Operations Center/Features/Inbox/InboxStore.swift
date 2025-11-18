@@ -22,6 +22,12 @@ final class InboxStore {
     var isLoading = false
     var errorMessage: String?
 
+    /// Note input text per listing - managed via binding
+    var listingNoteInputs: [String: String] = [:]
+
+    /// Pending note IDs for optimistic updates
+    private var pendingNoteIds = Set<String>()
+
     // MARK: - Dependencies
 
     private let taskRepository: TaskRepositoryClient
@@ -240,16 +246,63 @@ final class InboxStore {
 
     // MARK: - Note Actions
 
-    func addNote(to listingId: String, content: String) async {
-        errorMessage = nil
+    /// Submit note with optimistic update for instant UI feedback
+    func submitNote(for listingId: String) {
+        let inputText = listingNoteInputs[listingId] ?? ""
+        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
 
+        // Find the listing
+        guard let listingIndex = listings.firstIndex(where: { $0.listing.id == listingId }) else {
+            return
+        }
+
+        // Create optimistic note immediately
+        let tempId = UUID().uuidString
+        let optimisticNote = ListingNote(
+            id: tempId,
+            listingId: listingId,
+            content: trimmed,
+            type: "general",
+            createdBy: "Creating...",
+            createdByName: "You",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+
+        // Instant UI update - direct mutation triggers @Observable
+        listings[listingIndex].notes.append(optimisticNote)
+        pendingNoteIds.insert(tempId)
+        listingNoteInputs[listingId] = ""
+
+        // Fire async network call
+        Task {
+            await createNoteInBackground(tempId: tempId, listingId: listingId, content: trimmed)
+        }
+    }
+
+    /// Create note in background - replace optimistic version with server response
+    private func createNoteInBackground(tempId: String, listingId: String, content: String) async {
         do {
-            _ = try await noteRepository.createNote(listingId, content)
+            let createdNote = try await noteRepository.createNote(listingId, content)
 
-            // Refresh to get updated notes
-            await fetchTasks()
+            // Find the listing and replace temp note with server response
+            if let listingIndex = listings.firstIndex(where: { $0.listing.id == listingId }),
+               let noteIndex = listings[listingIndex].notes.firstIndex(where: { $0.id == tempId }) {
+                listings[listingIndex].notes[noteIndex] = createdNote
+            }
+            pendingNoteIds.remove(tempId)
+
+            Logger.database.info("Created note for listing \(listingId)")
         } catch {
-            errorMessage = error.localizedDescription
+            // Revert optimistic update
+            if let listingIndex = listings.firstIndex(where: { $0.listing.id == listingId }) {
+                listings[listingIndex].notes.removeAll { $0.id == tempId }
+            }
+            pendingNoteIds.remove(tempId)
+
+            Logger.database.error("Failed to create note: \(error.localizedDescription)")
+            errorMessage = "Failed to create note: \(error.localizedDescription)"
         }
     }
 

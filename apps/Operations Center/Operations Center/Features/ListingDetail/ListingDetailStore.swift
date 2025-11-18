@@ -37,6 +37,12 @@ final class ListingDetailStore {
     /// Loading state
     private(set) var isLoading = false
 
+    /// Note input text - managed by view via binding
+    var noteInputText = ""
+
+    /// Pending note IDs for optimistic updates
+    private var pendingNoteIds = Set<String>()
+
     /// Repositories for data access
     private let listingId: String
     private let listingRepository: ListingRepositoryClient
@@ -129,13 +135,52 @@ final class ListingDetailStore {
         await fetchListingData()
     }
 
-    /// Create a new note from NotesSection component
-    func addNote(_ content: String) async {
+    /// Submit note - optimistic update for instant UI feedback
+    func submitNote() {
+        let trimmed = noteInputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        // Create optimistic note immediately
+        let tempId = UUID().uuidString
+        let optimisticNote = ListingNote(
+            id: tempId,
+            listingId: listingId,
+            content: trimmed,
+            type: "general",
+            createdBy: "Creating...",
+            createdByName: "You",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+
+        // Instant UI update
+        notes.append(optimisticNote)
+        pendingNoteIds.insert(tempId)
+        noteInputText = ""
+
+        // Fire async network call
+        Task {
+            await createNoteInBackground(tempId: tempId, content: trimmed)
+        }
+    }
+
+    /// Create note in background - replace optimistic version with server response
+    private func createNoteInBackground(tempId: String, content: String) async {
         do {
             let createdNote = try await noteRepository.createNote(listingId, content)
-            notes.append(createdNote)
+
+            // Replace temp note with server response
+            if let index = notes.firstIndex(where: { $0.id == tempId }) {
+                notes[index] = createdNote
+            }
+            pendingNoteIds.remove(tempId)
+
             Logger.database.info("Created note for listing \(self.listingId)")
         } catch {
+            // Revert optimistic update
+            notes.removeAll { $0.id == tempId }
+            pendingNoteIds.remove(tempId)
+
             Logger.database.error("Failed to create note: \(error.localizedDescription)")
             errorMessage = "Failed to create note: \(error.localizedDescription)"
         }

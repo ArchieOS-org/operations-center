@@ -53,15 +53,16 @@ extension ListingNoteRepositoryClient {
                 Logger.database.info("Looking up staff by email: \(userEmail)")
 
                 // Fetch user's display name from staff table by email
-                let staff: [Staff] = try await supabase
+                let staff: Staff = try await supabase
                     .from("staff")
-                    .select()
+                    .select("staff_id, name")
                     .eq("email", value: userEmail)
+                    .single()
                     .execute()
                     .value
 
-                let userName = staff.first?.name
-                Logger.database.info("Found staff name: \(userName ?? "nil")")
+                let userName = staff.name
+                Logger.database.info("Found staff name: \(userName)")
                 let noteId = UUID().uuidString
                 let now = Date()
 
@@ -76,18 +77,13 @@ extension ListingNoteRepositoryClient {
                     updatedAt: now
                 )
 
-                let response: [ListingNote] = try await supabase
+                let createdNote: ListingNote = try await supabase
                     .from("listing_notes")
                     .insert(newNote)
                     .select()
+                    .single()
                     .execute()
                     .value
-
-                guard let createdNote = response.first else {
-                    throw NSError(domain: "ListingNoteRepository", code: -1, userInfo: [
-                        NSLocalizedDescriptionKey: "Failed to create note"
-                    ])
-                }
 
                 Logger.database.info("Created note \(noteId) for listing \(listingId)")
                 return createdNote
@@ -97,7 +93,7 @@ extension ListingNoteRepositoryClient {
                 try await supabase
                     .from("listing_notes")
                     .delete()
-                    .eq("note_id", value: noteId)
+                    .eq("id", value: noteId)
                     .execute()
                 Logger.database.info("Deleted note \(noteId)")
             }

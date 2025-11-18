@@ -15,10 +15,11 @@ public struct ListingCard: View {
     let realtor: Realtor?
     let tasks: [Activity]
     let notes: [ListingNote]
+    @Binding var noteInputText: String
     let isExpanded: Bool
     let onTap: () -> Void
     let onTaskTap: (Activity) -> Void
-    let onAddNote: (String) -> Void
+    let onSubmitNote: () -> Void
 
     // MARK: - Initialization
 
@@ -27,19 +28,21 @@ public struct ListingCard: View {
         realtor: Realtor?,
         tasks: [Activity],
         notes: [ListingNote],
+        noteInputText: Binding<String>,
         isExpanded: Bool,
         onTap: @escaping () -> Void,
         onTaskTap: @escaping (Activity) -> Void,
-        onAddNote: @escaping (String) -> Void
+        onSubmitNote: @escaping () -> Void
     ) {
         self.listing = listing
         self.realtor = realtor
         self.tasks = tasks
         self.notes = notes
+        self._noteInputText = noteInputText
         self.isExpanded = isExpanded
         self.onTap = onTap
         self.onTaskTap = onTaskTap
-        self.onAddNote = onAddNote
+        self.onSubmitNote = onSubmitNote
     }
 
     // MARK: - Body
@@ -63,7 +66,11 @@ public struct ListingCard: View {
                 // Expanded content
                 if isExpanded {
                     // Notes Section
-                    NotesSection(notes: notes, onAddNote: onAddNote)
+                    NotesSection(
+                        notes: notes,
+                        inputText: $noteInputText,
+                        onSubmit: onSubmitNote
+                    )
 
                     // Listing Activities Section
                     VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -170,6 +177,7 @@ public struct ListingCard: View {
 
 #Preview("Collapsed") {
     @Previewable @State var notes: [ListingNote] = []
+    @Previewable @State var noteInput = ""
 
     let listing = Listing(
         id: "listing-001",
@@ -191,20 +199,25 @@ public struct ListingCard: View {
         realtor: .mock1,
         tasks: [],
         notes: notes,
+        noteInputText: $noteInput,
         isExpanded: false,
         onTap: {},
         onTaskTap: { _ in },
-        onAddNote: { content in
+        onSubmitNote: {
+            let trimmed = noteInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
             let newNote = ListingNote(
                 id: UUID().uuidString,
                 listingId: listing.id,
-                content: content,
+                content: trimmed,
                 type: "general",
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
             )
             notes.append(newNote)
+            noteInput = ""
         }
     )
     .padding()
@@ -231,6 +244,7 @@ public struct ListingCard: View {
             updatedAt: Date().addingTimeInterval(-3600)
         )
     ]
+    @Previewable @State var noteInput = ""
 
     let listing = Listing(
         id: "listing-001",
@@ -318,20 +332,25 @@ public struct ListingCard: View {
         realtor: .mock2,
         tasks: tasks,
         notes: notes,
+        noteInputText: $noteInput,
         isExpanded: true,
         onTap: {},
         onTaskTap: { _ in },
-        onAddNote: { content in
+        onSubmitNote: {
+            let trimmed = noteInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
             let newNote = ListingNote(
                 id: UUID().uuidString,
                 listingId: listing.id,
-                content: content,
+                content: trimmed,
                 type: "general",
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
             )
             notes.append(newNote)
+            noteInput = ""
         }
     )
     .padding()
@@ -349,6 +368,7 @@ public struct ListingCard: View {
             updatedAt: Date().addingTimeInterval(-3600)
         )
     ]
+    @Previewable @State var noteInput = ""
 
     let listing = Listing(
         id: "listing-002",
@@ -370,20 +390,25 @@ public struct ListingCard: View {
         realtor: .mock3,
         tasks: [],
         notes: notes,
+        noteInputText: $noteInput,
         isExpanded: true,
         onTap: {},
         onTaskTap: { _ in },
-        onAddNote: { content in
+        onSubmitNote: {
+            let trimmed = noteInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
             let newNote = ListingNote(
                 id: UUID().uuidString,
                 listingId: listing.id,
-                content: content,
+                content: trimmed,
                 type: "general",
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
             )
             notes.append(newNote)
+            noteInput = ""
         }
     )
     .padding()
