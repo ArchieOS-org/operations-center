@@ -94,17 +94,16 @@ final class AuthenticationStore {
             currentUser = session.user
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
-            // Map Supabase errors to friendly signup errors
-            // Check message content for duplicate email
-            let message = authError.localizedDescription.lowercased()
-            let isDuplicateEmail = message.contains("already registered") ||
-                message.contains("already exists") ||
-                message.contains("user already exists") ||
-                message.contains("duplicate")
-
-            if isDuplicateEmail {
-                self.error = .emailAlreadyInUse
-            } else {
+            // Map Supabase errors using structured API fields
+            switch authError {
+            case .api(let message, _, _, _):
+                // Check structured message field for user_already_exists
+                if message.contains("user_already_exists") || message.contains("already registered") {
+                    self.error = .emailAlreadyInUse
+                } else {
+                    self.error = .supabaseError(authError)
+                }
+            default:
                 self.error = .supabaseError(authError)
             }
         } catch {
@@ -168,12 +167,12 @@ final class AuthenticationStore {
             NSLog("✅ Session restored successfully")
         } catch let authError as Auth.AuthError {
             // Check if this is expected (no session) vs actual error
-            let message = authError.localizedDescription.lowercased()
-            if message.contains("sessionmissing") || message.contains("session missing") {
+            switch authError {
+            case .api(let message, _, _, _) where message.contains("session_missing") || message.contains("SessionMissing"):
                 NSLog("ℹ️ No existing session - ensuring clean anon state")
                 // Ensure we're truly anonymous for RLS policies to work
                 try? await supabaseClient.auth.signOut()
-            } else {
+            default:
                 NSLog("⚠️ Session restoration error: \(authError.localizedDescription)")
                 // Clear any bad session
                 try? await supabaseClient.auth.signOut()
