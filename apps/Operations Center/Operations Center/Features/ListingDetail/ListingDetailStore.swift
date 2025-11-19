@@ -146,7 +146,7 @@ final class ListingDetailStore {
             id: tempId,
             listingId: listingId,
             content: trimmed,
-            type: "general",
+            type: .general,
             createdBy: "Creating...",
             createdByName: "You",
             createdAt: Date(),

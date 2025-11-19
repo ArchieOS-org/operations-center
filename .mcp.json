@@ -11,6 +11,19 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=kukmshbkzlskyuacgzbo"
+    },
+    "imessage": {
+      "command": "/opt/homebrew/bin/deno",
+      "args": [
+        "run",
+        "--allow-read",
+        "--allow-write",
+        "--allow-net",
+        "--allow-env",
+        "--allow-sys",
+        "--allow-ffi",
+        "/Users/noahdeskin/imessage-mcp/packages/imessage-mcp/src/index.ts"
+      ]
     }
   }
 }

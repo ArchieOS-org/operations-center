@@ -71,7 +71,7 @@ public struct NotesSection: View {
                 id: UUID().uuidString,
                 listingId: "listing-1",
                 content: trimmed,
-                type: "general",
+                type: .general,
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
@@ -89,7 +89,7 @@ public struct NotesSection: View {
             id: "1",
             listingId: "listing-1",
             content: "Need staging by Friday",
-            type: "general",
+            type: .general,
             createdBy: "Mike Torres",
             createdAt: Date().addingTimeInterval(-7200), // 2 hours ago
             updatedAt: Date().addingTimeInterval(-7200)
@@ -98,7 +98,7 @@ public struct NotesSection: View {
             id: "2",
             listingId: "listing-1",
             content: "Photos scheduled for Tuesday",
-            type: "general",
+            type: .general,
             createdBy: "Sarah Chen",
             createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
             updatedAt: Date().addingTimeInterval(-3600)
@@ -117,7 +117,7 @@ public struct NotesSection: View {
                 id: UUID().uuidString,
                 listingId: "listing-1",
                 content: trimmed,
-                type: "general",
+                type: .general,
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()

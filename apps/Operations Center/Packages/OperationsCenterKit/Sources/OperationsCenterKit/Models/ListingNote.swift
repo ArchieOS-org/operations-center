@@ -7,13 +7,21 @@
 
 import Foundation
 
+public enum NoteType: String, Codable, Sendable {
+    case general
+    case inspection
+    case showing
+    case offer
+    case followUp = "follow_up"
+}
+
 public struct ListingNote: Identifiable, Codable, Sendable {
     // MARK: - Properties
 
     public let id: String
     public let listingId: String
     public let content: String
-    public let type: String
+    public let type: NoteType
     public let createdBy: String?
     public let createdByName: String?
     public let createdAt: Date
@@ -26,7 +34,7 @@ public struct ListingNote: Identifiable, Codable, Sendable {
         id: String,
         listingId: String,
         content: String,
-        type: String = "general",
+        type: NoteType = .general,
         createdBy: String? = nil,
         createdByName: String? = nil,
         createdAt: Date,
@@ -60,45 +68,36 @@ public struct ListingNote: Identifiable, Codable, Sendable {
 
 extension ListingNote {
     /// Mock data for testing and previews
-    /// Context7 best practice: Keep mock data with the model
-    /// Note: Using computed properties (var) instead of static constants (let) to ensure dates are always relative to "now"
+    public static let mock1 = ListingNote(
+        id: "note_001",
+        listingId: "listing_001",
+        content: "Initial listing prep meeting with agent. Property needs deep cleaning before photos.",
+        type: .general,
+        createdBy: "staff_001",
+        createdByName: "Mike Torres",
+        createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+        updatedAt: Date().addingTimeInterval(-86400 * 2)
+    )
 
-    public static var mock1: ListingNote {
-        ListingNote(
-            id: "note_001",
-            listingId: "listing_001",
-            content: "Initial listing prep meeting with agent. Property needs deep cleaning before photos.",
-            type: "general",
-            createdBy: "staff_001",
-            createdByName: "Mike Torres",
-            createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
-            updatedAt: Date().addingTimeInterval(-86400 * 2)
-        )
-    }
+    public static let mock2 = ListingNote(
+        id: "note_002",
+        listingId: "listing_001",
+        content: "Professional photography scheduled for Friday. Staging team confirmed for Thursday evening.",
+        type: .general,
+        createdBy: "staff_002",
+        createdByName: "Sarah Chen",
+        createdAt: Date().addingTimeInterval(-86400), // 1 day ago
+        updatedAt: Date().addingTimeInterval(-86400)
+    )
 
-    public static var mock2: ListingNote {
-        ListingNote(
-            id: "note_002",
-            listingId: "listing_001",
-            content: "Professional photography scheduled for Friday. Staging team confirmed for Thursday evening.",
-            type: "general",
-            createdBy: "staff_002",
-            createdByName: "Sarah Chen",
-            createdAt: Date().addingTimeInterval(-86400), // 1 day ago
-            updatedAt: Date().addingTimeInterval(-86400)
-        )
-    }
-
-    public static var mock3: ListingNote {
-        ListingNote(
-            id: "note_003",
-            listingId: "listing_001",
-            content: "Agent requested virtual tour option. Coordinate with video team.",
-            type: "general",
-            createdBy: "staff_003",
-            createdByName: "Julia Martinez",
-            createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
-            updatedAt: Date().addingTimeInterval(-3600)
-        )
-    }
+    public static let mock3 = ListingNote(
+        id: "note_003",
+        listingId: "listing_001",
+        content: "Agent requested virtual tour option. Coordinate with video team.",
+        type: .general,
+        createdBy: "staff_003",
+        createdByName: "Julia Martinez",
+        createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
+        updatedAt: Date().addingTimeInterval(-3600)
+    )
 }

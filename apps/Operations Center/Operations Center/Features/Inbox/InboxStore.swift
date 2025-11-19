@@ -263,7 +263,7 @@ final class InboxStore {
             id: tempId,
             listingId: listingId,
             content: trimmed,
-            type: "general",
+            type: .general,
             createdBy: "Creating...",
             createdByName: "You",
             createdAt: Date(),

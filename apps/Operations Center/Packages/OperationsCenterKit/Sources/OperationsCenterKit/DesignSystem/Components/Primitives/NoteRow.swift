@@ -35,6 +35,7 @@ public struct NoteRow: View {
                 .font(Typography.body)
         }
         .padding(Spacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.sm)
     }
@@ -48,7 +49,7 @@ public struct NoteRow: View {
             id: "1",
             listingId: "listing-1",
             content: "Need to schedule staging for next week",
-            type: "general",
+            type: .general,
             createdBy: "staff_001",
             createdByName: "Sarah Chen",
             createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
@@ -59,7 +60,7 @@ public struct NoteRow: View {
             id: "2",
             listingId: "listing-1",
             content: "Photos scheduled for Tuesday at 2pm. Photographer confirmed.",
-            type: "general",
+            type: .general,
             createdBy: "staff_002",
             createdByName: "Mike Torres",
             createdAt: Date().addingTimeInterval(-86400), // 1 day ago
@@ -70,7 +71,7 @@ public struct NoteRow: View {
             id: "3",
             listingId: "listing-1",
             content: "Property showing went well. Buyer interested.",
-            type: "general",
+            type: .general,
             createdBy: "staff_003",
             createdByName: nil, // Test unknown author
             createdAt: Date().addingTimeInterval(-172800), // 2 days ago

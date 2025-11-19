@@ -91,6 +91,10 @@ final class AuthenticationStore {
                 data: ["team": .string(team.rawValue)]
             )
 
+            // Force session cache initialization before showing UI
+            // Prevents "Invalid session" race condition on immediate note creation
+            _ = try await supabaseClient.auth.session
+
             currentUser = session.user
             isAuthenticated = true
         } catch let authError as Auth.AuthError {
