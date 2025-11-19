@@ -15,6 +15,7 @@ public struct ListingNote: Identifiable, Codable, Sendable {
     public let content: String
     public let type: String
     public let createdBy: String?
+    public let createdByName: String?
     public let createdAt: Date
     public let updatedAt: Date
 
@@ -27,6 +28,7 @@ public struct ListingNote: Identifiable, Codable, Sendable {
         content: String,
         type: String = "general",
         createdBy: String? = nil,
+        createdByName: String? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -35,6 +37,7 @@ public struct ListingNote: Identifiable, Codable, Sendable {
         self.content = content
         self.type = type
         self.createdBy = createdBy
+        self.createdByName = createdByName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -47,6 +50,7 @@ public struct ListingNote: Identifiable, Codable, Sendable {
         case content
         case type
         case createdBy = "created_by"
+        case createdByName = "created_by_name"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -65,7 +69,8 @@ extension ListingNote {
             listingId: "listing_001",
             content: "Initial listing prep meeting with agent. Property needs deep cleaning before photos.",
             type: "general",
-            createdBy: "Mike Torres",
+            createdBy: "staff_001",
+            createdByName: "Mike Torres",
             createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
             updatedAt: Date().addingTimeInterval(-86400 * 2)
         )
@@ -77,7 +82,8 @@ extension ListingNote {
             listingId: "listing_001",
             content: "Professional photography scheduled for Friday. Staging team confirmed for Thursday evening.",
             type: "general",
-            createdBy: "Sarah Chen",
+            createdBy: "staff_002",
+            createdByName: "Sarah Chen",
             createdAt: Date().addingTimeInterval(-86400), // 1 day ago
             updatedAt: Date().addingTimeInterval(-86400)
         )
@@ -89,7 +95,8 @@ extension ListingNote {
             listingId: "listing_001",
             content: "Agent requested virtual tour option. Coordinate with video team.",
             type: "general",
-            createdBy: "Julia Martinez",
+            createdBy: "staff_003",
+            createdByName: "Julia Martinez",
             createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
             updatedAt: Date().addingTimeInterval(-3600)
         )

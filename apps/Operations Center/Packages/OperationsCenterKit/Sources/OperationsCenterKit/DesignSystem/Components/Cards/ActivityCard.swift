@@ -2,39 +2,35 @@
 //  ActivityCard.swift
 //  OperationsCenterKit
 //
-//  Blue accent, with border, subtasks first
-//  First-class citizen for property-linked activities
+//  Blue accent card for property-linked activities
 //
 
 import SwiftUI
 
-/// Card for displaying activities (property-linked, has a home)
+/// Card for displaying activities (property-linked tasks)
 public struct ActivityCard: View {
     // MARK: - Properties
 
     let task: Activity
     let listing: Listing
-    let subtasks: [Subtask]
     let isExpanded: Bool
+    let assigneeName: String?
     let onTap: () -> Void
-    let onSubtaskToggle: (Subtask) -> Void
 
     // MARK: - Initialization
 
     public init(
         task: Activity,
         listing: Listing,
-        subtasks: [Subtask],
         isExpanded: Bool,
-        onTap: @escaping () -> Void,
-        onSubtaskToggle: @escaping (Subtask) -> Void
+        assigneeName: String? = nil,
+        onTap: @escaping () -> Void
     ) {
         self.task = task
         self.listing = listing
-        self.subtasks = subtasks
         self.isExpanded = isExpanded
+        self.assigneeName = assigneeName
         self.onTap = onTap
-        self.onSubtaskToggle = onSubtaskToggle
     }
 
     // MARK: - Body
@@ -45,21 +41,94 @@ public struct ActivityCard: View {
             isExpanded: isExpanded,
             onTap: onTap
         ) {
-            // Collapsed content (always shown)
+            // Card content
             CardHeader(
                 title: listing.addressString,
-                subtitle: task.assignedStaffId ?? "Unassigned",
+                subtitle: assigneeName ?? "Unassigned",
                 chips: buildChips(),
                 dueDate: task.dueDate,
                 isExpanded: isExpanded
             )
         } expandedContent: {
             // Expanded content (only when expanded)
-            ActivitiesSection(subtasks: subtasks, onToggle: onSubtaskToggle)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity
-                ))
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Activity name
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text("Activity")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text(task.name)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                }
+
+                // Description/Notes
+                if let description = task.description, !description.isEmpty {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text("Notes")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Text(description)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                }
+
+                // Metadata grid
+                MetadataGrid(columnCount: 2) {
+                    MetadataItem(
+                        label: "Property",
+                        value: listing.addressString
+                    )
+
+                    MetadataItem(
+                        label: "Created",
+                        value: task.createdAt.formatted(date: .abbreviated, time: .omitted)
+                    )
+
+                    if let claimedAt = task.claimedAt {
+                        MetadataItem(
+                            label: "Claimed",
+                            value: claimedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let dueDate = task.dueDate {
+                        MetadataItem(
+                            label: "Due",
+                            value: dueDate.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let completedAt = task.completedAt {
+                        MetadataItem(
+                            label: "Completed",
+                            value: completedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    MetadataItem(
+                        label: "Status",
+                        value: task.status.displayName
+                    )
+
+                    if let taskCategory = task.taskCategory {
+                        MetadataItem(
+                            label: "Category",
+                            value: taskCategory.displayName
+                        )
+                    }
+                }
+            }
+            .padding(Spacing.md)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .top)),
+                removal: .opacity
+            ))
         }
     }
 
@@ -77,35 +146,37 @@ public struct ActivityCard: View {
         if let listingType = listing.type {
             chips.append(.custom(
                 text: listingType,
-                color: .blue
+                color: Colors.accentListing
             ))
         }
 
-        // Category chip
-        chips.append(.custom(
-            text: task.taskCategory.rawValue,
-            color: categoryColor(for: task.taskCategory)
-        ))
+        // Category chip (if categorized)
+        if let category = task.taskCategory {
+            chips.append(.custom(
+                text: category.rawValue,
+                color: categoryColor(for: category)
+            ))
+        }
 
         // Visibility group chip (if restricted)
         if task.visibilityGroup != .both {
             chips.append(.custom(
                 text: task.visibilityGroup.rawValue,
-                color: .orange
+                color: Colors.accentAgentTask
             ))
         }
 
         return chips
     }
 
-    private func categoryColor(for category: Activity.TaskCategory) -> Color {
+    private func categoryColor(for category: TaskCategory) -> Color {
         switch category {
-        case .admin: return .blue
-        case .marketing: return .purple
-        case .photo: return .pink
-        case .staging: return .green
-        case .inspection: return .red
-        case .other: return .gray
+        case .admin: return Colors.categoryAdmin
+        case .marketing: return Colors.categoryMarketing
+        case .photo: return Colors.categoryPhoto
+        case .staging: return Colors.categoryStaging
+        case .inspection: return Colors.categoryInspection
+        case .other: return Colors.categoryOther
         }
     }
 }
@@ -144,7 +215,6 @@ public struct ActivityCard: View {
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 0.0,
         type: "RESIDENTIAL",
-        notes: "",
         createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
         completedAt: nil,
@@ -154,15 +224,14 @@ public struct ActivityCard: View {
     ActivityCard(
         task: task,
         listing: listing,
-        subtasks: [],
         isExpanded: false,
-        onTap: {},
-        onSubtaskToggle: { _ in }
+        assigneeName: "Mike Torres",
+        onTap: {}
     )
     .padding()
 }
 
-#Preview("Expanded with Subtasks") {
+#Preview("Expanded") {
     let task = Activity(
         id: "1",
         listingId: "listing-001",
@@ -194,53 +263,18 @@ public struct ActivityCard: View {
         dueDate: Date().addingTimeInterval(7 * 24 * 3600),
         progress: 50.0,
         type: "LUXURY",
-        notes: "",
         createdAt: Date().addingTimeInterval(-2 * 24 * 3600),
         updatedAt: Date().addingTimeInterval(-2 * 24 * 3600),
         completedAt: nil,
         deletedAt: nil
     )
 
-    let subtasks = [
-        Subtask(
-            id: "1",
-            parentTaskId: "1",
-            name: "Deep clean all rooms",
-            isCompleted: true,
-            completedAt: Date(),
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "2",
-            parentTaskId: "1",
-            name: "Touch up paint in living room",
-            isCompleted: true,
-            completedAt: Date(),
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "3",
-            parentTaskId: "1",
-            name: "Landscape front yard",
-            isCompleted: false,
-            createdAt: Date()
-        ),
-        Subtask(
-            id: "4",
-            parentTaskId: "1",
-            name: "Stage master bedroom",
-            isCompleted: false,
-            createdAt: Date()
-        )
-    ]
-
     ActivityCard(
         task: task,
         listing: listing,
-        subtasks: subtasks,
         isExpanded: true,
-        onTap: {},
-        onSubtaskToggle: { _ in }
+        assigneeName: "Mike Torres",
+        onTap: {}
     )
     .padding()
 }

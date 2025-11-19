@@ -10,11 +10,13 @@ import OperationsCenterKit
 import SwiftUI
 
 struct InboxView: View {
-    @State private var store: InboxStore
+    /// Store is @Observable - SwiftUI tracks changes automatically
+    /// No @State wrapper needed for @Observable objects
+    let store: InboxStore
 
     /// Accepts pre-configured store
     init(store: InboxStore) {
-        _store = State(initialValue: store)
+        self.store = store
     }
 
     var body: some View {
@@ -22,14 +24,21 @@ struct InboxView: View {
             if store.isLoading {
                 ProgressView("Loading inbox...")
             } else if let error = store.errorMessage {
-                InboxErrorView(message: error) {
-                    Task { await store.refresh() }
-                }
+                DSErrorState(
+                    message: error,
+                    retryAction: {
+                        Task { await store.refresh() }
+                    }
+                )
             } else if store.tasks.isEmpty && store.listings.isEmpty {
-                EmptyInboxView()
+                DSEmptyState(
+                    icon: "tray",
+                    title: "No Tasks",
+                    message: "New tasks will appear here"
+                )
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: Spacing.md) {
                         // Listings Section
                         if !store.listings.isEmpty {
                             sectionHeader(title: "Listings", count: store.listings.count)
@@ -40,6 +49,10 @@ struct InboxView: View {
                                     realtor: item.realtor,
                                     tasks: item.activities,
                                     notes: item.notes,
+                                    noteInputText: Binding(
+                                        get: { store.listingNoteInputs[item.listing.id] ?? "" },
+                                        set: { store.listingNoteInputs[item.listing.id] = $0 }
+                                    ),
                                     isExpanded: store.isExpanded(item.listing.id),
                                     onTap: {
                                         withAnimation(.spring(duration: 0.4, bounce: 0.0)) {
@@ -49,8 +62,8 @@ struct InboxView: View {
                                     onTaskTap: { _ in
                                         // Activity tap - could navigate to detail or expand inline
                                     },
-                                    onAddNote: { content in
-                                        Task { await store.addNote(to: item.listing.id, content: content) }
+                                    onSubmitNote: {
+                                        store.submitNote(for: item.listing.id)
                                     }
                                 )
                                 .id(item.listing.id)
@@ -136,10 +149,7 @@ struct InboxView: View {
                 title: "Acknowledge",
                 systemImage: "checkmark.circle",
                 action: {
-                    // Mark all activities as acknowledged/claimed
-                    for activity in listingWithDetails.activities {
-                        Task { await store.claimActivity(activity) }
-                    }
+                    Task { await store.acknowledgeListing(listingWithDetails.listing.id) }
                 }
             ),
             DSContextAction(
@@ -169,59 +179,19 @@ struct InboxView: View {
             Text("\(count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)
                 .background(Color.gray.opacity(0.2))
                 .clipShape(Capsule())
         }
-        .padding(.top, 8)
-    }
-}
-
-struct EmptyInboxView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "tray")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            Text("No Tasks")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text("New tasks will appear here")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .padding()
-    }
-}
-
-struct InboxErrorView: View {
-    let message: String
-    let retry: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 60))
-                .foregroundStyle(.red)
-            Text("Error")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text(message)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button("Try Again", action: retry)
-                .buttonStyle(.borderedProminent)
-        }
-        .padding()
+        .padding(.top, Spacing.sm)
     }
 }
 
 #Preview("With Mock Data") {
     let store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview,
         initialTasks: [
@@ -252,6 +222,7 @@ struct InboxErrorView: View {
 #Preview("Empty State") {
     let store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )
@@ -264,6 +235,7 @@ struct InboxErrorView: View {
 #Preview("Loading State") {
     @Previewable @State var store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )
@@ -277,6 +249,7 @@ struct InboxErrorView: View {
 #Preview("Error State") {
     @Previewable @State var store = InboxStore(
         taskRepository: .preview,
+        listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview
     )

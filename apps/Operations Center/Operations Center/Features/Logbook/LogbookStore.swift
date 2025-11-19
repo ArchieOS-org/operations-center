@@ -19,6 +19,8 @@ final class LogbookStore {
 
     private(set) var completedListings: [Listing] = []
     private(set) var completedTasks: [AgentTask] = []
+    private(set) var deletedTasks: [AgentTask] = []
+    private(set) var deletedActivities: [ActivityWithDetails] = []
     var errorMessage: String?
     private(set) var isLoading = false
 
@@ -37,7 +39,7 @@ final class LogbookStore {
 
     // MARK: - Data Fetching
 
-    /// Fetch completed items from both repositories in parallel
+    /// Fetch completed items and deleted items from repositories in parallel
     /// Per Context7: Use async let for parallel fetching
     func fetchCompletedItems() async {
         isLoading = true
@@ -48,16 +50,24 @@ final class LogbookStore {
             // Fetch in parallel per Context7 pattern
             async let listingsFetch = listingRepository.fetchCompletedListings()
             async let tasksFetch = taskRepository.fetchCompletedTasks()
+            async let deletedTasksFetch = taskRepository.fetchDeletedTasks()
+            async let deletedActivitiesFetch = taskRepository.fetchDeletedActivities()
 
-            let (listings, tasks) = try await (listingsFetch, tasksFetch)
+            let (listings, tasks, delTasks, delActivities) = try await (
+                listingsFetch, tasksFetch, deletedTasksFetch, deletedActivitiesFetch
+            )
 
             completedListings = listings
             completedTasks = tasks
+            deletedTasks = delTasks
+            deletedActivities = delActivities
 
             Logger.database.info(
                 """
                 Fetched \(self.completedListings.count) completed listings, \
-                \(self.completedTasks.count) completed tasks
+                \(self.completedTasks.count) completed tasks, \
+                \(self.deletedTasks.count) deleted tasks, \
+                \(self.deletedActivities.count) deleted activities
                 """
             )
         } catch {

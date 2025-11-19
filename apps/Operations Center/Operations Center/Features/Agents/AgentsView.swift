@@ -16,6 +16,8 @@ import OperationsCenterKit
 struct AgentsView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: AgentsStore
 
     // MARK: - Initialization
@@ -32,8 +34,7 @@ struct AgentsView: View {
                 NavigationLink(value: Route.agent(id: realtor.id)) {
                     RealtorRow(realtor: realtor)
                 }
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .standardListRowInsets()
             }
         }
         .listStyle(.plain)
@@ -44,20 +45,8 @@ struct AgentsView: View {
         .task {
             await store.fetchRealtors()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .loadingOverlay(store.isLoading)
+        .errorAlert($store.errorMessage)
     }
 }
 
@@ -67,7 +56,7 @@ private struct RealtorRow: View {
     let realtor: Realtor
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
                 Text(realtor.name)
                     .font(.headline)
@@ -78,8 +67,8 @@ private struct RealtorRow: View {
                     Text(realtor.status.displayName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
                         .background(Color.secondary.opacity(0.2))
                         .clipShape(Capsule())
                 }
@@ -92,7 +81,7 @@ private struct RealtorRow: View {
             }
 
             if !realtor.territories.isEmpty {
-                HStack(spacing: 4) {
+                HStack(spacing: Spacing.xs) {
                     Image(systemName: "map")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -102,7 +91,7 @@ private struct RealtorRow: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 }
 

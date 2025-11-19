@@ -15,12 +15,17 @@ import OperationsCenterKit
 struct AllListingsView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: AllListingsStore
 
     // MARK: - Initialization
 
-    init(repository: ListingRepositoryClient) {
-        _store = State(initialValue: AllListingsStore(repository: repository))
+    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+        _store = State(initialValue: AllListingsStore(
+            listingRepository: listingRepository,
+            taskRepository: taskRepository
+        ))
     }
 
     // MARK: - Body
@@ -33,8 +38,13 @@ struct AllListingsView: View {
 
     private var listingsList: some View {
         List {
-            listingsSection
-            emptyStateSection
+            categoryFilterSection
+            if store.isLoading {
+                skeletonSection
+            } else {
+                listingsSection
+                emptyStateSection
+            }
         }
         .listStyle(.plain)
         .navigationTitle("All Listings")
@@ -44,61 +54,47 @@ struct AllListingsView: View {
         .task {
             await store.fetchAllListings()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .errorAlert($store.errorMessage)
+    }
+
+    private var categoryFilterSection: some View {
+        CategoryFilterPicker(selection: $store.selectedCategory)
     }
 
     @ViewBuilder
     private var listingsSection: some View {
-        if !store.listings.isEmpty {
+        if !store.filteredListings.isEmpty {
             Section {
-                ForEach(store.listings, id: \.id) { listing in
+                ForEach(store.filteredListings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingCollapsedContent(listing: listing)
                     }
-                    .listRowInsets(EdgeInsets(
-                        top: Spacing.listRowVertical,
-                        leading: Spacing.listRowHorizontal,
-                        bottom: Spacing.listRowVertical,
-                        trailing: Spacing.listRowHorizontal
-                    ))
+                    .standardListRowInsets()
                 }
             }
         }
     }
 
     @ViewBuilder
-    private var emptyStateSection: some View {
-        if store.listings.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "house.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No listings")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("Listings will appear here when they're added to the system")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+    private var skeletonSection: some View {
+        Section {
+            ForEach(0..<5, id: \.self) { _ in
+                SkeletonCard(tintColor: Colors.surfaceListingTinted)
+                    .skeletonShimmer()
+                    .listRowSeparator(.hidden)
+                    .standardListRowInsets()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+        }
+    }
+
+    @ViewBuilder
+    private var emptyStateSection: some View {
+        if store.filteredListings.isEmpty && !store.isLoading {
+            DSEmptyState(
+                icon: "house.circle",
+                title: "No listings",
+                message: "Listings will appear here when they're added to the system"
+            )
             .listRowSeparator(.hidden)
         }
     }
@@ -107,5 +103,8 @@ struct AllListingsView: View {
 // MARK: - Preview
 
 #Preview {
-    AllListingsView(repository: .preview)
+    AllListingsView(
+        listingRepository: .preview,
+        taskRepository: .preview
+    )
 }

@@ -2,36 +2,28 @@
 //  NoteRow.swift
 //  OperationsCenterKit
 //
-//  Single note display with author, timestamp, and content
+//  Single note display - author, timestamp, content
+//  Zero complexity, zero lag
 //
 
 import SwiftUI
 
-/// Displays a single note with author attribution and timestamp
+/// Single note row - clean and fast
 public struct NoteRow: View {
-    // MARK: - Properties
-
     let note: ListingNote
-
-    // MARK: - Initialization
 
     public init(note: ListingNote) {
         self.note = note
     }
 
-    // MARK: - Body
-
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            // Author and timestamp
             HStack(spacing: Spacing.xs) {
-                Text(note.createdBy ?? "Unknown")
+                Text(note.createdByName ?? "Unknown")
                     .font(Typography.cardMeta)
                     .fontWeight(.medium)
-                    .foregroundStyle(.primary)
 
                 Text("·")
-                    .font(Typography.cardMeta)
                     .foregroundStyle(.tertiary)
 
                 Text(note.createdAt, style: .relative)
@@ -39,24 +31,12 @@ public struct NoteRow: View {
                     .foregroundStyle(.secondary)
             }
 
-            // Content
             Text(note.content)
                 .font(Typography.body)
-                .foregroundStyle(.primary)
         }
         .padding(Spacing.sm)
         .background(Colors.surfaceSecondary)
         .cornerRadius(CornerRadius.sm)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityText)
-    }
-
-    // MARK: - Accessibility
-
-    private var accessibilityText: String {
-        let author = note.createdBy ?? "Unknown"
-        let time = note.createdAt.formatted(.relative(presentation: .named))
-        return "\(author), \(time): \(note.content)"
     }
 }
 
@@ -69,7 +49,8 @@ public struct NoteRow: View {
             listingId: "listing-1",
             content: "Need to schedule staging for next week",
             type: "general",
-            createdBy: "Sarah Chen",
+            createdBy: "staff_001",
+            createdByName: "Sarah Chen",
             createdAt: Date().addingTimeInterval(-3600), // 1 hour ago
             updatedAt: Date().addingTimeInterval(-3600)
         ))
@@ -79,7 +60,8 @@ public struct NoteRow: View {
             listingId: "listing-1",
             content: "Photos scheduled for Tuesday at 2pm. Photographer confirmed.",
             type: "general",
-            createdBy: "Mike Torres",
+            createdBy: "staff_002",
+            createdByName: "Mike Torres",
             createdAt: Date().addingTimeInterval(-86400), // 1 day ago
             updatedAt: Date().addingTimeInterval(-86400)
         ))
@@ -89,7 +71,8 @@ public struct NoteRow: View {
             listingId: "listing-1",
             content: "Property showing went well. Buyer interested.",
             type: "general",
-            createdBy: nil, // Test unknown author
+            createdBy: "staff_003",
+            createdByName: nil, // Test unknown author
             createdAt: Date().addingTimeInterval(-172800), // 2 days ago
             updatedAt: Date().addingTimeInterval(-172800)
         ))

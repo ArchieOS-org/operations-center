@@ -191,4 +191,101 @@ public enum Colors {
         return Color(nsColor: .systemGray)
         #endif
     }()
+
+    // MARK: - Task Category Colors
+
+    /// Admin task category
+    public static let categoryAdmin: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemBlue)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemBlue)
+        #endif
+    }()
+
+    /// Marketing task category
+    public static let categoryMarketing: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemPurple)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemPurple)
+        #endif
+    }()
+
+    /// Photo task category
+    public static let categoryPhoto: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemPink)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemPink)
+        #endif
+    }()
+
+    /// Staging task category
+    public static let categoryStaging: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGreen)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGreen)
+        #endif
+    }()
+
+    /// Inspection task category
+    public static let categoryInspection: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemRed)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemRed)
+        #endif
+    }()
+
+    /// Other task category
+    public static let categoryOther: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray)
+        #endif
+    }()
+
+    // MARK: - UI State Colors
+
+    /// Checkbox incomplete state
+    public static let checkboxIncomplete: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray).opacity(0.3)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray).opacity(0.3)
+        #endif
+    }()
+
+    /// Preview background for Xcode previews
+    public static let previewBackground: Color = {
+        #if canImport(UIKit)
+        return Color(uiColor: .systemGray).opacity(0.1)
+        #elseif canImport(AppKit)
+        return Color(nsColor: .systemGray).opacity(0.1)
+        #endif
+    }()
+
+    // MARK: - Semantic Color Resolution
+
+    /// Resolves a semantic color name to an actual Color token
+    /// Used by models that return semantic names (e.g., ListingStatus.semanticColorName)
+    ///
+    /// Example:
+    /// ```swift
+    /// let status: ListingStatus = .active
+    /// let color = Colors.semantic(status.semanticColorName)  // Returns .statusCompleted (green)
+    /// ```
+    public static func semantic(_ name: String) -> Color {
+        switch name {
+        case "success": return statusCompleted     // Green - active, successful states
+        case "warning": return statusClaimed       // Orange - pending, attention needed
+        case "info": return statusInProgress       // Blue - informational, in-progress
+        case "error": return statusFailed          // Red - errors, failures
+        case "neutral": return statusCancelled     // Gray - cancelled, neutral
+        default: return Color.gray                 // Fallback
+        }
+    }
 }

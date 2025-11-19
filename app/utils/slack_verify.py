@@ -11,10 +11,7 @@ import time
 
 
 def verify_slack_signature(
-    signing_secret: str,
-    timestamp: str,
-    body: str,
-    signature: str
+    signing_secret: str, timestamp: str, body: str, signature: str
 ) -> bool:
     """
     Verify Slack request signature using HMAC-SHA256
@@ -48,12 +45,13 @@ def verify_slack_signature(
         return False
 
     # Calculate expected signature
-    sig_basestring = f'v0:{timestamp}:{body}'
-    expected_signature = 'v0=' + hmac.new(
-        signing_secret.encode(),
-        sig_basestring.encode(),
-        hashlib.sha256
-    ).hexdigest()
+    sig_basestring = f"v0:{timestamp}:{body}"
+    expected_signature = (
+        "v0="
+        + hmac.new(
+            signing_secret.encode(), sig_basestring.encode(), hashlib.sha256
+        ).hexdigest()
+    )
 
     # Constant-time comparison to prevent timing attacks
     return hmac.compare_digest(expected_signature, signature)

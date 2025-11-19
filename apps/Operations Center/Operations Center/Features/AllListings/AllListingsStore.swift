@@ -2,24 +2,48 @@
 //  AllListingsStore.swift
 //  Operations Center
 //
-//  All Listings screen store - shows all listings system-wide
-//  Per TASK_MANAGEMENT_SPEC.md lines 238-253
+//  All Listings store - manages all listings system-wide
 //
 
 import Foundation
 import OperationsCenterKit
 import OSLog
-import SwiftUI
 
-/// Store for All Listings screen - all active listings across the entire system
-/// Per spec: "All Listings - Displays all active listings in the system"
 @Observable
 @MainActor
 final class AllListingsStore {
     // MARK: - Properties
 
+    /// Defer filtering updates during batch mutations
+    private var isDeferringUpdates = false
+
     /// All listings
-    private(set) var listings: [Listing] = []
+    private(set) var listings: [Listing] = [] {
+        didSet {
+            guard !isDeferringUpdates else { return }
+            updateFilteredListings()
+        }
+    }
+
+    /// Category filter selection (nil = "All")
+    var selectedCategory: TaskCategory? {
+        didSet {
+            guard !isDeferringUpdates else { return }
+            updateFilteredListings()
+        }
+    }
+
+    /// Mapping of listing ID to categories of all tasks for that listing
+    private var listingCategories: [String: Set<TaskCategory?>] = [:] {
+        didSet {
+            guard !isDeferringUpdates else { return }
+            updateFilteredListings()
+        }
+    }
+
+    /// Cached filtered listings - updated when listings or category changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredListings: [Listing] = []
 
     /// Error message to display
     var errorMessage: String?
@@ -28,12 +52,28 @@ final class AllListingsStore {
     private(set) var isLoading = false
 
     /// Repository for data access
-    private let repository: ListingRepositoryClient
+    private let listingRepository: ListingRepositoryClient
+    private let taskRepository: TaskRepositoryClient
 
     // MARK: - Initialization
 
-    init(repository: ListingRepositoryClient) {
-        self.repository = repository
+    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+        self.listingRepository = listingRepository
+        self.taskRepository = taskRepository
+    }
+
+    // MARK: - Private Methods
+
+    /// Update cached filtered listings when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredListings() {
+        if selectedCategory == nil {
+            filteredListings = listings
+        } else {
+            filteredListings = listings.filter { listing in
+                listingCategories[listing.id]?.contains(selectedCategory) ?? false
+            }
+        }
     }
 
     // MARK: - Actions
@@ -44,8 +84,31 @@ final class AllListingsStore {
         errorMessage = nil
 
         do {
-            listings = try await repository.fetchListings()
-            Logger.database.info("Fetched \(self.listings.count) listings")
+            // Fetch both listings and activities in parallel
+            async let listingsResult = listingRepository.fetchListings()
+            async let activitiesResult = taskRepository.fetchActivities()
+
+            let (allListings, allActivities) = try await (listingsResult, activitiesResult)
+
+            // Build category mapping from activities
+            var categoryMapping: [String: Set<TaskCategory?>] = [:]
+            for activityWithDetails in allActivities {
+                let listingId = activityWithDetails.task.listingId
+
+                if categoryMapping[listingId] == nil {
+                    categoryMapping[listingId] = Set()
+                }
+                categoryMapping[listingId]?.insert(activityWithDetails.task.taskCategory)
+            }
+
+            // Batch update: defer filtering until both properties updated
+            isDeferringUpdates = true
+            listings = allListings
+            listingCategories = categoryMapping
+            isDeferringUpdates = false
+
+            // Trigger single filter update with complete data
+            updateFilteredListings()
         } catch {
             Logger.database.error("Failed to fetch all listings: \(error.localizedDescription)")
             errorMessage = "Failed to load listings: \(error.localizedDescription)"
@@ -54,21 +117,8 @@ final class AllListingsStore {
         isLoading = false
     }
 
-    /// Refresh data
+    /// Refresh listings
     func refresh() async {
         await fetchAllListings()
-    }
-
-    /// Delete a listing
-    func deleteListing(_ listing: Listing) async {
-        do {
-            let currentUserId = "current-user" // NOTE: Get from auth
-            try await repository.deleteListing(listing.id, currentUserId)
-
-            await refresh()
-        } catch {
-            Logger.database.error("Failed to delete listing: \(error.localizedDescription)")
-            errorMessage = "Failed to delete listing: \(error.localizedDescription)"
-        }
     }
 }

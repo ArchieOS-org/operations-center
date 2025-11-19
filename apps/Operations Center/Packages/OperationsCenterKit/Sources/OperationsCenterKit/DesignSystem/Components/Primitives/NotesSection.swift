@@ -2,109 +2,55 @@
 //  NotesSection.swift
 //  OperationsCenterKit
 //
-//  Notes list with always-ready input field
+//  Notes list with input field - pure rendering, zero complexity
+//  Parent owns state and submission logic
 //
 
 import SwiftUI
 
-/// Section displaying notes with an always-visible input field
-/// Zero modes - type, hit return, note appears
+/// Notes section - pure rendering component
+/// Parent manages input state and handles submission with optimistic updates
 public struct NotesSection: View {
-    // MARK: - Properties
-
     let notes: [ListingNote]
-    let onAddNote: (String) -> Void
+    @Binding var inputText: String
+    let onSubmit: () -> Void
 
-    @State private var newNoteText = ""
     @FocusState private var isInputFocused: Bool
-    @State private var lastNoteIdToScroll: String?
-
-    // MARK: - Initialization
 
     public init(
         notes: [ListingNote],
-        onAddNote: @escaping (String) -> Void
+        inputText: Binding<String>,
+        onSubmit: @escaping () -> Void
     ) {
         self.notes = notes
-        self.onAddNote = onAddNote
+        self._inputText = inputText
+        self.onSubmit = onSubmit
     }
-
-    // MARK: - Body
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Section title
             Text("Notes")
                 .font(Typography.cardSubtitle)
                 .foregroundStyle(.secondary)
 
-            // Input field - always visible at top
-            TextField("Add a note...", text: $newNoteText, axis: .vertical)
+            TextField("Add a note...", text: $inputText)
                 .font(Typography.body)
-                .lineLimit(1...3)
+                .lineLimit(1)
                 .padding(Spacing.sm)
                 .background(Colors.surfaceTertiary)
                 .cornerRadius(CornerRadius.sm)
                 .focused($isInputFocused)
                 .submitLabel(.done)
-                .onChange(of: newNoteText) { newValue in
-                    guard isInputFocused else { return }
-                    guard newValue.last == "\n" else { return }
+                .onSubmit(onSubmit)
 
-                    // Remove the newline before submitting
-                    newNoteText.removeLast()
-                    submitNote()
-                }
-
-            // Notes list
             if !notes.isEmpty {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: Spacing.sm) {
-                            ForEach(notes) { note in
-                                NoteRow(note: note)
-                                    .id(note.id)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: Spacing.maxContentHeight)
-                    .task {
-                        // First render - scroll to bottom if needed
-                        lastNoteIdToScroll = notes.last?.id
-                    }
-                    .onChange(of: notes.last?.id) { newId in
-                        // Note added, edited, or reordered - scroll to latest
-                        lastNoteIdToScroll = newId
-                    }
-                    .onChange(of: lastNoteIdToScroll) { id in
-                        guard let id else { return }
-                        // Defer to next runloop so views are laid out
-                        DispatchQueue.main.async {
-                            withAnimation {
-                                proxy.scrollTo(id, anchor: .bottom)
-                            }
-                        }
+                VStack(spacing: Spacing.sm) {
+                    ForEach(notes) { note in
+                        NoteRow(note: note)
                     }
                 }
             }
         }
-        .transition(.asymmetric(
-            insertion: .opacity.combined(with: .move(edge: .top)),
-            removal: .opacity
-        ))
-    }
-
-    // MARK: - Helper Methods
-
-    private func submitNote() {
-        let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        onAddNote(trimmed)
-        newNoteText = ""
-
-        // Keep focus for rapid note-taking
-        isInputFocused = true
     }
 }
 
@@ -112,19 +58,28 @@ public struct NotesSection: View {
 
 #Preview("Empty Notes") {
     @Previewable @State var notes: [ListingNote] = []
+    @Previewable @State var inputText = ""
 
-    NotesSection(notes: notes) { content in
-        let newNote = ListingNote(
-            id: UUID().uuidString,
-            listingId: "listing-1",
-            content: content,
-            type: "general",
-            createdBy: "Current User",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        notes.append(newNote)
-    }
+    NotesSection(
+        notes: notes,
+        inputText: $inputText,
+        onSubmit: {
+            let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
+            let newNote = ListingNote(
+                id: UUID().uuidString,
+                listingId: "listing-1",
+                content: trimmed,
+                type: "general",
+                createdBy: "Current User",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            notes.append(newNote)
+            inputText = ""
+        }
+    )
     .padding()
 }
 
@@ -149,18 +104,27 @@ public struct NotesSection: View {
             updatedAt: Date().addingTimeInterval(-3600)
         )
     ]
+    @Previewable @State var inputText = ""
 
-    NotesSection(notes: notes) { content in
-        let newNote = ListingNote(
-            id: UUID().uuidString,
-            listingId: "listing-1",
-            content: content,
-            type: "general",
-            createdBy: "Current User",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        notes.append(newNote)
-    }
+    NotesSection(
+        notes: notes,
+        inputText: $inputText,
+        onSubmit: {
+            let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
+            let newNote = ListingNote(
+                id: UUID().uuidString,
+                listingId: "listing-1",
+                content: trimmed,
+                type: "general",
+                createdBy: "Current User",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            notes.append(newNote)
+            inputText = ""
+        }
+    )
     .padding()
 }

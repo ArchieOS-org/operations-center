@@ -14,6 +14,8 @@ import OperationsCenterKit
 struct AgentDetailView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: AgentDetailStore
 
     // MARK: - Initialization
@@ -48,11 +50,7 @@ struct AgentDetailView: View {
         .task {
             await store.fetchAgentData()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
+        .loadingOverlay(store.isLoading)
         .overlay(alignment: .bottom) {
             // Floating context menu - appears at screen bottom when card is expanded
             if let expandedId = store.expandedTaskId {
@@ -69,18 +67,7 @@ struct AgentDetailView: View {
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .errorAlert($store.errorMessage)
     }
 
     // MARK: - Helpers
@@ -121,9 +108,9 @@ struct AgentDetailView: View {
     private var agentInfoSection: some View {
         if let realtor = store.realtor {
             Section {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Spacing.md) {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
                             Text(realtor.name)
                                 .font(.title2)
                                 .fontWeight(.semibold)
@@ -140,15 +127,15 @@ struct AgentDetailView: View {
                         if realtor.status != .active {
                             Text(realtor.status.displayName)
                                 .font(.caption)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, Spacing.md)
+                                .padding(.vertical, Spacing.sm)
                                 .background(Color.secondary.opacity(0.2))
                                 .clipShape(Capsule())
                         }
                     }
 
                     if !realtor.territories.isEmpty {
-                        HStack(alignment: .top, spacing: 8) {
+                        HStack(alignment: .top, spacing: Spacing.sm) {
                             Image(systemName: "map")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -158,7 +145,7 @@ struct AgentDetailView: View {
                         }
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         Image(systemName: "envelope")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -167,7 +154,7 @@ struct AgentDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, Spacing.sm)
             }
         }
     }
@@ -181,7 +168,7 @@ struct AgentDetailView: View {
                         ListingBrowseCard(listing: listingWithActivities.listing)
                     }
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -195,17 +182,13 @@ struct AgentDetailView: View {
                     ActivityCard(
                         task: taskWithDetails.task,
                         listing: taskWithDetails.listing,
-                        subtasks: taskWithDetails.subtasks,
                         isExpanded: store.expandedTaskId == taskWithDetails.task.id,
                         onTap: {
                             store.toggleTaskExpansion(for: taskWithDetails.task.id)
-                        },
-                        onSubtaskToggle: { _ in
-                            // NOTE: Implement subtask toggle
                         }
                     )
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -225,7 +208,7 @@ struct AgentDetailView: View {
                         }
                     )
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -234,16 +217,11 @@ struct AgentDetailView: View {
     @ViewBuilder
     private var emptyStateSection: some View {
         if store.listings.isEmpty && store.activities.isEmpty && store.tasks.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "tray")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No work for this agent")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+            DSEmptyState(
+                icon: "tray",
+                title: "No work for this agent",
+                message: "Work items will appear here when they're assigned"
+            )
             .listRowSeparator(.hidden)
         }
     }

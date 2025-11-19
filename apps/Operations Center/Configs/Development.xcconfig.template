@@ -1,0 +1,17 @@
+//
+// Development.xcconfig.template
+// Operations Center
+//
+// Template for local development configuration
+// Copy this file to Development.local.xcconfig and fill in your actual values
+// Development.local.xcconfig is gitignored and will not be committed
+//
+
+// Supabase Configuration
+// Get these values from your Supabase project settings
+SUPABASE_URL = https://your-project.supabase.co
+SUPABASE_ANON_KEY = your-anon-key-here
+
+// FastAPI URL (optional, defaults to production)
+FASTAPI_URL = https://operations-center.vercel.app
+

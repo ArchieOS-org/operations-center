@@ -10,14 +10,14 @@ import Foundation
 import OperationsCenterKit
 import OSLog
 import Supabase
+import Dependencies
 
 /// Repository client for listing notes operations
 public struct ListingNoteRepositoryClient {
     public var fetchNotes: @Sendable (_ listingId: String) async throws -> [ListingNote]
     public var createNote: @Sendable (
         _ listingId: String,
-        _ content: String,
-        _ createdBy: String
+        _ content: String
     ) async throws -> ListingNote
     public var deleteNote: @Sendable (_ noteId: String) async throws -> Void
 }
@@ -25,60 +25,80 @@ public struct ListingNoteRepositoryClient {
 // MARK: - Live Implementation
 
 extension ListingNoteRepositoryClient {
-    public static let live = Self(
-        fetchNotes: { listingId in
-            Logger.database.info("Fetching notes for listing: \(listingId)")
-            let notes: [ListingNote] = try await supabase
-                .from("listing_notes")
-                .select()
-                .eq("listing_id", value: listingId)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            Logger.database.info("Fetched \(notes.count) notes for listing \(listingId)")
-            return notes
-        },
-        createNote: { listingId, content, createdBy in
-            Logger.database.info("Creating note for listing: \(listingId)")
-            let noteId = UUID().uuidString
-            let now = Date()
+    @MainActor
+    public static var live: Self {
+        @Dependency(\.authClient) var authClient
 
-            let newNote = ListingNote(
-                id: noteId,
-                listingId: listingId,
-                content: content,
-                type: "general",
-                createdBy: createdBy,
-                createdAt: now,
-                updatedAt: now
-            )
+        return Self(
+            fetchNotes: { listingId in
+                Logger.database.info("Fetching notes for listing: \(listingId)")
+                let notes: [ListingNote] = try await supabase
+                    .from("listing_notes")
+                    .select()
+                    .eq("listing_id", value: listingId)
+                    .order("created_at", ascending: true)
+                    .execute()
+                    .value
+                Logger.database.info("Fetched \(notes.count) notes for listing \(listingId)")
+                return notes
+            },
+            createNote: { listingId, content in
+                Logger.database.info("Creating note for listing: \(listingId)")
 
-            let response: [ListingNote] = try await supabase
-                .from("listing_notes")
-                .insert(newNote)
-                .select()
-                .execute()
-                .value
+                // Get current authenticated user ID and email
+                let userId = try await authClient.currentUserId()
+                let session = try await supabase.auth.session
+                let userEmail = session.user.email ?? ""
 
-            guard let createdNote = response.first else {
-                throw NSError(domain: "ListingNoteRepository", code: -1, userInfo: [
-                    NSLocalizedDescriptionKey: "Failed to create note"
-                ])
+                Logger.database.info("Looking up staff by email: \(userEmail)")
+
+                // Fetch user's display name from staff table by email
+                let staff: Staff = try await supabase
+                    .from("staff")
+                    .select("staff_id, name")
+                    .eq("email", value: userEmail)
+                    .single()
+                    .execute()
+                    .value
+
+                let userName = staff.name
+                Logger.database.info("Found staff name: \(userName)")
+                let noteId = UUID().uuidString
+                let now = Date()
+
+                let newNote = ListingNote(
+                    id: noteId,
+                    listingId: listingId,
+                    content: content,
+                    type: "general",
+                    createdBy: userId,
+                    createdByName: userName,
+                    createdAt: now,
+                    updatedAt: now
+                )
+
+                let createdNote: ListingNote = try await supabase
+                    .from("listing_notes")
+                    .insert(newNote)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+
+                Logger.database.info("Created note \(noteId) for listing \(listingId)")
+                return createdNote
+            },
+            deleteNote: { noteId in
+                Logger.database.info("Deleting note: \(noteId)")
+                try await supabase
+                    .from("listing_notes")
+                    .delete()
+                    .eq("id", value: noteId)
+                    .execute()
+                Logger.database.info("Deleted note \(noteId)")
             }
-
-            Logger.database.info("Created note \(noteId) for listing \(listingId)")
-            return createdNote
-        },
-        deleteNote: { noteId in
-            Logger.database.info("Deleting note: \(noteId)")
-            try await supabase
-                .from("listing_notes")
-                .delete()
-                .eq("note_id", value: noteId)
-                .execute()
-            Logger.database.info("Deleted note \(noteId)")
-        }
-    )
+        )
+    }
 }
 
 // MARK: - Preview Implementation
@@ -93,14 +113,15 @@ extension ListingNoteRepositoryClient {
                 ListingNote.mock3
             ]
         },
-        createNote: { listingId, content, createdBy in
+        createNote: { listingId, content in
             // Return a new mock note
             return ListingNote(
                 id: UUID().uuidString,
                 listingId: listingId,
                 content: content,
                 type: "general",
-                createdBy: createdBy,
+                createdBy: "preview-staff-id",
+                createdByName: "Preview User",
                 createdAt: Date(),
                 updatedAt: Date()
             )

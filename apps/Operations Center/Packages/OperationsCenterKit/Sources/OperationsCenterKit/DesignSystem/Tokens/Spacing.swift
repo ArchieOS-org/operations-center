@@ -45,4 +45,27 @@ public enum Spacing {
 
     /// Maximum height for scrollable content sections (notes, activities)
     public static let maxContentHeight: CGFloat = 240
+
+    /// Vertical padding for empty state views
+    public static let emptyStateVertical: CGFloat = 60
+}
+
+// MARK: - EdgeInsets Extensions
+
+public extension EdgeInsets {
+    /// Standard list row insets for card-style rows (vertical: 4, horizontal: 16)
+    public static let listCardInsets = EdgeInsets(
+        top: Spacing.xs,
+        leading: Spacing.screenEdge,
+        bottom: Spacing.xs,
+        trailing: Spacing.screenEdge
+    )
+
+    /// Standard list row insets for standard rows (vertical: 8, horizontal: 16)
+    public static let listRowInsets = EdgeInsets(
+        top: Spacing.listRowVertical,
+        leading: Spacing.listRowHorizontal,
+        bottom: Spacing.listRowVertical,
+        trailing: Spacing.listRowHorizontal
+    )
 }

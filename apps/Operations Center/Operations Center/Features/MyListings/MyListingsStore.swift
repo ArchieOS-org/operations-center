@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 197-213
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -19,7 +20,29 @@ final class MyListingsStore {
     // MARK: - Properties
 
     /// All listings where user has claimed activities
-    private(set) var listings: [Listing] = []
+    private(set) var listings: [Listing] = [] {
+        didSet {
+            updateFilteredListings()
+        }
+    }
+
+    /// Category filter selection (nil = "All")
+    var selectedCategory: TaskCategory? {
+        didSet {
+            updateFilteredListings()
+        }
+    }
+
+    /// Mapping of listing ID to categories of tasks user has claimed
+    private var listingCategories: [String: Set<TaskCategory?>] = [:] {
+        didSet {
+            updateFilteredListings()
+        }
+    }
+
+    /// Cached filtered listings - updated when listings, category, or mapping changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredListings: [Listing] = []
 
     /// Currently expanded listing ID (only one can be expanded at a time)
     var expandedListingId: String?
@@ -34,6 +57,24 @@ final class MyListingsStore {
     private let listingRepository: ListingRepositoryClient
     private let taskRepository: TaskRepositoryClient
 
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
+
+    // MARK: - Private Methods
+
+    /// Update cached filtered listings when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredListings() {
+        guard let selectedCategory else {
+            filteredListings = listings
+            return
+        }
+
+        filteredListings = listings.filter { listing in
+            listingCategories[listing.id]?.contains(selectedCategory) ?? false
+        }
+    }
+
     // MARK: - Initialization
 
     init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
@@ -43,30 +84,63 @@ final class MyListingsStore {
 
     // MARK: - Actions
 
-    /// Fetch all listings where user has claimed at least one activity
+    /// Fetch all listings where user has claimed at least one activity AND has acknowledged
     func fetchMyListings() async {
+        Logger.database.info("📱 MyListingsStore.fetchMyListings() starting...")
         isLoading = true
         errorMessage = nil
 
         do {
-            // NOTE: Get actual user ID from auth
-            let currentUserId = "current-user"
+            // First: Get user ID (required for subsequent calls)
+            let currentUserId = try await authClient.currentUserId()
+            Logger.database.info("👤 Current user ID: \(currentUserId)")
 
-            // Get activitys claimed by this realtor directly from repository
-            let userListingTasks = try await taskRepository.fetchActivitiesByRealtor(currentUserId)
+            // Then: Fetch activities and listings in PARALLEL
+            async let userListingTasks = taskRepository.fetchActivitiesByStaff(currentUserId)
+            async let allListings = listingRepository.fetchListings()
 
-            // Extract unique listing IDs
-            let listingIds = Set(userListingTasks.map { $0.task.listingId })
+            let activities = try await userListingTasks
+            let listings = try await allListings
 
-            // Fetch all listings
-            let allListings = try await listingRepository.fetchListings()
+            Logger.database.info("📋 User has \(activities.count) claimed activities")
+            Logger.database.info("📚 Total listings in database: \(listings.count)")
 
-            // Filter to only listings where user has claimed activities
-            listings = allListings.filter { listing in
-                listingIds.contains(listing.id)
+            // Extract unique listing IDs and build category mapping
+            var listingIds = Set<String>()
+            var categoryMapping: [String: Set<TaskCategory?>] = [:]
+
+            for activityWithDetails in activities {
+                let listingId = activityWithDetails.task.listingId
+                listingIds.insert(listingId)
+
+                // Add this task's category to the listing's category set
+                if categoryMapping[listingId] == nil {
+                    categoryMapping[listingId] = Set()
+                }
+                categoryMapping[listingId]?.insert(activityWithDetails.task.taskCategory)
             }
 
-            Logger.database.info("Fetched \(self.listings.count) listings with user activities")
+            Logger.database.info("🏠 User has activities for \(listingIds.count) unique listings: \(listingIds)")
+
+            // Filter to only listings where:
+            // 1. User has claimed activities AND
+            // 2. User has acknowledged the listing
+            // Batch query - single network call instead of N sequential calls
+            let acknowledgedListingIds = try await listingRepository.fetchAcknowledgedListingIds(
+                Array(listingIds),
+                currentUserId
+            )
+
+            Logger.database.info("✅ User has acknowledged \(acknowledgedListingIds.count) listings")
+
+            self.listings = listings.filter { listing in
+                acknowledgedListingIds.contains(listing.id)
+            }
+
+            // Store category mapping (only for acknowledged listings)
+            listingCategories = categoryMapping.filter { acknowledgedListingIds.contains($0.key) }
+
+            Logger.database.info("Fetched \(self.listings.count) acknowledged listings with user activities")
         } catch {
             Logger.database.error("Failed to fetch my listings: \(error.localizedDescription)")
             errorMessage = "Failed to load your listings: \(error.localizedDescription)"
@@ -88,8 +162,8 @@ final class MyListingsStore {
     /// Delete a listing
     func deleteListing(_ listing: Listing) async {
         do {
-            let currentUserId = "current-user" // NOTE: Get from auth
-            try await listingRepository.deleteListing(listing.id, currentUserId)
+            let userId = try await authClient.currentUserId()
+            try await listingRepository.deleteListing(listing.id, userId)
 
             await refresh()
         } catch {

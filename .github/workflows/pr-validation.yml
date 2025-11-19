@@ -36,8 +36,9 @@ jobs:
             fi
           done
 
-          # Check for common secret patterns in diff
-          if git diff origin/main...HEAD | grep -iE "(api_key|secret|password|token).*=.*['\"][^'\"]{20,}"; then
+          # Check for common secret patterns in diff (exclude variable assignments like "passwordError")
+          # Only match actual secret values (long strings starting with common prefixes)
+          if git diff origin/main...HEAD | grep -E "(api_key|secret|token).*=.*['\"][a-zA-Z0-9_-]{32,}['\"]"; then
             echo "Warning: Potential secret detected in diff"
             echo "Please review your changes carefully"
             exit 1

@@ -15,6 +15,7 @@ public struct TaskCard: View {
     let task: AgentTask
     let messages: [SlackMessage]
     let isExpanded: Bool
+    let assigneeName: String?
     let onTap: () -> Void
 
     // MARK: - Initialization
@@ -23,11 +24,13 @@ public struct TaskCard: View {
         task: AgentTask,
         messages: [SlackMessage],
         isExpanded: Bool,
+        assigneeName: String? = nil,
         onTap: @escaping () -> Void
     ) {
         self.task = task
         self.messages = messages
         self.isExpanded = isExpanded
+        self.assigneeName = assigneeName
         self.onTap = onTap
     }
 
@@ -49,11 +52,70 @@ public struct TaskCard: View {
             )
         } expandedContent: {
             // Expanded content (only when expanded)
-            SlackMessagesSection(messages: messages)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity
-                ))
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Slack messages (if any)
+                if !messages.isEmpty {
+                    SlackMessagesSection(messages: messages)
+                }
+
+                // Description/Notes
+                if let description = task.description, !description.isEmpty {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text("Notes")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Text(description)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                }
+
+                // Metadata grid
+                MetadataGrid(columnCount: 2) {
+                    MetadataItem(
+                        label: "Created",
+                        value: task.createdAt.formatted(date: .abbreviated, time: .omitted)
+                    )
+
+                    if let claimedAt = task.claimedAt {
+                        MetadataItem(
+                            label: "Claimed",
+                            value: claimedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let dueDate = task.dueDate {
+                        MetadataItem(
+                            label: "Due",
+                            value: dueDate.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let completedAt = task.completedAt {
+                        MetadataItem(
+                            label: "Completed",
+                            value: completedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    MetadataItem(
+                        label: "Status",
+                        value: task.status.displayName
+                    )
+
+                    MetadataItem(
+                        label: "Category",
+                        value: task.taskCategory.displayName
+                    )
+                }
+            }
+            .padding(Spacing.md)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .top)),
+                removal: .opacity
+            ))
         }
     }
 
@@ -63,27 +125,29 @@ public struct TaskCard: View {
         var chips: [ChipData] = []
 
         // Assigned agent chip
-        if let staffId = task.assignedStaffId {
-            chips.append(.agent(name: staffId, style: .agentTask))
+        if let name = assigneeName {
+            chips.append(.agent(name: name, style: .agentTask))
         }
 
-        // Category chip
-        chips.append(.custom(
-            text: task.taskCategory.rawValue,
-            color: categoryColor(for: task.taskCategory)
-        ))
+        // Category chip (if categorized)
+        if let category = task.taskCategory {
+            chips.append(.custom(
+                text: category.rawValue,
+                color: categoryColor(for: category)
+            ))
+        }
 
         return chips
     }
 
-    private func categoryColor(for category: AgentTask.TaskCategory) -> Color {
+    private func categoryColor(for category: TaskCategory) -> Color {
         switch category {
-        case .admin: return .blue
-        case .marketing: return .purple
-        case .photo: return .pink
-        case .staging: return .green
-        case .inspection: return .red
-        case .other: return .gray
+        case .admin: return Colors.categoryAdmin
+        case .marketing: return Colors.categoryMarketing
+        case .photo: return Colors.categoryPhoto
+        case .staging: return Colors.categoryStaging
+        case .inspection: return Colors.categoryInspection
+        case .other: return Colors.categoryOther
         }
     }
 }
@@ -95,6 +159,7 @@ public struct TaskCard: View {
         task: AgentTask.mock1,
         messages: [],
         isExpanded: false,
+        assigneeName: "Sarah Johnson",
         onTap: {}
     )
     .padding()
@@ -110,6 +175,7 @@ public struct TaskCard: View {
         task: AgentTask.mock2,
         messages: messages,
         isExpanded: true,
+        assigneeName: "Alex Chen",
         onTap: {}
     )
     .padding()

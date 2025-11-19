@@ -12,13 +12,20 @@ import Supabase
 
 // MARK: - Task Repository Client
 
+// swiftlint:disable file_length
 /// Task repository client for production and preview contexts
 public struct TaskRepositoryClient {
     /// Fetch all tasks with their associated Slack messages
     public var fetchTasks: @Sendable () async throws -> [TaskWithMessages]
 
-    /// Fetch all activities with their listing data and subtasks
+    /// Fetch all activities with their listing data and activity items
     public var fetchActivities: @Sendable () async throws -> [ActivityWithDetails]
+
+    /// Fetch deleted tasks (for Logbook)
+    public var fetchDeletedTasks: @Sendable () async throws -> [AgentTask]
+
+    /// Fetch deleted activities (for Logbook)
+    public var fetchDeletedActivities: @Sendable () async throws -> [ActivityWithDetails]
 
     /// Claim a task
     public var claimTask: @Sendable (_ taskId: String, _ staffId: String) async throws -> AgentTask
@@ -32,12 +39,6 @@ public struct TaskRepositoryClient {
     /// Delete an activity (soft delete)
     public var deleteActivity: @Sendable (_ taskId: String, _ deletedBy: String) async throws -> Void
 
-    /// Complete a subtask within an activity
-    public var completeSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
-
-    /// Uncomplete a subtask within an activity
-    public var uncompleteSubtask: @Sendable (_ subtaskId: String) async throws -> Subtask
-
     /// Fetch tasks for a specific realtor
     public var fetchTasksByRealtor: @Sendable (_ realtorId: String) async throws -> [TaskWithMessages]
 
@@ -46,6 +47,9 @@ public struct TaskRepositoryClient {
 
     /// Fetch completed tasks (for Logbook)
     public var fetchCompletedTasks: @Sendable () async throws -> [AgentTask]
+
+    /// Fetch activities by assigned staff member (for My Listings)
+    public var fetchActivitiesByStaff: @Sendable (_ staffId: String) async throws -> [ActivityWithDetails]
 }
 
 // MARK: - Response Models
@@ -57,7 +61,7 @@ private struct ActivityResponse: Decodable {
     let realtorId: String?
     let name: String
     let description: String?
-    let taskCategory: String
+    let taskCategory: String?  // Optional - can be NULL in database
     let status: String
     let priority: Int
     let visibilityGroup: String
@@ -113,8 +117,8 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         realtorId: row.realtorId,
         name: row.name,
         description: row.description,
-        taskCategory: Activity.TaskCategory(rawValue: row.taskCategory) ?? .other,
-        status: Activity.TaskStatus(rawValue: row.status) ?? .open,
+        taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),  // Optional: admin, marketing, or nil
+        status: TaskStatus(rawValue: row.status) ?? .open,
         priority: row.priority,
         visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
         assignedStaffId: row.assignedStaffId,
@@ -129,11 +133,7 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
         outputs: row.outputs
     )
 
-    // swiftlint:disable:next todo
-    // TODO: Add subtasks query once subtasks table exists
-    let subtasks: [Subtask] = []
-
-    return ActivityWithDetails(task: task, listing: listing, subtasks: subtasks)
+    return ActivityWithDetails(task: task, listing: listing)
 }
 
 // MARK: - Live Implementation
@@ -155,16 +155,67 @@ extension TaskRepositoryClient {
                 return response.map { TaskWithMessages(task: $0, messages: []) }
             },
             fetchActivities: {
-                // Query activities with nested listings join
-                let response: [ActivityResponse] = try await supabase
-                    .from("activities")
-                    .select("*, listings(*)")
-                    .is("deleted_at", value: nil)
-                    .order("priority", ascending: false)
-                    .order("created_at", ascending: false)
+                Logger.database.info("🔍 TaskRepository.fetchActivities() - Starting Supabase query...")
+
+                do {
+                    // Query activities with nested listings join
+                    let response: [ActivityResponse] = try await supabase
+                        .from("activities")
+                        .select("*, listings(*)")
+                        .is("deleted_at", value: nil)
+                        .order("priority", ascending: false)
+                        .order("created_at", ascending: false)
+                        .execute()
+                        .value
+
+                    Logger.database.info("✅ Supabase returned \(response.count) activity records")
+
+                    let mapped = response.compactMap(mapActivityResponse)
+                    Logger.database.info(
+                        """
+                        📊 After mapping: \(mapped.count) activities \
+                        (dropped \(response.count - mapped.count) due to missing listings)
+                        """
+                    )
+
+                    return mapped
+                } catch let error as URLError {
+                    Logger.database.error("❌ Network error connecting to Supabase")
+                    Logger.database.error("Error code: \(error.errorCode), Description: \(error.localizedDescription)")
+                    Logger.database.error("Failing URL: \(error.failingURL?.absoluteString ?? "unknown")")
+                    throw error
+                } catch {
+                    Logger.database.error("❌ Supabase query failed: \(String(describing: error))")
+                    Logger.database.error("Error type: \(type(of: error))")
+                    throw error
+                }
+            },
+            fetchDeletedTasks: {
+                Logger.database.info("Fetching deleted tasks")
+                // Fetch deleted tasks: deleted_at IS NOT NULL
+                let tasks: [AgentTask] = try await supabase
+                    .from("agent_tasks")
+                    .select()
+                    .filter("deleted_at", operator: "not.is.null", value: "")
+                    .order("deleted_at", ascending: false)
                     .execute()
                     .value
 
+                Logger.database.info("Fetched \(tasks.count) deleted agent tasks")
+                return tasks
+            },
+            fetchDeletedActivities: {
+                Logger.database.info("Fetching deleted activities")
+                // Fetch deleted activities: deleted_at IS NOT NULL
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
+                    .select("*, listings(*)")
+                    .filter("deleted_at", operator: "not.is.null", value: "")
+                    .order("deleted_at", ascending: false)
+                    .execute()
+                    .value
+
+                Logger.database.info("Fetched \(response.count) deleted activities")
                 return response.compactMap(mapActivityResponse)
             },
             claimTask: { taskId, staffId in
@@ -175,7 +226,7 @@ extension TaskRepositoryClient {
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": AgentTask.TaskStatus.claimed.rawValue
+                        "status": TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -193,7 +244,7 @@ extension TaskRepositoryClient {
                     .update([
                         "assigned_staff_id": staffId,
                         "claimed_at": now.ISO8601Format(),
-                        "status": Activity.TaskStatus.claimed.rawValue
+                        "status": TaskStatus.claimed.rawValue
                     ])
                     .eq("task_id", value: taskId)
                     .select()
@@ -226,20 +277,6 @@ extension TaskRepositoryClient {
                     ])
                     .eq("task_id", value: taskId)
                     .execute()
-            },
-            completeSubtask: { _ in
-                // swiftlint:disable:next todo
-                // TODO: Implement once subtasks table exists
-                throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
-                    NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
-                ])
-            },
-            uncompleteSubtask: { _ in
-                // swiftlint:disable:next todo
-                // TODO: Implement once subtasks table exists
-                throw NSError(domain: "TaskRepositoryClient", code: 501, userInfo: [
-                    NSLocalizedDescriptionKey: "Subtasks table not yet implemented"
-                ])
             },
             fetchTasksByRealtor: { realtorId in
                 let response: [AgentTask] = try await supabase
@@ -274,7 +311,7 @@ extension TaskRepositoryClient {
                 let tasks: [AgentTask] = try await supabase
                     .from("agent_tasks")
                     .select()
-                    .eq("status", value: AgentTask.TaskStatus.done.rawValue)
+                    .eq("status", value: TaskStatus.done.rawValue)
                     .is("deleted_at", value: nil)
                     .order("completed_at", ascending: false)
                     .execute()
@@ -282,6 +319,20 @@ extension TaskRepositoryClient {
 
                 Logger.database.info("Fetched \(tasks.count) completed agent tasks")
                 return tasks
+            },
+            fetchActivitiesByStaff: { staffId in
+                // Query activities with nested listings join by assigned_staff_id
+                let response: [ActivityResponse] = try await supabase
+                    .from("activities")
+                    .select("*, listings(*)")
+                    .eq("assigned_staff_id", value: staffId)
+                    .is("deleted_at", value: nil)
+                    .order("priority", ascending: false)
+                    .order("created_at", ascending: false)
+                    .execute()
+                    .value
+
+                return response.compactMap(mapActivityResponse)
             }
         )
     }
@@ -302,20 +353,23 @@ extension TaskRepositoryClient {
             [
                 ActivityWithDetails(
                     task: Activity.mock1,
-                    listing: Listing.mock1,
-                    subtasks: [Subtask.mock1, Subtask.mock2]
+                    listing: Listing.mock1
                 ),
                 ActivityWithDetails(
                     task: Activity.mock2,
-                    listing: Listing.mock2,
-                    subtasks: []
+                    listing: Listing.mock2
                 ),
                 ActivityWithDetails(
                     task: Activity.mock3,
-                    listing: Listing.mock3,
-                    subtasks: [Subtask.mock3]
+                    listing: Listing.mock3
                 )
             ]
+        },
+        fetchDeletedTasks: {
+            return []
+        },
+        fetchDeletedActivities: {
+            return []
         },
         claimTask: { _, staffId in
             var task = AgentTask.mock1
@@ -333,16 +387,6 @@ extension TaskRepositoryClient {
         },
         deleteTask: { _, _ in },
         deleteActivity: { _, _ in },
-        completeSubtask: { _ in
-            var subtask = Subtask.mock1
-            subtask.completedAt = Date()
-            return subtask
-        },
-        uncompleteSubtask: { _ in
-            var subtask = Subtask.mock1
-            subtask.completedAt = nil
-            return subtask
-        },
         fetchTasksByRealtor: { _ in
             return [
                 TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
@@ -353,19 +397,29 @@ extension TaskRepositoryClient {
             return [
                 ActivityWithDetails(
                     task: Activity.mock1,
-                    listing: Listing.mock1,
-                    subtasks: [Subtask.mock1]
+                    listing: Listing.mock1
                 ),
                 ActivityWithDetails(
                     task: Activity.mock2,
-                    listing: Listing.mock2,
-                    subtasks: []
+                    listing: Listing.mock2
                 )
             ]
         },
         fetchCompletedTasks: {
             // Return empty array - no completed tasks in mock data yet
             return []
+        },
+        fetchActivitiesByStaff: { _ in
+            return [
+                ActivityWithDetails(
+                    task: Activity.mock1,
+                    listing: Listing.mock1
+                ),
+                ActivityWithDetails(
+                    task: Activity.mock2,
+                    listing: Listing.mock2
+                )
+            ]
         }
     )
 }

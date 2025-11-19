@@ -3,7 +3,8 @@ Configuration management using Pydantic Settings.
 Context7 Pattern: BaseSettings with @lru_cache singleton
 Source: /pydantic/pydantic and /fastapi/fastapi docs
 """
-from pydantic_settings import BaseSettings
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
@@ -24,14 +25,15 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str | None = None
 
     @property
-    def supabase_service_key(self) -> str:
+    def supabase_service_key(self) -> str | None:
         """Return service key from either env var name"""
         return self.SUPABASE_SERVICE_KEY or self.SUPABASE_SERVICE_ROLE_KEY
 
     @property
-    def jwt_secret(self) -> str:
+    def jwt_secret(self) -> str | None:
         """Return JWT secret from either env var name"""
         return self.JWT_SECRET or self.SUPABASE_JWT_SECRET
+
     JWT_ALGORITHM: str = "HS256"
     ENABLE_DEBUG_AUTH: bool = False
 
@@ -41,16 +43,14 @@ class Settings(BaseSettings):
     # Slack (for existing webhook)
     SLACK_SIGNING_SECRET: str
     SLACK_BYPASS_VERIFY: bool = False
+    SLACK_BOT_TOKEN: str  # For posting acknowledgments via WebClient
 
     # Application
     APP_NAME: str = "Operations Center API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 @lru_cache()
@@ -60,4 +60,4 @@ def get_settings() -> Settings:
     Context7 Pattern: @lru_cache ensures singleton behavior.
     Source: /fastapi/fastapi docs - "Settings and environment variables"
     """
-    return Settings()
+    return Settings()  # type: ignore[call-arg]  # BaseSettings reads from env

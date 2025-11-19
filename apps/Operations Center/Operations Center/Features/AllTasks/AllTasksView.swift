@@ -15,6 +15,8 @@ import OperationsCenterKit
 struct AllTasksView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: AllTasksStore
 
     // MARK: - Initialization
@@ -45,7 +47,7 @@ struct AllTasksView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
+        .animation(.spring(response: 0.3, dampingFraction: 0.68), value: store.expandedTaskId)
     }
 
     // MARK: - Helpers
@@ -84,9 +86,13 @@ struct AllTasksView: View {
 
     private var tasksList: some View {
         List {
-            tasksSection
-            activitiesSection
-            emptyStateSection
+            if store.isLoading {
+                skeletonSection
+            } else {
+                tasksSection
+                activitiesSection
+                emptyStateSection
+            }
         }
         .listStyle(.plain)
         .navigationTitle("All Tasks")
@@ -96,20 +102,7 @@ struct AllTasksView: View {
         .task {
             await store.fetchAllTasks()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: .constant(store.errorMessage != nil)) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .errorAlert($store.errorMessage)
     }
 
     @ViewBuilder
@@ -126,7 +119,7 @@ struct AllTasksView: View {
                         }
                     )
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -140,18 +133,26 @@ struct AllTasksView: View {
                     ActivityCard(
                         task: taskWithDetails.task,
                         listing: taskWithDetails.listing,
-                        subtasks: taskWithDetails.subtasks,
                         isExpanded: store.expandedTaskId == taskWithDetails.task.id,
                         onTap: {
                             store.toggleExpansion(for: taskWithDetails.task.id)
-                        },
-                        onSubtaskToggle: { _ in
-                            // NOTE: Implement subtask toggle
                         }
                     )
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var skeletonSection: some View {
+        Section {
+            ForEach(0..<5, id: \.self) { _ in
+                SkeletonCard(tintColor: Colors.surfaceAgentTaskTinted)
+                    .skeletonShimmer()
+                    .listRowSeparator(.hidden)
+                    .standardListRowInsets()
             }
         }
     }
@@ -159,16 +160,11 @@ struct AllTasksView: View {
     @ViewBuilder
     private var emptyStateSection: some View {
         if store.filteredTasks.isEmpty && store.filteredActivities.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "checkmark.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No claimed tasks")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+            DSEmptyState(
+                icon: "checkmark.circle",
+                title: "No claimed tasks",
+                message: "Tasks will appear here when you claim them"
+            )
             .listRowSeparator(.hidden)
         }
     }
@@ -176,22 +172,20 @@ struct AllTasksView: View {
     private var bottomControls: some View {
         HStack {
             TeamToggle(selection: $store.teamFilter)
-                .padding(.leading, 16)
-                .padding(.bottom, 16)
+                .padding(.leading, Spacing.md)
+                .padding(.bottom, Spacing.md)
 
             Spacer()
 
             FloatingActionButton(
                 systemImage: "plus",
-                action: {
-                    // NOTE: Implement create new task
-                }
+                action: {}
             )
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
+            .padding(.trailing, Spacing.md)
+            .padding(.bottom, Spacing.md)
             .offset(y: store.expandedTaskId != nil ? 100 : 0)
             .opacity(store.expandedTaskId != nil ? 0 : 1)
-            .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedTaskId)
+            .animation(.spring(response: 0.3, dampingFraction: 0.68), value: store.expandedTaskId)
         }
     }
 }

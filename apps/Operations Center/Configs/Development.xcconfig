@@ -1,0 +1,25 @@
+//
+// Development.xcconfig
+// Operations Center
+//
+// Build configuration for local development and debugging
+//
+
+// Use Xcode auto-generated Info.plist
+GENERATE_INFOPLIST_FILE = YES
+
+// OAuth URL Scheme: operationscenter://
+// Used for deep link callback after Supabase processes OAuth
+// Configured via INFOPLIST_KEY_CFBundleURLTypes in project.pbxproj
+
+// Configuration values - not used by Info.plist, accessed directly in Config.swift
+// SECURITY: Actual secrets are loaded from Development.local.xcconfig (not committed to git)
+// See Development.xcconfig.template for setup instructions
+
+// Include local config if it exists (create from template)
+#include? "Development.local.xcconfig"
+
+// Fallback values (should be overridden by Development.local.xcconfig)
+SUPABASE_URL = $(SUPABASE_URL)
+SUPABASE_ANON_KEY = $(SUPABASE_ANON_KEY)
+FASTAPI_URL = https://operations-center.vercel.app

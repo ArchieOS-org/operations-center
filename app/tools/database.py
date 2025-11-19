@@ -7,7 +7,7 @@ All CRUD operations go through these tools.
 
 from typing import Dict, Any, Optional
 from langchain.tools import tool
-from database.supabase_client import get_supabase
+from app.database.supabase_client import get_supabase
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 @tool
 async def store_classification(
-    message_id: str,
-    classification: Dict[str, Any],
-    source: str = "slack"
+    message_id: str, classification: Dict[str, Any], source: str = "slack"
 ) -> Dict[str, Any]:
     """
     Store a message classification result in the database.
@@ -37,11 +35,18 @@ async def store_classification(
         table_name = f"{source}_messages"
 
         # Update the message with classification
-        result = client.table(table_name).update({
-            "classification": classification,
-            "processing_status": "classified",
-            "classified_at": "now()"
-        }).eq("id", message_id).execute()
+        result = (
+            client.table(table_name)
+            .update(
+                {
+                    "classification": classification,
+                    "processing_status": "classified",
+                    "classified_at": "now()",
+                }
+            )
+            .eq("id", message_id)
+            .execute()
+        )
 
         logger.info(f"Stored classification for {message_id} in {table_name}")
         return {"status": "success", "data": result.data}
@@ -52,14 +57,13 @@ async def store_classification(
 
 
 @tool
-@register_tool("create_task")
 async def create_task(
     title: str,
     description: str,
     realtor_id: Optional[str] = None,
     listing_id: Optional[str] = None,
     task_type: str = "general",
-    priority: str = "medium"
+    priority: str = "medium",
 ) -> Dict[str, Any]:
     """
     Create a new task in the database.
@@ -87,7 +91,7 @@ async def create_task(
                 "listing_id": listing_id,
                 "realtor_id": realtor_id,
                 "priority": priority,
-                "status": "pending"
+                "status": "pending",
             }
         elif task_type == "stray":
             table_name = "agent_tasks"
@@ -96,7 +100,7 @@ async def create_task(
                 "description": description,
                 "realtor_id": realtor_id,
                 "priority": priority,
-                "status": "pending"
+                "status": "pending",
             }
         else:
             table_name = "agent_tasks"
@@ -105,7 +109,7 @@ async def create_task(
                 "description": description,
                 "assigned_to": realtor_id,
                 "priority": priority,
-                "status": "pending"
+                "status": "pending",
             }
 
         result = client.table(table_name).insert(task_data).execute()
@@ -119,11 +123,8 @@ async def create_task(
 
 
 @tool
-@register_tool("find_realtor")
 async def find_realtor(
-    name: Optional[str] = None,
-    email: Optional[str] = None,
-    phone: Optional[str] = None
+    name: Optional[str] = None, email: Optional[str] = None, phone: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Find a realtor by name, email, or phone.
@@ -163,11 +164,7 @@ async def find_realtor(
 
 
 @tool
-@register_tool("update_listing")
-async def update_listing(
-    listing_id: str,
-    updates: Dict[str, Any]
-) -> Dict[str, Any]:
+async def update_listing(listing_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
     """
     Update a listing with new information.
 
@@ -203,11 +200,8 @@ async def update_listing(
 
 
 @tool
-@register_tool("add_task_note")
 async def add_task_note(
-    task_id: str,
-    note: str,
-    author: str = "system"
+    task_id: str, note: str, author: str = "system"
 ) -> Dict[str, Any]:
     """
     Add a note to a task.
@@ -223,11 +217,7 @@ async def add_task_note(
     try:
         client = get_supabase()
 
-        note_data = {
-            "task_id": task_id,
-            "note": note,
-            "created_by": author
-        }
+        note_data = {"task_id": task_id, "note": note, "created_by": author}
 
         result = client.table("task_notes").insert(note_data).execute()
 

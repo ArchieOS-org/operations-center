@@ -8,6 +8,7 @@
 
 import Foundation
 import OperationsCenterKit
+import OSLog
 import Supabase
 
 @Observable
@@ -16,7 +17,7 @@ final class AppState {
     // MARK: - State
 
     var allTasks: [Activity] = []
-    var currentUser: User?
+    var currentUser: Supabase.User?
     var isLoading = false
     var errorMessage: String?
 
@@ -30,6 +31,9 @@ final class AppState {
 
     @ObservationIgnored
     private var authStateTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var taskRefreshTask: Task<Void, Error>?
 
     // MARK: - Computed Properties
 
@@ -80,15 +84,24 @@ final class AppState {
     // MARK: - Authentication
 
     private func setupAuthStateListener() async {
-        // Listen for auth state changes
-        authStateTask = Task {
-            for await state in supabase.auth.authStateChanges
+        // Listen for auth state changes using structured concurrency
+        authStateTask = Task { [weak self] in
+            guard let self else { return }
+            for await state in self.supabase.auth.authStateChanges
                 where [.initialSession, .signedIn, .signedOut].contains(state.event) {
-                currentUser = state.session?.user
+                self.currentUser = state.session?.user
 
                 // Refresh tasks when auth state changes
                 if state.session != nil {
-                    await fetchTasks()
+                    // Cancel any pending refresh to avoid race condition
+                    self.taskRefreshTask?.cancel()
+                    self.taskRefreshTask = Task {
+                        await self.fetchTasks()
+                    }
+                } else {
+                    // User logged out - cancel pending refresh
+                    self.taskRefreshTask?.cancel()
+                    self.taskRefreshTask = nil
                 }
             }
         }
@@ -102,16 +115,20 @@ final class AppState {
 
         do {
             // Use TaskRepositoryClient (production or preview based on init)
+            Logger.database.info("AppState.fetchTasks() starting...")
             let taskData = try await taskRepository.fetchActivities()
-            allTasks = taskData.map(\.task)  // Extract just the activities
+            self.allTasks = taskData.map(\.task)  // Extract just the activities
+            Logger.database.info("AppState now has \(self.allTasks.count) tasks")
 
             // Save to cache
             saveCachedData()
         } catch {
+            Logger.database.error("❌ fetchTasks failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+        Logger.database.info("AppState.fetchTasks() completed")
     }
 
     // MARK: - Real-time Sync
@@ -122,24 +139,19 @@ final class AppState {
 
         let channel = supabase.realtimeV2.channel("all_tasks")
 
-        realtimeSubscription = Task {
+        realtimeSubscription = Task { [weak self] in
+            guard let self else { return }
             do {
-                // Setup listener BEFORE subscribing
-                let listenerTask = Task {
-                    for await change in channel.postgresChange(AnyAction.self, table: "activities") {
-                        await handleRealtimeChange(change)
-                    }
-                }
-
-                // Now subscribe to start receiving events
+                // Subscribe to start receiving events
                 try await channel.subscribeWithError()
 
-                // Keep listener running
-                await listenerTask.value
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Realtime subscription error: \(error.localizedDescription)"
+                // Listen for changes directly - NO NESTED TASK
+                // Structured concurrency: task owns the loop, cancellation propagates automatically
+                for await change in channel.postgresChange(AnyAction.self, table: "activities") {
+                    await self.handleRealtimeChange(change)
                 }
+            } catch {
+                self.errorMessage = "Realtime subscription error: \(error.localizedDescription)"
             }
         }
     }
@@ -147,13 +159,16 @@ final class AppState {
     private func handleRealtimeChange(_ change: AnyAction) async {
         // Refresh entire list on any change
         // This ensures all views stay in sync
+        Logger.database.info("Handling realtime change...")
         do {
             let taskData = try await taskRepository.fetchActivities()
-            allTasks = taskData.map(\.task)  // Extract just the activities
+            self.allTasks = taskData.map(\.task)  // Extract just the activities
+            Logger.database.info("Updated \(self.allTasks.count) tasks from realtime change")
 
             // Save to cache
             saveCachedData()
         } catch {
+            Logger.database.error("❌ Realtime change handler failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
     }

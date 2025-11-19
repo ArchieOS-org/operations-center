@@ -18,6 +18,7 @@ from enum import Enum
 
 class MessageType(str, Enum):
     """Message classification types"""
+
     GROUP = "GROUP"
     STRAY = "STRAY"
     INFO_REQUEST = "INFO_REQUEST"
@@ -26,12 +27,14 @@ class MessageType(str, Enum):
 
 class ListingType(str, Enum):
     """Listing types (SALE or LEASE)"""
+
     SALE = "SALE"
     LEASE = "LEASE"
 
 
 class GroupKey(str, Enum):
     """Valid group_key values for GROUP message types"""
+
     SALE_LISTING = "SALE_LISTING"
     LEASE_LISTING = "LEASE_LISTING"
     SALE_LEASE_LISTING = "SALE_LEASE_LISTING"
@@ -44,6 +47,7 @@ class GroupKey(str, Enum):
 
 class TaskKey(str, Enum):
     """Valid task_key values for STRAY message types"""
+
     # Sale Listings
     SALE_ACTIVE_TASKS = "SALE_ACTIVE_TASKS"
     SALE_SOLD_TASKS = "SALE_SOLD_TASKS"
@@ -79,6 +83,7 @@ class TaskKey(str, Enum):
 
 class Listing(BaseModel):
     """Listing information"""
+
     type: Optional[ListingType] = None
     address: Optional[str] = None
 
@@ -90,6 +95,7 @@ class ClassificationV1(BaseModel):
     Ported from TypeScript ClassificationV1 interface
     LangChain will automatically validate against this schema
     """
+
     schema_version: Literal[1] = 1
     message_type: MessageType
     task_key: Optional[TaskKey] = None

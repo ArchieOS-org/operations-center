@@ -1,290 +1,439 @@
 # Operations Center
 
-A production-quality multi-platform SwiftUI app for managing real estate operations, powered by Python FastAPI intelligence layer, LangChain/LangGraph AI agents, and Supabase database.
+> **Status**: 🚧 **65% Complete** - Core infrastructure working, intelligence layer partially implemented, integration gaps exist
 
-## Overview
+A multi-platform SwiftUI app for managing real estate operations with Python FastAPI intelligence layer, LangChain/LangGraph AI agents, and Supabase database.
 
-Operations Center is a monorepo containing:
-- **Multi-Platform Apple App**: SwiftUI native app for iOS, iPadOS, and macOS following Things 3 UX patterns
-- **Python Intelligence Layer**: FastAPI serverless functions for AI classification and multi-agent orchestration
-- **Shared Libraries**: Reusable Swift packages and Python utilities
-- **Infrastructure**: Supabase for data persistence, Vercel for serverless deployment
+[![Swift](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS%2018.5%2B-blue.svg)](https://developer.apple.com/xcode/swiftui/)
 
-**Architecture Philosophy:** FastAPI handles ONLY intelligence (AI agents, classification, orchestration). All CRUD goes direct from Swift → Supabase.
+## What Actually Works (December 2025)
 
-## Project Structure
+### ✅ Production-Ready
+- **Swift App CRUD**: Full-featured task/listing management via direct Supabase integration
+- **Supabase Database**: 22 migrations, 9 tables, RLS policies (partial), real-time subscriptions
+- **Slack Message Intake**: Webhook → Batch → Classify → Store → Create entities (end-to-end working)
+- **LangChain Classifier**: OpenAI-powered message classification with structured output
+- **Swift Architecture**: MVVM + @Observable + dependency injection + feature-based organization
 
-```
-operations-center/
-├── .claude/                     # Claude Code workspace configuration
-├── apps/
-│   ├── operations-center/      # Multi-platform SwiftUI app (iOS + iPadOS + macOS)
-│   └── backend/
-│       └── api/                # Python FastAPI Intelligence Layer
-│           ├── agents/         # 🧠 AI Agents (Orchestrator, Classifier)
-│           ├── tools/          # 🛠️ Reusable Capabilities
-│           ├── workflows/      # 🌊 Multi-Step Processes
-│           ├── state/          # 📊 Shared State Schemas
-│           ├── webhooks/       # 🔌 External Listeners
-│           ├── workers/        # 👷 Background Processors
-│           ├── schemas/        # 📝 Data Contracts
-│           ├── config/         # ⚙️ Settings
-│           ├── database/       # 💾 Minimal DB Client
-│           ├── main.py         # 🚪 5 Intelligence Endpoints
-│           └── langgraph.json  # 📋 LangGraph Configuration
-├── libs/
-│   └── shared-utils/           # Shared Python libraries
-├── tools/
-│   └── scripts/                # 2 essential scripts only
-│       ├── setup.sh            # Environment setup
-│       └── deploy.sh           # Production deployment
-├── configs/                     # Configuration files
-│   ├── .swiftlint.yml
-│   ├── .pylintrc
-│   └── .env.production
-├── docs/                        # Essential documentation
-│   ├── README.md
-│   ├── ARCHITECTURE_DESIGN.md
-│   ├── ARCHITECTURE_COMPLETE.md
-│   └── TRANSFORMATION_PROGRESS.md
-├── supabase/                    # All database migrations and config
-├── trash/                       # Archived code (never deleted)
-│   └── crud-archive-*/         # Historical implementations
-├── .gitignore
-├── .env.example
-├── conductor.json               # Conductor configuration
-├── vercel.json                  # Vercel deployment config
-├── CLAUDE.md                    # AI development workflow guide
-└── README.md                    # This file
-```
+### 🚧 Partially Working
+- **Real-time Sync**: Only `activities` table subscribed (not `agent_tasks` - gap!)
+- **FastAPI Endpoints**: 5 endpoints exist, 3 functional (Slack webhook, status, classify stub)
+- **Swift App Features**: 70% screens working (Inbox, My Tasks, My Listings, Browse), 30% stubs (Settings, Logbook, Team views)
+- **Backend Intelligence**: Classifier works, orchestrator exists but specialist agents are TODO scaffolding
+
+### ❌ Broken / Incomplete
+- **Integration Layer**: Swift app has **ZERO network clients** calling FastAPI - intelligence unreachable
+- **Orchestrator Agent**: Not registered in agent registry, `/chat` endpoint fails
+- **4 Specialist Agents**: Realtor, Listing, Task, Notification agents are TODO stubs (return "not implemented")
+- **SMS Webhook**: Returns 501 "not implemented"
+- **Streaming**: `/classify` and `/chat` endpoints claim SSE but return single JSON chunks
+- **Background Workers**: All disabled (commented out in lifespan)
+- **Authentication**: FastAPI has ZERO auth middleware (wide open)
+- **Slack Verification**: Signature validation is TODO stub (security gap)
+- **SettingsView**: Empty placeholder (no sign-out, no profile)
+- **LogbookView**: Screen exists but fetch never wired
+- **Test Coverage**: <5% (only batched classification tested)
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Apple Platforms Development**:
-  - Xcode 15.5+ (with Swift 6.1)
-  - iOS 18.5+ / iPadOS 18.5+ / macOS 14+ targets
+**Apple Development:**
+- Xcode 15.5+ with Swift 6.1
+- iOS 18.5+ / iPadOS 18.5+ / macOS 14+
 
-- **Backend Development**:
-  - Python 3.11+
-  - pip or uv package manager
+**Backend:**
+- Python 3.11+
+- Supabase account + project
+- OpenAI API key
 
-- **Database**:
-  - Supabase account
-  - Supabase CLI (optional, for local development)
-
-### Setup
-
-Run the automated setup script:
+### 1. Clone & Setup
 
 ```bash
+# Clone repository
+git clone https://github.com/your-org/operations-center.git
+cd operations-center
+
+# Run automated setup
 ./tools/scripts/setup.sh
 ```
 
-This script will:
-1. Create Python virtual environment
-2. Install Python dependencies
-3. Resolve Swift Package Manager dependencies
-4. Create `.env` file from template
-5. Set up git hooks for code quality
+This creates venv, installs dependencies, resolves SPM packages, creates `.env` from template.
 
-### Manual Setup
+### 2. Configure Environment
 
-If you prefer manual setup:
+Copy `.env.example` to `.env` and fill in:
 
-#### Backend
 ```bash
-cd apps/backend/api
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -e ../../../libs/shared-utils
+# Required
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_KEY=your_service_key
+OPENAI_API_KEY=sk-proj-your-key
+
+# Optional (for Slack integration)
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_SIGNING_SECRET=your_secret
 ```
 
-#### Multi-Platform Apple App
+### 3. Run Database Migrations
+
+```bash
+cd supabase
+supabase db push
+# Or manually apply migrations from supabase/migrations/
+```
+
+### 4. Start Backend (Optional - for Slack integration only)
+
+```bash
+cd apps/backend/api
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+```
+
+**Note**: Swift app works **without** backend (direct Supabase CRUD).
+
+### 5. Build & Run Swift App
+
 ```bash
 cd apps/operations-center
 open "Operations Center.xcodeproj"
-# Xcode will automatically resolve Swift Package dependencies
+# Xcode: Select scheme "Operations Center" → iOS Simulator → Run
 ```
 
-## Development
-
-### Backend Development
+**Or via command line:**
 
 ```bash
-cd apps/backend/api
-source venv/bin/activate
-
-# Run development server
-uvicorn main:app --reload
-
-# Run tests
-pytest
-
-# Lint code
-ruff check .
-
-# Type checking
-mypy .
-```
-
-### Multi-Platform Apple App Development
-
-```bash
-cd apps/operations-center
-
-# Build for iOS
+# iOS
 xcodebuild -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
-  build --quiet
-
-# Build for macOS
-xcodebuild -scheme "Operations Center" \
-  -destination 'platform=macOS' \
-  build --quiet
-
-# Test iOS
-xcodebuild test \
-  -scheme "Operations Center" \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-  --quiet
+  build -quiet
 
-# Test macOS
-xcodebuild test \
-  -scheme "Operations Center" \
+# macOS
+xcodebuild -scheme "Operations Center" \
   -destination 'platform=macOS' \
-  --quiet
-
-# Lint (all platforms)
-swiftlint lint --config ../../configs/.swiftlint.yml
+  build -quiet
 ```
+
+---
+
+## Project Structure
+
+```
+operations-center/
+├── apps/
+│   ├── Operations Center/          # SwiftUI multi-platform app
+│   │   ├── Operations Center/
+│   │   │   ├── Features/          # 11 feature modules (70% complete)
+│   │   │   ├── Components/        # App-level components
+│   │   │   ├── Dependencies/      # Repository clients (Supabase)
+│   │   │   ├── State/             # AppState (@Observable global)
+│   │   │   └── Utilities/         # Helpers
+│   │   ├── Packages/
+│   │   │   └── OperationsCenterKit/  # Design system SPM package
+│   │   └── Operations CenterTests/    # <5% coverage (CRITICAL)
+│   │
+│   └── backend/api/               # Python FastAPI intelligence
+│       ├── agents/                # Classifier (works), Orchestrator (broken)
+│       ├── workflows/             # Slack intake (works), SMS (stub)
+│       ├── tools/                 # Database tools (defined, unused)
+│       ├── queue/                 # Message batching (works)
+│       └── main.py                # 5 endpoints (3 working)
+│
+├── supabase/
+│   ├── migrations/                # 22 migrations (1,578 lines SQL)
+│   └── seed/                      # Dev seed data
+│
+├── docs/                          # 74 markdown files
+│   ├── README.md                  # Documentation index
+│   ├── README_API.md              # Endpoint reference
+│   ├── README_DATABASE.md         # Schema documentation
+│   └── SWIFT_TESTING_GUIDE.md     # Testing framework guide
+│
+├── Audit_Reports/                 # 32 quality audit files
+├── tools/scripts/                 # setup.sh, deploy.sh
+└── configs/                       # .swiftlint.yml, .pylintrc
+```
+
+---
 
 ## Architecture
 
-### The Five Intelligence Endpoints
+### Data Flow (Current Reality)
 
-FastAPI provides ONLY these endpoints - all CRUD is handled by Supabase:
+```
+┌─────────────────────────────────────────────────────┐
+│                  EXTERNAL WORLD                      │
+│         Slack Messages    |    Swift App Users       │
+└───────────┬───────────────┼───────────┬──────────────┘
+            │               │           │
+            ▼               │           ▼
+     ┌──────────────┐       │    ┌──────────────┐
+     │   FastAPI    │       │    │  Swift App   │
+     │  (Vercel)    │       │    │ iOS/macOS    │
+     │              │       │    └──────┬───────┘
+     │ 5 Endpoints  │       │           │
+     │ - Slack ✅   │       │           │ CRUD (100%)
+     │ - Classify🚧 │       │           │
+     │ - Chat ❌    │       │           ▼
+     │ - Status ✅  │       │    ┌──────────────┐
+     │ - SMS ❌     │       │    │   SUPABASE   │
+     └──────┬───────┘       │    │              │
+            │               │    │ - Database   │
+            │ (writes only) │    │ - Auth       │
+            │               │    │ - Realtime   │
+            └───────────────┴────┤ - Storage    │
+                                 └──────────────┘
 
-```python
-# Webhooks - External Systems
-POST /webhooks/slack    # Slack Events API intake
-POST /webhooks/sms      # Twilio SMS webhook
-
-# Intelligence - AI Operations
-POST /classify          # Stream classification results (SSE)
-POST /chat              # Interactive agent chat (SSE)
-
-# System
-GET  /status            # Health & agent status
+                     ❌ MISSING: Swift → FastAPI clients
 ```
 
-### Multi-Platform Apple App
+**Critical Gap**: Swift app has **no network layer** for FastAPI. Intelligence features exist but unreachable.
 
-Built using modern SwiftUI patterns for **iOS, iPadOS, and macOS**:
-- **MVVM with @Observable stores** (Swift 6)
-- **Dependency injection** via swift-dependencies
-- **Feature-based organization** for scalability
-- **Progressive disclosure** UX inspired by Things 3
-- **Adaptive UI** that automatically adjusts to each platform
-- **Maximum code sharing** with platform-specific optimizations where needed
-- **Direct Supabase SDK** for all CRUD operations
+### The 5 Intelligence Endpoints
 
-Key patterns:
-- Navigation via optional child stores
-- Real-time updates via Supabase subscriptions
-- Calm technology principles for ambient awareness
+| Endpoint | Method | Status | Implementation | Swift Client |
+|----------|--------|--------|----------------|--------------|
+| `/webhooks/slack` | POST | ✅ WORKING | Full pipeline: batch → classify → store → create entities | N/A (external) |
+| `/webhooks/sms` | POST | ❌ STUB | Returns 501 "not implemented" | N/A (external) |
+| `/classify` | POST | 🚧 PARTIAL | Classifier works but no streaming, unreachable | ❌ Missing |
+| `/chat` | POST | ❌ BROKEN | Orchestrator not registered, always fails | ❌ Missing |
+| `/status` | GET | ✅ WORKING | Returns static JSON | ❌ Missing |
 
-### Backend Intelligence Layer
+### Backend Agent Architecture (65% Complete)
 
-FastAPI agent-based architecture (v3.0):
-- **LangChain agents** for AI decision-making
-- **LangGraph workflows** for multi-step orchestration
-- **Streaming responses** for progressive UI updates (SSE)
-- **Event-driven** webhooks and background workers
-- **Minimal database layer** (agents write results to Supabase)
-
-**Agent Architecture:**
 ```
-apps/backend/api/
-├── agents/          # The Intelligence
-│   ├── orchestrator.py    # Routes to specialist agents
-│   └── classifier.py      # Message classification
-├── tools/           # Reusable Capabilities
-│   └── database.py        # Database operations
-├── workflows/       # Multi-Step Processes
-│   └── slack_intake.py    # Slack → Classify → Store → Route
-└── main.py          # 5 endpoints only
+app/
+├── agents/
+│   ├── classifier.py       ✅ WORKING (LangChain + OpenAI structured output)
+│   └── orchestrator.py     ❌ BROKEN (exists but not registered, specialist agents are TODO)
+│
+├── workflows/
+│   ├── slack_intake.py     ✅ WORKING (Slack → Batch → Classify → Store → Create)
+│   ├── entity_creation.py  ✅ WORKING (57 activity templates, listing creation)
+│   └── batched_classification.py  ✅ WORKING (2s batch timeout, tested)
+│
+├── tools/
+│   └── database.py         📋 DEFINED, UNUSED (tools exist but not wired to agents)
+│
+├── queue/
+│   └── message_queue.py    ✅ WORKING (in-memory batching, 2s timeout)
+│
+└── main.py                 🚧 PARTIAL (5 endpoints declared, 3 functional)
 ```
 
-### Database
+### Swift App Architecture (70% Complete)
 
-Supabase PostgreSQL with:
-- 9 core tables for operations management
-- Row-level security (RLS) policies
-- Real-time subscriptions
-- Automatic timestamps and soft deletes
-
-## Key Features
-
-### Year 1 (Operations Focus)
-- [ ] Operations list with real-time updates
-- [ ] Task assignment and tracking
-- [ ] Realtor and listing management
-- [x] Slack message integration with AI classification
-- [x] Multi-agent system with LangGraph orchestration
-
-### Year 2 (Chat Features)
-- [ ] AI-powered chat interface
-- [ ] Streaming LLM responses
-- [ ] Context-aware suggestions
-- [ ] Multi-modal interactions
-
-## Testing
-
-### Swift Tests (All Platforms)
-```bash
-cd apps/operations-center
-
-# Test on iOS
-xcodebuild test -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
-
-# Test on macOS
-xcodebuild test -scheme "Operations Center" \
-  -destination 'platform=macOS'
-
-# Test on iPad
-xcodebuild test -scheme "Operations Center" \
-  -destination 'platform=iPad Simulator,name=iPad Pro (12.9-inch) (6th generation)'
+```
+Operations Center/
+├── Features/
+│   ├── Inbox/              ✅ WORKING - Unacknowledged listings + unclaimed tasks
+│   ├── MyTasks/            ✅ WORKING - User's claimed agent tasks
+│   ├── MyListings/         ✅ WORKING - Listings with user's activities
+│   ├── AllTasks/           ✅ WORKING - System-wide tasks
+│   ├── AllListings/        ✅ WORKING - Browse all listings
+│   ├── Agents/             ✅ WORKING - Browse realtors
+│   ├── Auth/               ✅ WORKING - Email + Google OAuth
+│   ├── ListingDetail/      🚧 IN PROGRESS - Activity display, note submission incomplete
+│   ├── Logbook/            ❌ BROKEN - Screen exists, fetch not wired
+│   ├── Settings/           ❌ NOT STARTED - Empty placeholder
+│   └── Team Views/         ❌ NOT USED - No navigation routes
+│
+├── Dependencies/
+│   ├── TaskRepositoryClient         ✅ COMPLETE (Supabase CRUD)
+│   ├── ListingRepositoryClient      ✅ COMPLETE
+│   ├── ListingNoteRepositoryClient  ✅ COMPLETE
+│   ├── RealtorRepositoryClient      ✅ COMPLETE
+│   └── AuthClient                   ✅ COMPLETE
+│
+├── State/
+│   └── AppState.swift      ✅ WORKING (@Observable global, real-time sync)
+│
+└── Packages/OperationsCenterKit/
+    └── DesignSystem/       ✅ MATURE (50+ components, consistent tokens)
 ```
 
-### Python Tests
+### Database Schema (Supabase)
+
+**9 Tables:**
+- `staff` - Staff members
+- `realtors` - Real estate agents
+- `listings` - Properties
+- `listing_acknowledgments` - Inbox claim tracking
+- `activities` - Listing-related tasks
+- `agent_tasks` - Standalone tasks
+- `listing_notes` - Notes on listings
+- `task_notes` - Notes on tasks
+- `slack_messages` - Classification results
+
+**22 Migrations** (1,578 lines SQL)
+**RLS Policies**: ⚠️ Partially enforced
+**Real-time**: ✅ Working (activities only, agent_tasks gap)
+
+---
+
+## Development
+
+### Backend
+
 ```bash
 cd apps/backend/api
 source venv/bin/activate
+
+# Run server
+uvicorn main:app --reload --port 8000
+
+# Tests (15% coverage)
 pytest tests/ -v
 
-# Test agents
-pytest tests/agents/ -v
+# Lint
+ruff check .
 
-# Test workflows
-pytest tests/workflows/ -v
+# Type check
+mypy .
 ```
+
+### Swift App
+
+```bash
+cd apps/operations-center
+
+# Build iOS
+xcodebuild -scheme "Operations Center" \
+  -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+  build -quiet
+
+# Build macOS
+xcodebuild -scheme "Operations Center" \
+  -destination 'platform=macOS' \
+  build -quiet
+
+# Test (<5% coverage - CRITICAL)
+xcodebuild test \
+  -scheme "Operations Center" \
+  -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+  -quiet
+
+# Lint
+swiftlint lint --config ../../configs/.swiftlint.yml
+```
+
+---
+
+## Critical Issues (Must Fix Before Production)
+
+### 🔴 Tier 1: Breaks Production
+
+1. **Integration Gap** - Swift app has no FastAPI clients (intelligence unreachable)
+2. **Orchestrator Not Registered** - `/chat` endpoint calls non-existent agent
+3. **No Authentication** - FastAPI endpoints are wide open (no JWT validation)
+4. **Slack Verification Missing** - Signature check is TODO stub (security vulnerability)
+5. **Classifier Blocking** - Uses synchronous `.invoke()` instead of `.ainvoke()` (blocks event loop)
+
+### 🟡 Tier 2: Degrades UX
+
+6. **No Real Streaming** - SSE endpoints return single chunks (false promise)
+7. **Real-time Gap** - Only `activities` subscribed, not `agent_tasks`
+8. **SettingsView Empty** - No sign-out, no user profile
+9. **LogbookView Broken** - Screen exists but fetch not connected
+10. **Test Coverage <5%** - Critical production risk
+
+### 🟠 Tier 3: Incomplete Features
+
+11. **SMS Webhook Stub** - Returns 501, no Twilio integration
+12. **Background Workers Disabled** - All commented out in lifespan
+13. **4 Specialist Agents Missing** - Orchestrator routes but agents return "not implemented"
+14. **Tools Not Wired** - Database tools defined but no agent can call them
+
+---
+
+## What to Build Next
+
+**Sprint 1: Close Integration Gap (2-3 days)**
+1. Create `IntelligenceAPIClient` in Swift
+2. Wire `/classify` endpoint (first-token streaming)
+3. Implement basic auth middleware on FastAPI
+4. Register OrchestratorAgent in agent registry
+
+**Sprint 2: Fix Critical Features (3-5 days)**
+5. Implement SettingsView (sign-out, profile)
+6. Wire LogbookView fetch
+7. Subscribe to `agent_tasks` in real-time
+8. Fix classifier to use `.ainvoke()` (async)
+
+**Sprint 3: Build Specialist Agents (5-7 days)**
+9. Create RealtorAgent (queries realtor data, assigns tasks)
+10. Create ListingAgent (updates listings, creates activities)
+11. Create TaskAgent (task CRUD, note management)
+12. Create NotificationAgent (Slack acknowledgments)
+
+**Sprint 4: Testing & Security (3-5 days)**
+13. Add test coverage to 30%+ (critical paths)
+14. Implement Slack signature verification
+15. Add RLS policy completion
+16. Enable background workers with monitoring
+
+---
+
+## Tech Stack
+
+**Frontend (iOS + iPadOS + macOS):**
+- Swift 6.1
+- SwiftUI (iOS 18.5+, iPadOS 18.5+, macOS 14+)
+- SPM: supabase-swift (2.5.1+), swift-dependencies (1.0.0+)
+- Architecture: MVVM + @Observable + DI
+
+**Backend:**
+- Python 3.11+
+- FastAPI 0.115.13+
+- LangChain 0.3.0+ (AI agents)
+- LangGraph (multi-agent orchestration)
+- Supabase Python SDK 2.10.0+
+- OpenAI (LLM provider)
+
+**Infrastructure:**
+- Supabase (PostgreSQL + Auth + Realtime + Storage)
+- Vercel (Serverless FastAPI deployment)
+- GitHub Actions (CI/CD - not configured)
+
+---
+
+## Testing
+
+**Current Status:**
+- Python: ~15% coverage (batched classification only)
+- Swift: <5% coverage (MyTasksStoreTests only)
+- Integration: 0% coverage
+- **Production Risk: CRITICAL**
+
+**Target:**
+- Business logic: >80%
+- Repositories: >60%
+- Workflows: >70%
+
+---
 
 ## Deployment
 
 ### Backend (Vercel)
+
 ```bash
-# Automatic deployment on push to main
+# Automatic on push to main
 git push origin main
 
-# Manual deployment
+# Manual
 ./tools/scripts/deploy.sh
 ```
 
-### Multi-Platform Apple App (App Store)
+**Status:** ✅ Configured, ⚠️ Secrets in git (`.env.production` exposed - FIX!)
+
+### Swift App (App Store)
 
 **iOS + iPadOS:**
 1. Archive for iOS in Xcode
@@ -292,201 +441,84 @@ git push origin main
 3. Submit for review
 
 **macOS:**
-1. Archive for macOS in Xcode
+1. Archive for macOS
 2. Notarize with Apple
-3. Upload to App Store Connect or distribute directly
+3. Distribute via App Store or directly
 
-See [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) for details.
+**Status:** ✅ Builds successfully, ❌ 30% features incomplete
 
-## Environment Variables
-
-Create `.env` file in the root directory:
-
-```bash
-# Supabase
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
-
-# OpenAI (or Anthropic)
-OPENAI_API_KEY=your_openai_api_key
-# ANTHROPIC_API_KEY=your_anthropic_api_key
-
-# Slack
-SLACK_BOT_TOKEN=xoxb-your-token
-SLACK_SIGNING_SECRET=your_signing_secret
-
-# Twilio (Optional, for SMS)
-TWILIO_ACCOUNT_SID=your_account_sid
-TWILIO_AUTH_TOKEN=your_auth_token
-```
+---
 
 ## Documentation
 
-- [CLAUDE.md](CLAUDE.md) - AI-assisted development workflow
-- [Architecture Design](ARCHITECTURE_DESIGN.md) - Vision and structure
-- [Architecture Complete](ARCHITECTURE_COMPLETE.md) - Implementation summary
-- [Transformation Progress](TRANSFORMATION_PROGRESS.md) - Migration history
-- [Database Schema](docs/README_DATABASE.md) - Database structure
-- [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) - Production deployment
+**74 markdown files across:**
+- [docs/](docs/) - Developer documentation (11 files)
+- [Audit_Reports/](Audit_Reports/) - Quality audits (32 files)
+- Root - Architecture, setup, deployment (14 files)
 
-## Development Workflow
+**Key Reads:**
+- [CLAUDE.md](CLAUDE.md) - AI-assisted workflow guide
+- [docs/README_API.md](docs/README_API.md) - Endpoint reference
+- [docs/README_DATABASE.md](docs/README_DATABASE.md) - Schema documentation
+- [docs/SWIFT_TESTING_GUIDE.md](docs/SWIFT_TESTING_GUIDE.md) - Testing patterns
 
-### Using Claude Code
-
-This project is optimized for AI-assisted development with Claude Code:
-
-1. **Start with `/clear`** to reset context
-2. **Read relevant files** before making changes
-3. **Request "ultrathink and make a plan"** for complex features
-4. **Review all changes as diffs** in GitHub Desktop
-5. **Commit selectively** - never bulk commit
-6. **Check Context7** before implementing agent patterns
-
-See [CLAUDE.md](CLAUDE.md) for complete workflow guidelines.
-
-### Agent Development
-
-1. **Research** - Check Context7 for LangChain/LangGraph patterns
-2. **Design** - Define purpose, state, tools, workflow
-3. **Implement** - Create agent, register, build workflow
-4. **Test** - Unit tests, integration tests, streaming
-
-See [Agent Development Guidelines](CLAUDE.md#agent-development-guidelines) for templates.
-
-### Code Quality
-
-- **SwiftLint** enforces Swift style and best practices
-- **Ruff** for Python linting and formatting
-- **mypy** for Python type checking
-- **Pre-commit hooks** run checks automatically
-- **Test coverage** target: >80% for business logic
-- **Endpoint count** maintained at 5 (intelligence only)
-
-### Git Workflow
-
-```bash
-# Create feature branch
-git checkout -b nsd97/feature-name
-
-# Make changes, commit frequently
-git add specific-files
-git commit -m "Clear, descriptive message
-
-🤖 Generated with Claude Code
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-# Push and create PR
-git push -u origin nsd97/feature-name
-gh pr create --web
-```
-
-## Tech Stack
-
-### Multi-Platform Apple (iOS + iPadOS + macOS)
-- Swift 6.1
-- SwiftUI (iOS 18.5+, iPadOS 18.5+, macOS 14+)
-- Swift Package Manager
-- Supabase Swift SDK
-- swift-dependencies
-
-### Backend Intelligence Layer
-- Python 3.11+
-- FastAPI (v3.0 - intelligence only)
-- LangChain (AI agent framework)
-- LangGraph (multi-agent orchestration)
-- Supabase Python SDK (minimal usage)
-- uvicorn (ASGI server)
-
-### Infrastructure
-- Supabase (PostgreSQL + Auth + Realtime)
-- Vercel (Serverless deployment)
-- GitHub Actions (CI/CD)
-
-## Contributing
-
-1. Read [CLAUDE.md](CLAUDE.md) for development guidelines
-2. Follow the established architecture patterns
-3. Write tests for new features
-4. Keep code quality metrics high
-5. Review all AI-generated code as diffs
-6. **Archive, don't delete** - Move old code to `trash/`
+---
 
 ## Performance Targets
 
-- **App build time**: <5 minutes (incremental, any platform)
-- **Backend response time**: <200ms (p95)
-- **Streaming first token**: <500ms (p95)
-- **Test coverage**: >80% business logic
-- **Code churn**: <7% (2-week window)
-- **SwiftLint warnings**: 0
-- **Endpoint count**: 5 (maintained)
+| Metric | Target | Current | Status |
+|--------|--------|---------|--------|
+| App build time (incremental) | <5 min | ~3 min | ✅ |
+| Backend response (p95) | <200ms | ~50ms | ✅ |
+| Streaming first token (p95) | <500ms | N/A | ❌ Not implemented |
+| Test coverage | >80% | <5% | ❌ CRITICAL |
+| SwiftLint warnings | 0 | ~5 | 🚧 |
+| Endpoint count | 5 | 5 | ✅ |
 
-## Maintenance
+---
 
-### Weekly Audits
+## Contributing
 
-Run these prompts with Claude Code:
-- "Find duplicate code blocks >5 lines"
-- "Find functions >50 lines or cyclomatic complexity >10"
-- "Find unused functions, properties, and imports"
-- "Audit for @MainActor violations and thread safety"
-- "Review agent complexity and routing logic"
+1. Read [CLAUDE.md](CLAUDE.md) for development workflow
+2. Follow MVVM + @Observable patterns
+3. Write tests (currently <5% - unacceptable)
+4. Keep endpoints minimal (5 total)
+5. Archive, don't delete (use `trash/` directory)
+6. Review all changes as diffs before committing
 
-### Dependency Updates
-
-```bash
-# Swift packages
-cd apps/operations-center
-xcodebuild -resolvePackageDependencies
-
-# Python packages
-cd apps/backend/api
-pip list --outdated
-pip install --upgrade package-name
-```
-
-## Architecture Evolution
-
-This project underwent a significant architectural transformation (November 2025):
-
-**Before (v2.0):**
-- 5,763 lines of Python code
-- 52+ CRUD endpoints in FastAPI
-- Mixed intelligence and data access
-- Redundant with Supabase capabilities
-
-**After (v3.0):**
-- 1,431 lines of focused intelligence code (-75%)
-- 5 intelligence endpoints only (-90%)
-- Clear separation: FastAPI = Intelligence, Supabase = CRUD
-- Agent-based architecture with LangGraph
-
-See [ARCHITECTURE_COMPLETE.md](ARCHITECTURE_COMPLETE.md) for details.
+---
 
 ## License
 
 [Your License Here]
 
+---
+
 ## Support
 
-For questions or issues:
-- Check [docs/](docs/) directory for detailed documentation
+**Questions?**
+- Check [docs/README.md](docs/README.md) for documentation index
 - Review [CLAUDE.md](CLAUDE.md) for development patterns
-- Open an issue on GitHub
+- Open GitHub issue
+
+**Known Issues:**
+- See [Critical Issues](#critical-issues-must-fix-before-production) above
+- Check [Audit_Reports/](Audit_Reports/) for detailed analysis
+
+---
 
 ## Acknowledgments
 
-Built following modern best practices from:
-- [Point-Free](https://www.pointfree.co/) - swift-dependencies, architecture patterns
+Built following patterns from:
+- [Point-Free](https://www.pointfree.co/) - swift-dependencies, architecture
 - [Supabase](https://supabase.com/) - Backend infrastructure
 - [Things 3](https://culturedcode.com/things/) - UX inspiration
 - [LangChain](https://www.langchain.com/) - AI agent framework
-- Production SwiftUI guide (2025) - Architecture methodology
 
 ---
 
 **"Simplicity is the ultimate sophistication."** - Leonardo da Vinci
 
-Made with Claude Code following production-quality patterns for maintainable AI-assisted development.
+**Reality check**: This codebase is 65% complete with solid foundations but critical gaps. Build the integration layer, add tests, ship it.
+
+Made with Claude Code.

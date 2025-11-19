@@ -15,6 +15,8 @@ import OperationsCenterKit
 struct MyListingsView: View {
     // MARK: - Properties
 
+    /// Store is @Observable AND @State for projected value binding
+    /// @State wrapper enables $store for Binding properties
     @State private var store: MyListingsStore
 
     // MARK: - Initialization
@@ -36,6 +38,7 @@ struct MyListingsView: View {
 
     private var listingsList: some View {
         List {
+            categoryFilterSection
             listingsSection
             emptyStateSection
         }
@@ -47,35 +50,23 @@ struct MyListingsView: View {
         .task {
             await store.fetchMyListings()
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-            }
-        }
-        .alert("Error", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK") {
-                store.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-            }
-        }
+        .loadingOverlay(store.isLoading)
+        .errorAlert($store.errorMessage)
+    }
+
+    private var categoryFilterSection: some View {
+        CategoryFilterPicker(selection: $store.selectedCategory)
     }
 
     @ViewBuilder
     private var listingsSection: some View {
-        if !store.listings.isEmpty {
+        if !store.filteredListings.isEmpty {
             Section {
-                ForEach(store.listings, id: \.id) { listing in
+                ForEach(store.filteredListings, id: \.id) { listing in
                     NavigationLink(value: Route.listing(id: listing.id)) {
                         ListingBrowseCard(listing: listing)
                     }
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .standardListRowInsets()
                 }
             }
         }
@@ -83,21 +74,12 @@ struct MyListingsView: View {
 
     @ViewBuilder
     private var emptyStateSection: some View {
-        if store.listings.isEmpty && !store.isLoading {
-            VStack(spacing: 16) {
-                Image(systemName: "house.circle")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.secondary)
-                Text("No listings with claimed activities")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("Listings will appear here when you claim activities")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+        if store.filteredListings.isEmpty && !store.isLoading {
+            DSEmptyState(
+                icon: "house.circle",
+                title: "No listings with claimed activities",
+                message: "Listings will appear here when you claim activities"
+            )
             .listRowSeparator(.hidden)
         }
     }

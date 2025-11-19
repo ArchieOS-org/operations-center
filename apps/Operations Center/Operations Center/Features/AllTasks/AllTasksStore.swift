@@ -6,6 +6,7 @@
 //  Per TASK_MANAGEMENT_SPEC.md lines 286-305
 //
 
+import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
@@ -19,7 +20,11 @@ final class AllTasksStore {
     // MARK: - Properties
 
     /// All agent tasks (standalone tasks)
-    private(set) var tasks: [TaskWithMessages] = []
+    private(set) var tasks: [TaskWithMessages] = [] {
+        didSet {
+            updateFilteredTasks()
+        }
+    }
 
     /// All activities (property-linked tasks)
     private(set) var activities: [ActivityWithDetails] = []
@@ -28,7 +33,15 @@ final class AllTasksStore {
     var expandedTaskId: String?
 
     /// Filter by team: marketing, admin, or all
-    var teamFilter: OperationsCenterKit.TeamFilter = .all
+    var teamFilter: OperationsCenterKit.TeamFilter = .all {
+        didSet {
+            updateFilteredTasks()
+        }
+    }
+
+    /// Cached filtered tasks - updated when tasks or filter changes
+    /// Performance: Filter runs once per change, not 60x/second
+    private(set) var filteredTasks: [TaskWithMessages] = []
 
     /// Error message to display
     var errorMessage: String?
@@ -39,11 +52,8 @@ final class AllTasksStore {
     /// Repository for data access
     private let repository: TaskRepositoryClient
 
-    /// Current authenticated user ID
-    /// NOTE: Replace with actual authenticated user ID from auth service
-    private var currentUserId: String {
-        "current-user"
-    }
+    /// Authentication client for current user ID
+    @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
@@ -67,10 +77,6 @@ final class AllTasksStore {
             // Filter only claimed tasks
             tasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
-
-            Logger.tasks.info(
-                "Fetched \(self.tasks.count) agent tasks and \(self.activities.count) activities"
-            )
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
@@ -92,7 +98,8 @@ final class AllTasksStore {
     /// Claim a agent task
     func claimTask(_ task: AgentTask) async {
         do {
-            _ = try await repository.claimTask(task.id, currentUserId)
+            let userId = try await authClient.currentUserId()
+            _ = try await repository.claimTask(task.id, userId)
 
             await refresh()
         } catch {
@@ -104,7 +111,8 @@ final class AllTasksStore {
     /// Claim a activity
     func claimActivity(_ task: Activity) async {
         do {
-            _ = try await repository.claimActivity(task.id, currentUserId)
+            let userId = try await authClient.currentUserId()
+            _ = try await repository.claimActivity(task.id, userId)
 
             await refresh()
         } catch {
@@ -116,7 +124,8 @@ final class AllTasksStore {
     /// Delete a agent task
     func deleteTask(_ task: AgentTask) async {
         do {
-            try await repository.deleteTask(task.id, currentUserId)
+            let userId = try await authClient.currentUserId()
+            try await repository.deleteTask(task.id, userId)
 
             await refresh()
         } catch {
@@ -128,7 +137,8 @@ final class AllTasksStore {
     /// Delete a activity
     func deleteActivity(_ task: Activity) async {
         do {
-            try await repository.deleteActivity(task.id, currentUserId)
+            let userId = try await authClient.currentUserId()
+            try await repository.deleteActivity(task.id, userId)
 
             await refresh()
         } catch {
@@ -137,19 +147,22 @@ final class AllTasksStore {
         }
     }
 
-    // MARK: - Computed Properties
+    // MARK: - Private Methods
 
-    /// Filtered agent tasks based on team filter
-    var filteredTasks: [TaskWithMessages] {
+    /// Update cached filtered tasks when data or filter changes
+    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    private func updateFilteredTasks() {
         switch teamFilter {
         case .all:
-            return tasks
+            filteredTasks = tasks
         case .marketing:
-            return tasks.filter { $0.task.taskCategory == .marketing }
+            filteredTasks = tasks.filter { $0.task.taskCategory == .marketing }
         case .admin:
-            return tasks.filter { $0.task.taskCategory == .admin }
+            filteredTasks = tasks.filter { $0.task.taskCategory == .admin }
         }
     }
+
+    // MARK: - Computed Properties
 
     /// Filtered activities based on team filter
     var filteredActivities: [ActivityWithDetails] {

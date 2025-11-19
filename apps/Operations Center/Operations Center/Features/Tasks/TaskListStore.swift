@@ -85,24 +85,6 @@ final class TaskListStore {
         }
     }
 
-    /// Toggle subtask completion
-    func toggleSubtask(_ subtask: Subtask) async {
-        errorMessage = nil
-
-        do {
-            if subtask.isCompleted {
-                _ = try await repository.uncompleteSubtask(subtask.id)
-            } else {
-                _ = try await repository.completeSubtask(subtask.id)
-            }
-
-            // Refresh to get updated subtasks
-            await fetchTasks()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
     /// Refresh tasks (for pull-to-refresh)
     func refresh() async {
         await fetchTasks()

@@ -17,7 +17,6 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
     private var activities: [Activity]
     private var listings: [String: Listing] // listingId -> Listing
     private var slackMessages: [String: [SlackMessage]] // taskId -> messages
-    private var subtasks: [String: [Subtask]] // taskId -> subtasks
 
     // MARK: - Initialization
 
@@ -28,7 +27,6 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
         self.activities = mockData.activities
         self.listings = mockData.listings
         self.slackMessages = mockData.slackMessages
-        self.subtasks = mockData.subtasks
     }
 
     /// Factory method for creating instances from non-isolated contexts
@@ -58,8 +56,7 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
                 guard let listing = listings[task.listingId] else {
                     return nil
                 }
-                let taskSubtasks = subtasks[task.id] ?? []
-                return ActivityWithDetails(task: task, listing: listing, subtasks: taskSubtasks)
+                return ActivityWithDetails(task: task, listing: listing)
             }
     }
 
@@ -184,64 +181,17 @@ final class MockTaskRepository: TaskRepository, @unchecked Sendable {
 
         activities[index] = updated
     }
-
-    func completeSubtask(subtaskId: String) async throws -> Subtask {
-        // Find subtask across all task subtask arrays
-        for (taskId, var taskSubtasks) in subtasks {
-            if let index = taskSubtasks.firstIndex(where: { $0.id == subtaskId }) {
-                let original = taskSubtasks[index]
-                let updated = Subtask(
-                    id: original.id,
-                    parentTaskId: original.parentTaskId,
-                    name: original.name,
-                    isCompleted: true,
-                    completedAt: Date(),
-                    createdAt: original.createdAt
-                )
-                taskSubtasks[index] = updated
-                subtasks[taskId] = taskSubtasks
-                return updated
-            }
-        }
-
-        throw MockRepositoryError.subtaskNotFound
-    }
-
-    func uncompleteSubtask(subtaskId: String) async throws -> Subtask {
-        // Find subtask across all task subtask arrays
-        for (taskId, var taskSubtasks) in subtasks {
-            if let index = taskSubtasks.firstIndex(where: { $0.id == subtaskId }) {
-                let original = taskSubtasks[index]
-                let updated = Subtask(
-                    id: original.id,
-                    parentTaskId: original.parentTaskId,
-                    name: original.name,
-                    isCompleted: false,
-                    completedAt: nil,
-                    createdAt: original.createdAt
-                )
-                taskSubtasks[index] = updated
-                subtasks[taskId] = taskSubtasks
-                return updated
-            }
-        }
-
-        throw MockRepositoryError.subtaskNotFound
-    }
 }
 
 // MARK: - Errors
 
 enum MockRepositoryError: LocalizedError {
     case taskNotFound
-    case subtaskNotFound
 
     var errorDescription: String? {
         switch self {
         case .taskNotFound:
             return "Task not found"
-        case .subtaskNotFound:
-            return "Subtask not found"
         }
     }
 }

@@ -51,7 +51,9 @@ struct TaskRow: View {
             }
 
             HStack {
-                CategoryBadge(category: task.taskCategory)
+                if let category = task.taskCategory {
+                    CategoryBadge(category: category)
+                }
 
                 if task.priority > 0 {
                     PriorityBadge(priority: task.priority)
@@ -71,7 +73,7 @@ struct TaskRow: View {
 }
 
 struct StatusBadge: View {
-    let status: Activity.TaskStatus
+    let status: TaskStatus
 
     var body: some View {
         Text(status.rawValue)
@@ -95,7 +97,7 @@ struct StatusBadge: View {
 }
 
 struct CategoryBadge: View {
-    let category: Activity.TaskCategory
+    let category: TaskCategory
 
     var body: some View {
         Label(category.rawValue, systemImage: icon)
@@ -109,8 +111,8 @@ struct CategoryBadge: View {
         case .marketing: return "megaphone"
         case .photo: return "camera"
         case .staging: return "house"
-        case .inspection: return "magnifyingglass"
-        case .other: return "ellipsis.circle"
+        case .inspection: return "checklist"
+        case .other: return "tag"
         }
     }
 }

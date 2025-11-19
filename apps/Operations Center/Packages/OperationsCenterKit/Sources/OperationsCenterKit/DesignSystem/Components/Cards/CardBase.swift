@@ -41,43 +41,46 @@ struct CardBase<Content: View>: View {
     // MARK: - Body
 
     var body: some View {
-        Button(action: handleTap) {
-            VStack(alignment: .leading, spacing: 0) {
-                content
-            }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                ZStack {
-                    // System background (automatic dark mode)
-                    Colors.surfaceSecondary
-
-                    // Subtle tint overlay
-                    tintColor
-                }
-            )
-            .cornerRadius(CornerRadius.card)
-            // Dual-layer shadow system for realistic depth
-            .shadow(
-                color: Shadows.cardSecondaryShadow(colorScheme),
-                radius: Shadows.cardSecondaryRadius,
-                x: 0,
-                y: Shadows.cardSecondaryOffset
-            )
-            .shadow(
-                color: Shadows.cardPrimaryShadow(colorScheme),
-                radius: Shadows.cardPrimaryRadius,
-                x: 0,
-                y: Shadows.cardPrimaryOffset
-            )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
+        VStack(alignment: .leading, spacing: 0) {
+            content
         }
-        .buttonStyle(.plain)
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: isPressed)
-        ._onButtonGesture { pressing in
-            isPressed = pressing
-        } perform: {}
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack {
+                // System background (automatic dark mode)
+                Colors.surfaceSecondary
+
+                // Subtle tint overlay
+                tintColor
+            }
+        )
+        .cornerRadius(CornerRadius.card)
+        // Dual-layer shadow system for realistic depth
+        .shadow(
+            color: Shadows.cardSecondaryShadow(colorScheme),
+            radius: Shadows.cardSecondaryRadius,
+            x: 0,
+            y: Shadows.cardSecondaryOffset
+        )
+        .shadow(
+            color: Shadows.cardPrimaryShadow(colorScheme),
+            radius: Shadows.cardPrimaryRadius,
+            x: 0,
+            y: Shadows.cardPrimaryOffset
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+        .onTapGesture {
+            handleTap()
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+        .sensoryFeedback(.selection, trigger: isExpanded)
     }
 
     // MARK: - Actions

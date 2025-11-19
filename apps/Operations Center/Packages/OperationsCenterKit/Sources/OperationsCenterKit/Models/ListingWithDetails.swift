@@ -12,7 +12,7 @@ public struct ListingWithDetails: Sendable, Identifiable {
     public let listing: Listing
     public let realtor: Realtor?
     public let activities: [Activity]
-    public let notes: [ListingNote]
+    public var notes: [ListingNote]  // Mutable for optimistic updates
 
     /// Indicates if there was an error loading notes for this listing
     public let hasNotesError: Bool

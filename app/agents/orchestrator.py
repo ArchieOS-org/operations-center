@@ -8,6 +8,7 @@ classification results. It's the central coordinator of the multi-agent system.
 import logging
 from typing import Dict, Any, Optional
 from langgraph.graph import StateGraph, END, START
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict, Annotated
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class OrchestratorState(TypedDict):
     """State for orchestrator workflow"""
+
     messages: Annotated[list, add_messages]
     classification: Optional[Dict[str, Any]]
     routing_decision: Optional[str]
@@ -44,9 +46,11 @@ class OrchestratorAgent(BaseAgent):
 
     @property
     def description(self) -> str:
-        return "Routes messages to appropriate specialist agents based on classification"
+        return (
+            "Routes messages to appropriate specialist agents based on classification"
+        )
 
-    def _build_graph(self) -> StateGraph:
+    def _build_graph(self) -> CompiledStateGraph:
         """Build the orchestration workflow graph"""
 
         workflow = StateGraph(OrchestratorState)
@@ -71,7 +75,7 @@ class OrchestratorAgent(BaseAgent):
                 "task": "process_task",
                 "generic": "process_generic",
                 END: END,
-            }
+            },
         )
 
         # All processing nodes lead to END
@@ -100,22 +104,24 @@ class OrchestratorAgent(BaseAgent):
                 input_data["classification"] = classification_result
 
         # Run the orchestration workflow
-        result = await self.graph.ainvoke({
-            "messages": input_data.get("messages", []),
-            "classification": input_data.get("classification"),
-        })
+        result = await self.graph.ainvoke(
+            {
+                "messages": input_data.get("messages", []),
+                "classification": input_data.get("classification"),
+            }
+        )
 
         return result.get("result", {})
 
     def _route_message(self, state: OrchestratorState) -> OrchestratorState:
         """Analyze classification and determine routing"""
 
-        classification = state.get("classification", {})
+        classification = state.get("classification") or {}
 
         # Determine which agent should handle this
-        message_type = classification.get("message_type")
-        group_key = classification.get("group_key")
-        task_key = classification.get("task_key")
+        message_type = classification.get("message_type") or ""
+        group_key = classification.get("group_key") or ""
+        task_key = classification.get("task_key") or ""
 
         if message_type == "IGNORE":
             routing = END
@@ -137,9 +143,20 @@ class OrchestratorAgent(BaseAgent):
 
     def _get_routing_decision(self, state: OrchestratorState) -> str:
         """Extract routing decision from state"""
-        return state.get("routing_decision", END)
+        routing_decision = state.get("routing_decision")
 
-    async def _process_with_realtor_agent(self, state: OrchestratorState) -> OrchestratorState:
+        if not routing_decision:
+            logger.warning(
+                "routing_decision was missing or corrupted in state - "
+                "falling back to conservative default 'generic'"
+            )
+            return "generic"
+
+        return routing_decision
+
+    async def _process_with_realtor_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with realtor specialist agent"""
 
         # TODO: Implement when RealtorAgent is created
@@ -158,7 +175,9 @@ class OrchestratorAgent(BaseAgent):
             "result": result,
         }
 
-    async def _process_with_listing_agent(self, state: OrchestratorState) -> OrchestratorState:
+    async def _process_with_listing_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with listing specialist agent"""
 
         # TODO: Implement when ListingAgent is created
@@ -173,7 +192,9 @@ class OrchestratorAgent(BaseAgent):
             "result": result,
         }
 
-    async def _process_with_task_agent(self, state: OrchestratorState) -> OrchestratorState:
+    async def _process_with_task_agent(
+        self, state: OrchestratorState
+    ) -> OrchestratorState:
         """Process with task specialist agent"""
 
         # TODO: Implement when TaskAgent is created

@@ -17,7 +17,7 @@ def register_tool(name: str, func: Callable):
     return func
 
 
-def get_tool(name: str) -> Callable:
+def get_tool(name: str) -> Callable | None:
     """Get a tool by name"""
     return TOOL_REGISTRY.get(name)
 

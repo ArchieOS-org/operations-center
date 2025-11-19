@@ -76,6 +76,7 @@ struct RootView: View {
         case .inbox:
             InboxView(store: InboxStore(
                 taskRepository: taskRepo,
+                listingRepository: listingRepo,
                 noteRepository: noteRepo,
                 realtorRepository: realtorRepo
             ))
@@ -103,12 +104,16 @@ struct RootView: View {
             ListingDetailView(
                 listingId: id,
                 listingRepository: listingRepo,
-                noteRepository: noteRepo
+                noteRepository: noteRepo,
+                taskRepository: taskRepo
             )
         case .allTasks:
             AllTasksView(repository: taskRepo)
         case .allListings:
-            AllListingsView(repository: listingRepo)
+            AllListingsView(
+                listingRepository: listingRepo,
+                taskRepository: taskRepo
+            )
         case .settings:
             SettingsView()
         }

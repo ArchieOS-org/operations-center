@@ -3,6 +3,7 @@ Authentication middleware using FastAPI dependency injection.
 Context7 Pattern: Depends() for reusable auth logic
 Source: /fastapi/fastapi docs - "Dependencies" and "Security"
 """
+
 from fastapi import Depends, HTTPException, Header, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
@@ -16,11 +17,10 @@ security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     authorization: Annotated[
-        Optional[HTTPAuthorizationCredentials], 
-        Depends(security)
+        Optional[HTTPAuthorizationCredentials], Depends(security)
     ] = None,
     x_debug_user: Annotated[Optional[str], Header()] = None,
-    ops_session: Annotated[Optional[str], Cookie()] = None
+    ops_session: Annotated[Optional[str], Cookie()] = None,
 ) -> User:
     """
     FastAPI dependency to extract and validate current user.
@@ -54,7 +54,7 @@ async def get_current_user(
             name=f"Debug User {x_debug_user}",
             provider="debug",
             roles=[],
-            groups=[]
+            groups=[],
         )
 
     # Extract token from Bearer or Cookie
@@ -68,15 +68,13 @@ async def get_current_user(
         raise HTTPException(
             status_code=401,
             detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Validate JWT
     try:
         payload = jwt.decode(
-            token,
-            settings.JWT_SECRET,
-            algorithms=[settings.JWT_ALGORITHM]
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
 
         user_id = payload.get("sub")
@@ -90,11 +88,10 @@ async def get_current_user(
             tenant_id=payload.get("tenant_id"),
             provider=payload.get("provider", "cognito"),
             roles=payload.get("roles", []),
-            groups=payload.get("groups", [])
+            groups=payload.get("groups", []),
         )
 
     except JWTError as e:
         raise HTTPException(
-            status_code=401,
-            detail=f"Could not validate credentials: {str(e)}"
+            status_code=401, detail=f"Could not validate credentials: {str(e)}"
         )

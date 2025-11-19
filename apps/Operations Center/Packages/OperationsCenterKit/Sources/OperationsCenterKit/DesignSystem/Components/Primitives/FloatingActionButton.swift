@@ -21,6 +21,7 @@ public struct FloatingActionButton: View {
     private let action: () -> Void
     private let systemImage: String
     private let accessibilityLabel: String
+    @State private var tapped = false
 
     // MARK: - Initialization
 
@@ -37,7 +38,10 @@ public struct FloatingActionButton: View {
     // MARK: - Body
 
     public var body: some View {
-        Button(action: action) {
+        Button(action: {
+            tapped.toggle()
+            action()
+        }) {
             Image(systemName: systemImage)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
@@ -53,6 +57,7 @@ public struct FloatingActionButton: View {
         }
         .buttonStyle(FloatingActionButtonStyle())
         .accessibilityLabel(accessibilityLabel)
+        .sensoryFeedback(.impact, trigger: tapped)
     }
 }
 

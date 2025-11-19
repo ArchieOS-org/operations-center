@@ -1,0 +1,18 @@
+//
+// Production.xcconfig
+// Operations Center
+//
+// Build configuration for production releases (App Store, TestFlight)
+//
+
+// Use Xcode auto-generated Info.plist
+GENERATE_INFOPLIST_FILE = YES
+
+// OAuth URL Scheme: operationscenter://
+// Used for deep link callback after Supabase processes OAuth
+// Configured via INFOPLIST_KEY_CFBundleURLTypes in project.pbxproj
+
+// Configuration values - not used by Info.plist, accessed directly in Config.swift
+SUPABASE_URL = https://kukmshbkzlskyuacgzbo.supabase.co
+SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1a21zaGJremxza3l1YWNnemJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTUyOTAsImV4cCI6MjA3ODM3MTI5MH0.Jax3HtgBuu5COWr_p0mXiVuXlCFDsQaj9VUEQGxUOcE
+FASTAPI_URL = https://operations-center.vercel.app

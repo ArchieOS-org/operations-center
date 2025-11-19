@@ -28,10 +28,4 @@ public protocol TaskRepository: Sendable {
 
     /// Delete an activity (soft delete)
     func deleteActivity(taskId: String, deletedBy: String) async throws
-
-    /// Complete a subtask within an activity
-    func completeSubtask(subtaskId: String) async throws -> Subtask
-
-    /// Uncomplete a subtask within an activity
-    func uncompleteSubtask(subtaskId: String) async throws -> Subtask
 }
