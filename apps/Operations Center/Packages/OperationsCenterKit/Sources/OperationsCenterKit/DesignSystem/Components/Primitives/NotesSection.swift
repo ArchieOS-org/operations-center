@@ -2,28 +2,42 @@
 //  NotesSection.swift
 //  OperationsCenterKit
 //
-//  GOLDEN MASTER
-//  - Fixed: Avatar vertical alignment (pinned to leading edge)
-//  - Fixed: Optical text alignment (cap-height correction)
-//  - Fixed: Chronology (Oldest -> Newest)
-//  - Fixed: Input scrolling behavior
+//  THE ELASTIC ACCORDION
+//  - No inner ScrollView (Page handles scrolling)
+//  - Default: Last 3 notes
+//  - Interaction: Drag down or Tap top to expand
+//  - Conflict Free: Requires .refreshable to be removed from parent
 //
 
 import SwiftUI
 
-/// Premium notes section with multi-line input and avatar-based rows
-/// Clean text on parent surface, no backgrounds, fuzzy timestamps
 public struct NotesSection: View {
     let notes: [ListingNote]
     @Binding var inputText: String
     let onSubmit: () -> Void
 
     @FocusState private var isInputFocused: Bool
+    @State private var isExpanded = false
+    @State private var triggerHaptic = false
 
-    // SORTING: Oldest at Top -> Newest at Bottom (Standard timeline flow)
+    // MARK: - Computed Props
+
+    // Sort: Oldest (Top) -> Newest (Bottom)
     private var sortedNotes: [ListingNote] {
         notes.sorted { $0.createdAt < $1.createdAt }
     }
+
+    // Slice: If collapsed, show only last 3. If expanded, show all.
+    private var visibleNotes: [ListingNote] {
+        guard !isExpanded else { return sortedNotes }
+        return Array(sortedNotes.suffix(3))
+    }
+
+    private var hasHiddenNotes: Bool {
+        notes.count > 3
+    }
+
+    // MARK: - Init
 
     public init(
         notes: [ListingNote],
@@ -35,48 +49,67 @@ public struct NotesSection: View {
         self.onSubmit = onSubmit
     }
 
+    // MARK: - Body
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Notes list
-            if !notes.isEmpty {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        // CRITICAL FIX: alignment: .leading
-                        // Prevents short notes from centering and shifting the avatar right
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            ForEach(sortedNotes) { note in
-                                NoteRow(note: note)
-                                    .id(note.id)
-                                    .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .move(edge: .bottom)),
-                                        removal: .opacity
-                                    ))
+
+            // 1. The "Handle" / Expansion Trigger
+            // Only visible if we have hidden history
+            if hasHiddenNotes {
+                ExpansionTrigger(isExpanded: isExpanded)
+                    .onTapGesture { toggleExpansion() }
+                    .highPriorityGesture(
+                        DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                            .onEnded { value in
+                                if value.translation.height > 0 && !isExpanded {
+                                    toggleExpansion() // Drag Down -> Expand
+                                } else if value.translation.height < 0 && isExpanded {
+                                    toggleExpansion() // Drag Up -> Collapse
+                                }
                             }
-                        }
-                        .padding(.vertical, Spacing.md)
-                        .padding(.horizontal, Spacing.md)
-                        .frame(maxWidth: .infinity, alignment: .leading) // Force scroll content width
-                    }
-                    .scrollIndicators(.hidden)
-                    .onChange(of: notes.count) { oldCount, newCount in
-                        // Auto-scroll to the bottom (Newest)
-                        if newCount > oldCount, let lastNote = sortedNotes.last {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.68)) {
-                                proxy.scrollTo(lastNote.id, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-            } else {
-                Spacer()
+                    )
+                    .zIndex(1) // Ensure it sits above the animating list
             }
 
-            // Input section (Sits at bottom)
+            // 2. The List
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                ForEach(visibleNotes) { note in
+                    NoteRow(note: note)
+                        .id(note.id)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.bottom, Spacing.md)
+            // When collapsed, add a top padding to account for the gradient/handle area
+            .padding(.top, (hasHiddenNotes && !isExpanded) ? 0 : Spacing.md)
+            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: visibleNotes.count)
+            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isExpanded)
+
+            // 3. Input Section
             InputBar(
                 text: $inputText,
                 isFocused: $isInputFocused,
                 onSubmit: handleSubmit
             )
+        }
+        // Haptic feedback on expansion toggle
+        .sensoryFeedback(.selection, trigger: isExpanded)
+        // Haptic feedback on new note
+        .sensoryFeedback(.impact(weight: .light), trigger: triggerHaptic)
+        .onChange(of: notes.count) { oldCount, newCount in
+            if newCount > oldCount {
+                triggerHaptic.toggle()
+                // Optional: Auto-expand if they add a note?
+                // Steve: No. Keep it minimal. Let them expand if they want context.
+            }
+        }
+    }
+
+    private func toggleExpansion() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            isExpanded.toggle()
         }
     }
 
@@ -84,12 +117,44 @@ public struct NotesSection: View {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         onSubmit()
-        isInputFocused = false
+        // Keep focus for rapid fire
     }
 }
 
-// MARK: - Input Bar
+// MARK: - Subviews
 
+private struct ExpansionTrigger: View {
+    let isExpanded: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+            // Subtle Handle Indicator
+            Capsule()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: 32, height: 4)
+            Spacer()
+        }
+        .padding(.vertical, 12)
+        .background {
+            if !isExpanded {
+                // The "Fade" Mask when collapsed
+                LinearGradient(
+                    colors: [
+                        Colors.surfacePrimary.opacity(0),
+                        Colors.surfacePrimary
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .padding(-20) // Bleed out
+            }
+        }
+        .contentShape(Rectangle()) // Make the clear area tappable
+    }
+}
+
+// MARK: - Input Bar (Unchanged)
 private struct InputBar: View {
     @Binding var text: String
     var isFocused: FocusState<Bool>.Binding
@@ -116,7 +181,6 @@ private struct InputBar: View {
                     return .ignored
                 }
 
-            // Button only appears when needed
             if isSubmitEnabled {
                 Button(action: onSubmit) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -134,15 +198,13 @@ private struct InputBar: View {
     }
 }
 
-// MARK: - Note Row
-
+// MARK: - Note Row (Unchanged)
 private struct NoteRow: View {
     let note: ListingNote
     @State private var isHovering = false
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
-            // Avatar (Anchor)
             Circle()
                 .fill(avatarColor)
                 .frame(width: 32, height: 32)
@@ -152,32 +214,30 @@ private struct NoteRow: View {
                         .foregroundStyle(.white)
                 }
 
-            // Content
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                // Header
-                HStack(spacing: Spacing.xs) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
                     Text(note.createdByName ?? "Unknown")
                         .font(Typography.cardSubtitle.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .offset(y: -2) // Optical alignment with 32pt avatar
+                        .alignmentGuide(.top) { d in d[.top] + 2 }
 
                     Text("·")
                         .foregroundStyle(.tertiary)
+                        .alignmentGuide(.top) { d in d[.top] + 2 }
 
                     Text(formatTime(note.createdAt))
                         .font(Typography.chipLabel)
                         .foregroundStyle(.tertiary)
-                        .offset(y: -2) // Optical alignment with 32pt avatar
+                        .alignmentGuide(.top) { d in d[.top] + 2 }
                 }
 
-                // Body
                 Text(note.content)
                     .font(Typography.body)
                     .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true) // Wrap text properly
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading) // Ensure row fills width
+        .frame(maxWidth: .infinity, alignment: .leading)
         .opacity(isHovering ? 0.8 : 1.0)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -186,17 +246,13 @@ private struct NoteRow: View {
         }
     }
 
-    // MARK: - Helpers
-
     private var initials: String {
         guard let name = note.createdByName else { return "?" }
         let components = name.split(separator: " ")
         if components.count >= 2 {
-            let first = components[0].prefix(1).uppercased()
-            let last = components[1].prefix(1).uppercased()
-            return first + last
+            return String(components[0].prefix(1)) + String(components[1].prefix(1))
         }
-        return String(name.prefix(2).uppercased())
+        return String(name.prefix(2))
     }
 
     private var avatarColor: Color {
@@ -208,9 +264,9 @@ private struct NoteRow: View {
     private func formatTime(_ date: Date) -> String {
         let seconds = Date().timeIntervalSince(date)
         if seconds < 60 { return "just now" }
-        if seconds < 3600 { return "\(Int(seconds / 60))m ago" }
-        if seconds < 86400 { return "\(Int(seconds / 3600))h ago" }
-        return "\(Int(seconds / 86400))d ago"
+        if seconds < 3600 { return "\(Int(seconds/60))m ago" }
+        if seconds < 86400 { return "\(Int(seconds/3600))h ago" }
+        return "\(Int(seconds/86400))d ago"
     }
 }
 
