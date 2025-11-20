@@ -54,6 +54,10 @@ final class AppState {
     @ObservationIgnored
     private lazy var tasksChannel = supabase.realtimeV2.channel("all_tasks")
 
+    // Track Realtime connection state for lifecycle management
+    @ObservationIgnored
+    private var isRealtimeConnected = false
+
     // MARK: - Computed Properties
 
     /// Tasks that are unclaimed (Inbox)
@@ -87,6 +91,7 @@ final class AppState {
 
     /// Start async operations after app launch
     /// Call this from .task modifier in RootView
+    /// Note: Realtime connection is managed separately via scenePhase in RootView
     func startup() async {
         // Load cached data first for instant UI
         loadCachedData()
@@ -94,7 +99,7 @@ final class AppState {
         // Setup async operations
         await setupAuthStateListener()
         await fetchTasks()
-        await setupPermanentRealtimeSync()
+        // Realtime is now connected via connectRealtimeIfNeeded() called from RootView's scenePhase handler
     }
 
     deinit {
@@ -158,6 +163,41 @@ final class AppState {
     }
 
     // MARK: - Real-time Sync
+
+    /// Connect to Realtime if not already connected
+    /// Call this when app becomes active
+    func connectRealtimeIfNeeded() async {
+        guard !isRealtimeConnected else {
+            Logger.database.debug("Realtime already connected, skipping")
+            return
+        }
+        Logger.database.info("Connecting Realtime (app became active)")
+        isRealtimeConnected = true
+        await setupPermanentRealtimeSync()
+    }
+
+    /// Disconnect from Realtime
+    /// Call this when app goes to background or inactive
+    func disconnectRealtime() {
+        guard isRealtimeConnected else {
+            Logger.database.debug("Realtime already disconnected, skipping")
+            return
+        }
+        Logger.database.info("Disconnecting Realtime (app going to background)")
+        isRealtimeConnected = false
+
+        // Cancel the streaming task
+        realtimeSubscription?.cancel()
+        realtimeSubscription = nil
+
+        // Unsubscribe from the channel
+        // Per Supabase docs: removing channels prevents performance degradation
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await self.tasksChannel.unsubscribe()
+            Logger.database.debug("Realtime channel unsubscribed")
+        }
+    }
 
     private func setupPermanentRealtimeSync() async {
         // Cancel any existing subscription

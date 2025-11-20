@@ -12,6 +12,7 @@ import Supabase
 struct RootView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var path: [Route] = []
 
     var body: some View {
@@ -61,6 +62,25 @@ struct RootView: View {
                 // Skip startup in preview mode - zero network calls
                 guard !CommandLine.arguments.contains("--use-preview-data") else { return }
                 await appState.startup()
+                // Connect Realtime after startup completes
+                await appState.connectRealtimeIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                // Skip lifecycle management in preview mode
+                guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+
+                Task {
+                    switch newPhase {
+                    case .active:
+                        // App came to foreground - reconnect Realtime
+                        await appState.connectRealtimeIfNeeded()
+                    case .inactive, .background:
+                        // App going to background - disconnect Realtime to save battery
+                        appState.disconnectRealtime()
+                    @unknown default:
+                        break
+                    }
+                }
             }
         }
     }
