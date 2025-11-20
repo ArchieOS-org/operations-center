@@ -13,6 +13,9 @@ import CoreGraphics
 ///     .cornerRadius(CornerRadius.avatarList)
 /// ```
 public enum AvatarSizes {
-    /// Avatar size for list rows and cards (36pt circle, matches iOS-style list avatars)
+    /// Avatar size for list rows and cards (16pt circle)
     public static let list: CGFloat = 16
+
+    /// Avatar size for detail sheets and profile cards (32pt circle)
+    public static let detail: CGFloat = 32
 }

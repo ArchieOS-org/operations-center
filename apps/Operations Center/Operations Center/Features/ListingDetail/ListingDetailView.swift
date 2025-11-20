@@ -34,15 +34,21 @@ struct ListingDetailView: View {
     /// Header scroll state: baseline and offset relative to that baseline
     @State private var headerScroll = HeaderScrollState()
 
+    // MARK: - UI State
+
+    /// Show metadata detail sheet
+    @State private var showMetaDetailSheet = false
+
     // MARK: - Layout Constants
 
     private enum HeaderMetrics {
-        /// Total height of the header container
-        static let height: CGFloat = 96
+        /// Total height of the header container, from the design system
+        /// Matches large-title nav bars and gives room below the status bar
+        static let height: CGFloat = Spacing.navHeaderHeight
         /// Fraction of the header height used as top spacer so content slightly overlaps
-        static let overlapFraction: CGFloat = 0.5
+        static let overlapFraction: CGFloat = Spacing.navHeaderOverlapFraction
         /// Scroll distance (points) from baseline at which the header is fully compact
-        static let collapseDistance: CGFloat = 80
+        static let collapseDistance: CGFloat = Spacing.navHeaderCollapseDistance
     }
 
     // MARK: - Initialization
@@ -65,27 +71,71 @@ struct ListingDetailView: View {
         ))
     }
 
+    // MARK: - Computed Properties
+
+    private var isHeaderCollapsed: Bool {
+        abs(headerScroll.relativeOffset) > Spacing.navHeaderCollapseDistance
+    }
+
+    private var headerTitle: String {
+        let addressString = store.listing?.addressString ?? "Listing"
+
+        // Format address: "Street Address," on first line, "City" on second line
+        // Keep existing address formatting logic unchanged
+        guard !addressString.isEmpty, addressString != "Listing" else {
+            return addressString
+        }
+
+        // Split by commas to parse address components
+        let components = addressString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        guard components.count >= 2 else {
+            // If no commas, return as-is
+            return addressString
+        }
+
+        // First component is street address
+        let streetAddress = components[0]
+
+        // Second component contains city (may also have state and zip)
+        let cityAndState = components[1]
+
+        // Extract just the city by removing state abbreviation and zip code
+        // Split by spaces and stop when we hit a state code or zip code
+        let words = cityAndState.split(separator: " ")
+        var cityWords: [String] = []
+
+        for word in words {
+            let trimmed = String(word).trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Stop if we hit a 2-letter uppercase state/province code (like "CA", "NY", "ON", "BC")
+            if trimmed.count == 2 && trimmed.allSatisfy({ $0.isLetter }) && trimmed == trimmed.uppercased() {
+                break
+            }
+
+            // Stop if we hit a zip/postal code (5 digits or 5-4 format)
+            if trimmed.range(of: #"^\d{5}(-\d{4})?$"#, options: .regularExpression) != nil {
+                break
+            }
+
+            cityWords.append(trimmed)
+        }
+
+        let city = cityWords.joined(separator: " ")
+
+        // Format: "Street Address,\nCity"
+        return "\(streetAddress),\n\(city)"
+    }
+
     // MARK: - Body
 
     var body: some View {
-        // Capture state for visualEffect (avoid MainActor isolation warnings)
-        let offset = headerScroll.relativeOffset
-
         ZStack(alignment: .top) {
-            // The Pulley Header (fixed position, visual transform only)
-            headerView
-                .zIndex(1)
-                .visualEffect { content, _ in
-                    content
-                        // Inverse: scroll down = header up
-                        .offset(y: min(0, -offset))
-                }
-
             // Main Scroll Content
             ScrollView {
                 LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                     // Top spacer for partial header clearance (allow overlap)
-                    Color.clear.frame(height: HeaderMetrics.height * HeaderMetrics.overlapFraction)
+                    Color.clear.frame(height: Spacing.navHeaderHeight * Spacing.navHeaderOverlapFraction)
 
                     // Notes Section (rendered as list items, not a compound component)
                     notesListSection
@@ -136,7 +186,7 @@ struct ListingDetailView: View {
                     }
 
                     // Bottom spacer to prevent last activity from being obscured by input bar
-                    Color.clear.frame(height: 120)
+                    Color.clear.frame(height: Spacing.bottomInputBarSpacer)
                 }
                 .scrollTargetLayout()
             }
@@ -158,6 +208,19 @@ struct ListingDetailView: View {
                 noteInputBar
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            DSListingHeader(
+                mode: isHeaderCollapsed ? .compact : .primary,
+                title: headerTitle,
+                realtorName: store.realtor?.name,
+                listingType: store.listing?.type.flatMap(ListingType.init(rawValue:)),
+                onBack: { dismiss() }
+            )
+            .padding(.top, Spacing.navHeaderTop)
+            .padding(.horizontal, Spacing.screenEdge)
+            .background(Colors.surfacePrimary)
+            .animation(.easeInOut(duration: 0.2), value: isHeaderCollapsed)
+        }
         .navigationTitle(store.listing?.title ?? "Listing")
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -177,101 +240,29 @@ struct ListingDetailView: View {
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedActivityId)
+        .sheet(isPresented: $showMetaDetailSheet) {
+            if let agentMeta = store.realtor.map({ ListingAgentMeta(id: $0.id, name: $0.name, email: $0.email, phone: $0.phone, slackUserId: $0.slackUserId) }),
+               let createdDate = store.listing?.createdAt {
+                DSListingMetaDetailSheet(
+                    detail: ListingMetaDetail(
+                        agent: agentMeta,
+                        slackMessage: nil, // TODO: Fetch Slack message when available
+                        createdDate: createdDate,
+                        channelId: nil // TODO: Get channel ID from Slack message
+                    ),
+                    onOpenSlackChannel: {
+                        // TODO: Implement Slack channel opening
+                        // For now, just dismiss the sheet
+                        showMetaDetailSheet = false
+                    }
+                )
+                .presentationDetents([.fraction(0.6)])
+                .presentationDragIndicator(.visible)
+            }
+        }
     }
 
     // MARK: - Subviews
-
-    /// The Pulley Header - two states, crossfading based on scroll distance from initial position
-    @ViewBuilder
-    private var headerView: some View {
-        let transition = headerTransitionProgress(for: headerScroll.relativeOffset)
-        let addressString = store.listing?.addressString ?? "Listing"
-        
-        // Format address: "Street Address," on first line, "City" on second line
-        let title: String = {
-            guard !addressString.isEmpty, addressString != "Listing" else {
-                return addressString
-            }
-            
-            // Split by commas to parse address components
-            let components = addressString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            
-            guard components.count >= 2 else {
-                // If no commas, return as-is
-                return addressString
-            }
-            
-            // First component is street address
-            let streetAddress = components[0]
-            
-            // Second component contains city (may also have state and zip)
-            let cityAndState = components[1]
-            
-            // Extract just the city by removing state abbreviation and zip code
-            // Split by spaces and stop when we hit a state code or zip code
-            let words = cityAndState.split(separator: " ")
-            var cityWords: [String] = []
-            
-            for word in words {
-                let trimmed = String(word).trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                // Stop if we hit a 2-letter uppercase state/province code (like "CA", "NY", "ON", "BC")
-                if trimmed.count == 2 && trimmed.allSatisfy({ $0.isLetter }) && trimmed == trimmed.uppercased() {
-                    break
-                }
-                
-                // Stop if we hit a zip/postal code (5 digits or 5-4 format)
-                if trimmed.range(of: #"^\d{5}(-\d{4})?$"#, options: .regularExpression) != nil {
-                    break
-                }
-                
-                cityWords.append(trimmed)
-            }
-            
-            let city = cityWords.joined(separator: " ")
-            
-            // Format: "Street Address,\nCity"
-            return "\(streetAddress),\n\(city)"
-        }()
-        
-        // Safe optional chaining: use realtor name, fallback to realtor ID, then nil
-        let realtorName = store.realtor?.name ?? (store.listing?.realtorId)
-        
-        // Get listing type for display
-        let listingType = store.listing?.listingType
-
-        ZStack(alignment: .topLeading) {
-            // Primary header (initial state) - larger, with background, overlaps notes
-            ListingHeader(
-                mode: .primary,
-                title: title,
-                realtorName: realtorName,
-                listingType: listingType,
-                onBack: { dismiss() }
-            )
-            .opacity(1 - transition)
-
-            // Compact header (scrolled state) - smaller, no background
-            ListingHeader(
-                mode: .compact,
-                title: title,
-                realtorName: realtorName,
-                listingType: listingType,
-                onBack: { dismiss() }
-            )
-            .opacity(transition)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, Spacing.sm)
-        .padding(.horizontal, Spacing.md)
-        .padding(.bottom, Spacing.sm)
-        .background(
-            Colors.surfacePrimary
-                // Background only for primary state
-                .opacity(1 - transition)
-        )
-        .frame(height: HeaderMetrics.height, alignment: .bottom)
-    }
 
     /// Notes rendered as individual rows in the main scroll view
     @ViewBuilder
@@ -283,7 +274,7 @@ struct ListingDetailView: View {
                     .padding(.horizontal, Spacing.md)
             }
         }
-        .padding(.top, Spacing.md)
+        .padding(.top, Spacing.contentTop)
     }
 
     /// Input bar for adding new notes
@@ -344,14 +335,6 @@ struct ListingDetailView: View {
         store.notes.sorted { $0.createdAt < $1.createdAt }
     }
 
-    /// Crossfade progress between primary and compact headers based on distance
-    /// from the initial scroll position. 0 = fully primary, 1 = fully compact.
-    private func headerTransitionProgress(for offset: CGFloat) -> Double {
-        let distance = abs(offset)
-        let raw = distance / HeaderMetrics.collapseDistance
-        return Double(min(max(raw, 0), 1))
-    }
-
     /// Scroll to the Marketing Activities header on initial load
     /// This positions the "Marketing Activities" section as the primary focal point
     private func scrollToInitialPosition() async {
@@ -390,76 +373,6 @@ private struct HeaderScrollState {
 }
 
 // MARK: - Supporting Views
-
-/// Pure header view used by ListingDetailView; all state is supplied via arguments.
-private struct ListingHeader: View {
-    enum Mode {
-        case primary
-        case compact
-    }
-
-    let mode: Mode
-    let title: String
-    let realtorName: String?
-    let listingType: ListingType?
-    let onBack: () -> Void
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            switch mode {
-            case .primary:
-                primaryContent
-            case .compact:
-                compactContent
-            }
-        }
-    }
-
-    /// Large, on-load header: back arrow, big address, realtor line, listing type
-    private var primaryContent: some View {
-        HStack(alignment: .center, spacing: Spacing.sm) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.title3.weight(.semibold))
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-
-                Text(realtorName ?? "Realtor Name")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                // Listing type chip
-                if let listingType = listingType {
-                    DSChip(text: listingType.rawValue, color: listingType.color)
-                }
-            }
-
-            Spacer()
-        }
-    }
-
-    /// Compact header used when scrolled away from the initial position
-    private var compactContent: some View {
-        HStack(alignment: .center, spacing: Spacing.sm) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-            }
-
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Spacer()
-        }
-    }
-}
 
 /// Simple note row renderer
 private struct NoteRowView: View {
