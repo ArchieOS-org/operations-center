@@ -30,8 +30,16 @@ struct MyTasksView: View {
 
     /// Initialize view with repository injection
     /// Store created once and tracked via @Observable macro + @State
-    init(repository: TaskRepositoryClient, supabase: SupabaseClient) {
-        _store = State(initialValue: MyTasksStore(repository: repository, supabase: supabase))
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer
+    ) {
+        _store = State(initialValue: MyTasksStore(
+            repository: repository,
+            supabase: supabase,
+            taskCoalescer: taskCoalescer
+        ))
     }
 
     // MARK: - Body
@@ -173,5 +181,9 @@ struct MyTasksView: View {
 // MARK: - Preview
 
 #Preview {
-    MyTasksView(repository: .preview, supabase: supabase)
+    MyTasksView(
+        repository: .preview,
+        supabase: supabase,
+        taskCoalescer: TaskFetchCoalescer()
+    )
 }

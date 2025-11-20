@@ -25,12 +25,16 @@ struct AllListingsView: View {
     init(
         listingRepository: ListingRepositoryClient,
         taskRepository: TaskRepositoryClient,
-        supabase: SupabaseClient
+        supabase: SupabaseClient,
+        listingCoalescer: ListingFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
     ) {
         _store = State(initialValue: AllListingsStore(
             listingRepository: listingRepository,
             taskRepository: taskRepository,
-            supabase: supabase
+            supabase: supabase,
+            listingCoalescer: listingCoalescer,
+            activityCoalescer: activityCoalescer
         ))
     }
 
@@ -112,6 +116,8 @@ struct AllListingsView: View {
     AllListingsView(
         listingRepository: .preview,
         taskRepository: .preview,
-        supabase: supabase
+        supabase: supabase,
+        listingCoalescer: ListingFetchCoalescer(),
+        activityCoalescer: ActivityFetchCoalescer()
     )
 }

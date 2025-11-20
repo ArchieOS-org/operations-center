@@ -25,12 +25,14 @@ struct MyListingsView: View {
     init(
         listingRepository: ListingRepositoryClient,
         taskRepository: TaskRepositoryClient,
-        supabase: SupabaseClient
+        supabase: SupabaseClient,
+        listingCoalescer: ListingFetchCoalescer
     ) {
         _store = State(initialValue: MyListingsStore(
             listingRepository: listingRepository,
             taskRepository: taskRepository,
-            supabase: supabase
+            supabase: supabase,
+            listingCoalescer: listingCoalescer
         ))
     }
 
@@ -97,6 +99,7 @@ struct MyListingsView: View {
     MyListingsView(
         listingRepository: .preview,
         taskRepository: .preview,
-        supabase: supabase
+        supabase: supabase,
+        listingCoalescer: ListingFetchCoalescer()
     )
 }

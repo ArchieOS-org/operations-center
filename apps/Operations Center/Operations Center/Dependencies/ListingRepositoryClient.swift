@@ -53,71 +53,139 @@ public struct ListingRepositoryClient {
 // MARK: - Live Implementation
 
 extension ListingRepositoryClient {
-    /// Production implementation using global Supabase client
-    public static let live = Self(
+    /// Production implementation with local-first architecture
+    /// Reads from local database first, then refreshes from Supabase in background
+    public static func live(localDatabase: LocalDatabase) -> Self {
+        return Self(
         fetchListings: {
-            Logger.database.info("🔍 ListingRepository.fetchListings() - Starting query...")
-            let listings: [Listing] = try await supabase
-                .from("listings")
-                .select()
-                .is("deleted_at", value: nil)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            Logger.database.info("🔍 ListingRepository.fetchListings() - Reading from local database...")
 
-            Logger.database.info("✅ Supabase returned \(listings.count) listings")
-            if !listings.isEmpty {
-                Logger.database.info("📋 Listing IDs from database: \(listings.map { $0.id })")
-            } else {
-                Logger.database.warning("⚠️ NO LISTINGS IN DATABASE - listings table is empty or all are deleted")
+            // Read from local database first for instant UI
+            let cachedListings = try await MainActor.run { try localDatabase.fetchListings() }
+            Logger.database.info("📱 Local database returned \(cachedListings.count) listings")
+
+            // Background refresh from Supabase
+            Task.detached {
+                do {
+                    Logger.database.info("☁️ Refreshing listings from Supabase...")
+                    let listings: [Listing] = try await supabase
+                        .from("listings")
+                        .select()
+                        .is("deleted_at", value: nil)
+                        .order("created_at", ascending: false)
+                        .execute()
+                        .value
+
+                    Logger.database.info("✅ Supabase returned \(listings.count) listings")
+
+                    // Persist to local database
+                    try await MainActor.run { try localDatabase.upsertListings(listings) }
+                    Logger.database.info("💾 Saved listings to local database")
+                } catch {
+                    Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                }
             }
-            return listings
+
+            return cachedListings
         },
         fetchListing: { listingId in
-            Logger.database.info("Fetching listing: \(listingId)")
-            let listings: [Listing] = try await supabase
-                .from("listings")
-                .select()
-                .eq("listing_id", value: listingId)
-                .is("deleted_at", value: nil)
-                .execute()
-                .value
+            Logger.database.info("🔍 ListingRepository.fetchListing(\(listingId)) - Reading from local database...")
 
-            return listings.first
+            // Read from local database first
+            let cachedListing = try await MainActor.run { try localDatabase.fetchListing(id: listingId) }
+            Logger.database.info("📱 Local database returned: \(cachedListing != nil ? "found" : "not found")")
+
+            // Background refresh from Supabase
+            Task.detached {
+                do {
+                    Logger.database.info("☁️ Refreshing listing \(listingId) from Supabase...")
+                    let listings: [Listing] = try await supabase
+                        .from("listings")
+                        .select()
+                        .eq("listing_id", value: listingId)
+                        .is("deleted_at", value: nil)
+                        .execute()
+                        .value
+
+                    if let fresh = listings.first {
+                        Logger.database.info("✅ Supabase returned listing \(listingId)")
+                        try await MainActor.run { try localDatabase.upsertListings([fresh]) }
+                        Logger.database.info("💾 Saved listing to local database")
+                    }
+                } catch {
+                    Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                }
+            }
+
+            return cachedListing
         },
         fetchListingsByRealtor: { realtorId in
-            Logger.database.info("Fetching listings for realtor: \(realtorId)")
-            let listings: [Listing] = try await supabase
-                .from("listings")
-                .select()
-                .eq("realtor_id", value: realtorId)
-                .is("deleted_at", value: nil)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            Logger.database.info("🔍 ListingRepository.fetchListingsByRealtor(\(realtorId)) - Reading from local database...")
 
-            Logger.database.info("Fetched \(listings.count) listings for realtor")
-            return listings
+            // Read from local database first - filter by realtor_id
+            let allCached = try await MainActor.run { try localDatabase.fetchListings() }
+            let cachedForRealtor = allCached.filter { $0.realtorId == realtorId }
+            Logger.database.info("📱 Local database returned \(cachedForRealtor.count) listings for realtor")
+
+            // Background refresh from Supabase
+            Task.detached {
+                do {
+                    Logger.database.info("☁️ Refreshing realtor \(realtorId) listings from Supabase...")
+                    let listings: [Listing] = try await supabase
+                        .from("listings")
+                        .select()
+                        .eq("realtor_id", value: realtorId)
+                        .is("deleted_at", value: nil)
+                        .order("created_at", ascending: false)
+                        .execute()
+                        .value
+
+                    Logger.database.info("✅ Supabase returned \(listings.count) listings for realtor")
+                    try await MainActor.run { try localDatabase.upsertListings(listings) }
+                    Logger.database.info("💾 Saved listings to local database")
+                } catch {
+                    Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                }
+            }
+
+            return cachedForRealtor
         },
         fetchCompletedListings: {
-            Logger.database.info("Fetching completed listings")
-            // Fetch completed listings: completed_at IS NOT NULL
-            let listings: [Listing] = try await supabase
-                .from("listings")
-                .select()
-                .filter("completed_at", operator: "not.is.null", value: "")
-                .is("deleted_at", value: nil)
-                .order("completed_at", ascending: false)
-                .execute()
-                .value
+            Logger.database.info("🔍 ListingRepository.fetchCompletedListings() - Reading from local database...")
 
-            Logger.database.info("Fetched \(listings.count) completed listings")
-            return listings
+            // Read from local database first - filter for completed
+            let allCached = try await MainActor.run { try localDatabase.fetchListings() }
+            let completedCached = allCached.filter { $0.completedAt != nil }
+            Logger.database.info("📱 Local database returned \(completedCached.count) completed listings")
+
+            // Background refresh from Supabase
+            Task.detached {
+                do {
+                    Logger.database.info("☁️ Refreshing completed listings from Supabase...")
+                    let listings: [Listing] = try await supabase
+                        .from("listings")
+                        .select()
+                        .filter("completed_at", operator: "not.is.null", value: "")
+                        .is("deleted_at", value: nil)
+                        .order("completed_at", ascending: false)
+                        .execute()
+                        .value
+
+                    Logger.database.info("✅ Supabase returned \(listings.count) completed listings")
+                    try await MainActor.run { try localDatabase.upsertListings(listings) }
+                    Logger.database.info("💾 Saved listings to local database")
+                } catch {
+                    Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                }
+            }
+
+            return completedCached
         },
         deleteListing: { listingId, deletedBy in
-            Logger.database.info("Deleting listing: \(listingId)")
+            Logger.database.info("🗑️ ListingRepository.deleteListing(\(listingId))")
             let now = Date()
 
+            // Update Supabase first
             try await supabase
                 .from("listings")
                 .update([
@@ -127,7 +195,29 @@ extension ListingRepositoryClient {
                 .eq("listing_id", value: listingId)
                 .execute()
 
-            Logger.database.info("Successfully deleted listing: \(listingId)")
+            Logger.database.info("✅ Supabase marked listing as deleted")
+
+            // Update local database
+            let cachedListing = try await MainActor.run { try localDatabase.fetchListing(id: listingId) }
+            if let cachedListing {
+                // Create updated listing with deletedAt timestamp
+                let updatedListing = Listing(
+                    id: cachedListing.id,
+                    addressString: cachedListing.addressString,
+                    status: cachedListing.status,
+                    assignee: cachedListing.assignee,
+                    realtorId: cachedListing.realtorId,
+                    dueDate: cachedListing.dueDate,
+                    progress: cachedListing.progress,
+                    type: cachedListing.type,
+                    createdAt: cachedListing.createdAt,
+                    updatedAt: cachedListing.updatedAt,
+                    completedAt: cachedListing.completedAt,
+                    deletedAt: now
+                )
+                try await MainActor.run { try localDatabase.upsertListings([updatedListing]) }
+                Logger.database.info("💾 Updated local database with deletion")
+            }
         },
         acknowledgeListing: { listingId, staffId in
             Logger.database.info("Acknowledging listing \(listingId) for staff \(staffId)")
@@ -222,7 +312,8 @@ extension ListingRepositoryClient {
 
             return unacknowledged
         }
-    )
+        )
+    }
 }
 
 // MARK: - Preview Implementation

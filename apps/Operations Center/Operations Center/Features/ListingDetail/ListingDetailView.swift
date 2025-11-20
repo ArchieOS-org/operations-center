@@ -59,7 +59,9 @@ struct ListingDetailView: View {
         noteRepository: ListingNoteRepositoryClient,
         taskRepository: TaskRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
-        supabase: SupabaseClient
+        supabase: SupabaseClient,
+        activityCoalescer: ActivityFetchCoalescer,
+        noteCoalescer: NoteFetchCoalescer
     ) {
         _store = State(initialValue: ListingDetailStore(
             listingId: listingId,
@@ -67,7 +69,9 @@ struct ListingDetailView: View {
             noteRepository: noteRepository,
             taskRepository: taskRepository,
             realtorRepository: realtorRepository,
-            supabase: supabase
+            supabase: supabase,
+            activityCoalescer: activityCoalescer,
+            noteCoalescer: noteCoalescer
         ))
     }
 
@@ -268,7 +272,7 @@ struct ListingDetailView: View {
     @ViewBuilder
     private var notesListSection: some View {
         LazyVStack(alignment: .leading, spacing: Spacing.sm) {
-            ForEach(sortedNotes) { note in
+            ForEach(store.sortedNotes) { note in
                 NoteRowView(note: note)
                     .id(note.id)
                     .padding(.horizontal, Spacing.md)
@@ -329,11 +333,6 @@ struct ListingDetailView: View {
     }
 
     // MARK: - Helper Methods
-
-    /// Notes sorted chronologically (oldest at top, newest at bottom)
-    private var sortedNotes: [ListingNote] {
-        store.notes.sorted { $0.createdAt < $1.createdAt }
-    }
 
     /// Scroll to the Marketing Activities header on initial load
     /// This positions the "Marketing Activities" section as the primary focal point
@@ -497,7 +496,9 @@ private struct NoteInputBar: View {
             noteRepository: .preview,
             taskRepository: .preview,
             realtorRepository: .preview,
-            supabase: supabase  // Use global stub in preview mode
+            supabase: supabase,  // Use global stub in preview mode
+            activityCoalescer: ActivityFetchCoalescer(),
+            noteCoalescer: NoteFetchCoalescer()
         )
     }
 }

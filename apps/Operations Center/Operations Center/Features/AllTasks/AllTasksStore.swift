@@ -28,7 +28,11 @@ final class AllTasksStore {
     }
 
     /// All activities (property-linked tasks)
-    private(set) var activities: [ActivityWithDetails] = []
+    private(set) var activities: [ActivityWithDetails] = [] {
+        didSet {
+            updateFilteredActivities()
+        }
+    }
 
     /// Currently expanded task ID (only one can be expanded at a time)
     var expandedTaskId: String?
@@ -37,12 +41,17 @@ final class AllTasksStore {
     var teamFilter: OperationsCenterKit.TeamFilter = .all {
         didSet {
             updateFilteredTasks()
+            updateFilteredActivities()
         }
     }
 
     /// Cached filtered tasks - updated when tasks or filter changes
     /// Performance: Filter runs once per change, not 60x/second
     private(set) var filteredTasks: [TaskWithMessages] = []
+
+    /// Cached filtered activities - updated when activities or filter changes
+    /// Performance: Filter runs once per change, not during every layout pass
+    private(set) var filteredActivities: [ActivityWithDetails] = []
 
     /// Error message to display
     var errorMessage: String?
@@ -53,9 +62,20 @@ final class AllTasksStore {
     /// Repository for data access
     private let repository: TaskRepositoryClient
 
+    /// Coalescers for request deduplication
+    private let taskCoalescer: TaskFetchCoalescer
+    private let activityCoalescer: ActivityFetchCoalescer
+
     /// Supabase client for realtime subscriptions
     @ObservationIgnored
     private let supabase: SupabaseClient
+
+    /// Realtime channels (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var agentTasksChannel = supabase.realtimeV2.channel("all_agent_tasks")
+
+    @ObservationIgnored
+    private lazy var activitiesChannel = supabase.realtimeV2.channel("all_activities")
 
     /// Realtime subscription tasks
     @ObservationIgnored
@@ -69,14 +89,39 @@ final class AllTasksStore {
 
     // MARK: - Initialization
 
-    init(repository: TaskRepositoryClient, supabase: SupabaseClient) {
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
+    ) {
         self.repository = repository
         self.supabase = supabase
+        self.taskCoalescer = taskCoalescer
+        self.activityCoalescer = activityCoalescer
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await agentTasksChannel.unsubscribe()
+            await activitiesChannel.unsubscribe()
+        }
         agentTasksRealtimeTask?.cancel()
         activitiesRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    @MainActor
+    static func makePreview(supabase: SupabaseClient) -> AllTasksStore {
+        AllTasksStore(
+            repository: .preview,
+            supabase: supabase,
+            taskCoalescer: TaskFetchCoalescer(),
+            activityCoalescer: ActivityFetchCoalescer()
+        )
     }
 
     // MARK: - Actions
@@ -87,8 +132,8 @@ final class AllTasksStore {
         errorMessage = nil
 
         do {
-            async let tasksFetch = repository.fetchTasks()
-            async let activitiesFetch = repository.fetchActivities()
+            async let tasksFetch = taskCoalescer.fetch(using: repository)
+            async let activitiesFetch = activityCoalescer.fetch(using: repository)
 
             let (stray, listing) = try await (tasksFetch, activitiesFetch)
 
@@ -168,32 +213,45 @@ final class AllTasksStore {
         }
     }
 
-    // MARK: - Private Methods
+    // MARK: - Filtering
 
-    /// Update cached filtered tasks when data or filter changes
-    /// Performance optimization: Filter runs once per change, not on every SwiftUI redraw
+    /// Update filtered tasks based on current filter
     private func updateFilteredTasks() {
         switch teamFilter {
         case .all:
             filteredTasks = tasks
         case .marketing:
-            filteredTasks = tasks.filter { $0.task.taskCategory == .marketing }
+            var filtered: [TaskWithMessages] = []
+            for task in tasks where task.task.taskCategory == .marketing {
+                filtered.append(task)
+            }
+            filteredTasks = filtered
         case .admin:
-            filteredTasks = tasks.filter { $0.task.taskCategory == .admin }
+            var filtered: [TaskWithMessages] = []
+            for task in tasks where task.task.taskCategory == .admin {
+                filtered.append(task)
+            }
+            filteredTasks = filtered
         }
     }
 
-    // MARK: - Computed Properties
-
-    /// Filtered activities based on team filter
-    var filteredActivities: [ActivityWithDetails] {
+    /// Update filtered activities based on current filter
+    private func updateFilteredActivities() {
         switch teamFilter {
         case .all:
-            return activities
+            filteredActivities = activities
         case .marketing:
-            return activities.filter { $0.task.visibilityGroup == .marketing || $0.task.visibilityGroup == .both }
+            var filtered: [ActivityWithDetails] = []
+            for activity in activities where activity.task.visibilityGroup == .marketing || activity.task.visibilityGroup == .both {
+                filtered.append(activity)
+            }
+            filteredActivities = filtered
         case .admin:
-            return activities.filter { $0.task.visibilityGroup == .agent || $0.task.visibilityGroup == .both }
+            var filtered: [ActivityWithDetails] = []
+            for activity in activities where activity.task.visibilityGroup == .agent || activity.task.visibilityGroup == .both {
+                filtered.append(activity)
+            }
+            filteredActivities = filtered
         }
     }
 
@@ -209,16 +267,14 @@ final class AllTasksStore {
     private func setupAgentTasksRealtime() async {
         agentTasksRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("all_agent_tasks")
-
         agentTasksRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+                let stream = agentTasksChannel.postgresChange(AnyAction.self, table: "agent_tasks")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await agentTasksChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
@@ -244,18 +300,16 @@ final class AllTasksStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("all_activities")
-
         activitiesRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
-                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = activitiesChannel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await activitiesChannel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleActivitiesChange(change)
                 }

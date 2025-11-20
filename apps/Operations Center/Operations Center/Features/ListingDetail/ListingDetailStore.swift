@@ -24,7 +24,15 @@ final class ListingDetailStore {
     private(set) var listing: Listing?
 
     /// Notes for this listing
-    private(set) var notes: [ListingNote] = []
+    private(set) var notes: [ListingNote] = [] {
+        didSet {
+            updateSortedNotes()
+        }
+    }
+
+    /// Notes sorted chronologically (oldest at top, newest at bottom)
+    /// Cached to prevent recomputation during every layout pass
+    private(set) var sortedNotes: [ListingNote] = []
 
     /// Activities for this listing
     private(set) var activities: [Activity] = []
@@ -54,9 +62,20 @@ final class ListingDetailStore {
     private let taskRepository: TaskRepositoryClient
     private let realtorRepository: RealtorRepositoryClient
 
+    /// Coalescers for request deduplication
+    private let activityCoalescer: ActivityFetchCoalescer
+    private let noteCoalescer: NoteFetchCoalescer
+
     /// Supabase client for realtime subscriptions
     @ObservationIgnored
     private let supabase: SupabaseClient
+
+    /// Realtime channels (stored to prevent "postgresChange after joining" error)
+    @ObservationIgnored
+    private var notesChannel: RealtimeChannelV2?
+
+    @ObservationIgnored
+    private var activitiesChannel: RealtimeChannelV2?
 
     /// Realtime subscription tasks
     @ObservationIgnored
@@ -79,7 +98,9 @@ final class ListingDetailStore {
         noteRepository: ListingNoteRepositoryClient,
         taskRepository: TaskRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
-        supabase: SupabaseClient
+        supabase: SupabaseClient,
+        activityCoalescer: ActivityFetchCoalescer,
+        noteCoalescer: NoteFetchCoalescer
     ) {
         self.listingId = listingId
         self.listingRepository = listingRepository
@@ -87,11 +108,38 @@ final class ListingDetailStore {
         self.taskRepository = taskRepository
         self.realtorRepository = realtorRepository
         self.supabase = supabase
+        self.activityCoalescer = activityCoalescer
+        self.noteCoalescer = noteCoalescer
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await notesChannel?.unsubscribe()
+            await activitiesChannel?.unsubscribe()
+        }
         notesRealtimeTask?.cancel()
         activitiesRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    @MainActor
+    static func makePreview(
+        listingId: String,
+        supabase: SupabaseClient
+    ) -> ListingDetailStore {
+        ListingDetailStore(
+            listingId: listingId,
+            listingRepository: .preview,
+            noteRepository: .preview,
+            taskRepository: .preview,
+            realtorRepository: .preview,
+            supabase: supabase,
+            activityCoalescer: ActivityFetchCoalescer(),
+            noteCoalescer: NoteFetchCoalescer()
+        )
     }
 
     // MARK: - Computed Properties
@@ -134,8 +182,8 @@ final class ListingDetailStore {
         do {
             // Fetch listing, activities, and notes in parallel
             async let listingFetch = listingRepository.fetchListing(listingId)
-            async let activitiesFetch = taskRepository.fetchActivities()
-            async let notesFetch = noteRepository.fetchNotes(listingId)
+            async let activitiesFetch = activityCoalescer.fetch(using: taskRepository)
+            async let notesFetch = noteCoalescer.fetch(listingId: listingId, using: noteRepository)
 
             let (fetchedListing, allActivities, fetchedNotes) = try await (listingFetch, activitiesFetch, notesFetch)
 
@@ -284,13 +332,26 @@ final class ListingDetailStore {
         }
     }
 
+    // MARK: - Private Methods
+
+    /// Update sorted notes cache
+    /// Called automatically when notes array changes
+    private func updateSortedNotes() {
+        sortedNotes = notes.sorted { $0.createdAt < $1.createdAt }
+    }
+
     // MARK: - Realtime Subscriptions
 
     /// Setup realtime subscription for notes on this listing
     private func setupNotesRealtime() async {
         notesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("listing_\(listingId)_notes")
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if notesChannel == nil {
+            notesChannel = supabase.realtimeV2.channel("listing_\(listingId)_notes")
+        }
+
+        guard let channel = notesChannel else { return }
 
         notesRealtimeTask = Task { [weak self] in
             guard let self else { return }
@@ -298,7 +359,7 @@ final class ListingDetailStore {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
                 let stream = channel.postgresChange(AnyAction.self, table: "listing_notes")
 
-                // Now subscribe to start receiving events
+                // Now subscribe to start receiving events (safe to call multiple times)
                 try await channel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
@@ -320,7 +381,7 @@ final class ListingDetailStore {
         // Simple approach: re-fetch all notes for this listing
         // AppState pattern - avoids complex decode logic
         do {
-            let fetchedNotes = try await noteRepository.fetchNotes(listingId)
+            let fetchedNotes = try await noteCoalescer.fetch(listingId: listingId, using: noteRepository)
             notes = fetchedNotes
 
             // Rebuild ID set for deduplication
@@ -336,18 +397,23 @@ final class ListingDetailStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("listing_\(listingId)_activities")
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if activitiesChannel == nil {
+            activitiesChannel = supabase.realtimeV2.channel("listing_\(listingId)_activities")
+        }
+
+        guard let channel = activitiesChannel else { return }
 
         activitiesRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
                 let stream = channel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
+                // Now subscribe to start receiving events (safe to call multiple times)
                 try await channel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleActivitiesChange(change)
                 }
@@ -365,7 +431,7 @@ final class ListingDetailStore {
 
         // Simple approach: re-fetch all activities for this listing
         do {
-            let allActivities = try await taskRepository.fetchActivities()
+            let allActivities = try await activityCoalescer.fetch(using: taskRepository)
             activities = allActivities.map(\.task).filter { $0.listingId == listingId }
 
             Logger.database.info("Realtime: Refreshed \(self.activities.count) activities")

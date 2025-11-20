@@ -189,11 +189,7 @@ struct InboxView: View {
 }
 
 #Preview("With Mock Data") {
-    let store = InboxStore(
-        taskRepository: .preview,
-        listingRepository: .preview,
-        noteRepository: .preview,
-        realtorRepository: .preview,
+    let store = InboxStore.makePreview(
         supabase: supabase,
         initialTasks: [
             TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
@@ -221,13 +217,7 @@ struct InboxView: View {
 }
 
 #Preview("Empty State") {
-    let store = InboxStore(
-        taskRepository: .preview,
-        listingRepository: .preview,
-        noteRepository: .preview,
-        realtorRepository: .preview,
-        supabase: supabase
-    )
+    let store = InboxStore.makePreview(supabase: supabase)
 
     NavigationStack {
         InboxView(store: store)
@@ -235,14 +225,11 @@ struct InboxView: View {
 }
 
 #Preview("Loading State") {
-    @Previewable @State var store = InboxStore(
-        taskRepository: .preview,
-        listingRepository: .preview,
-        noteRepository: .preview,
-        realtorRepository: .preview,
-        supabase: supabase
-    )
-    store.isLoading = true
+    let store = {
+        let s = InboxStore.makePreview(supabase: supabase)
+        s.isLoading = true
+        return s
+    }()
 
     return NavigationStack {
         InboxView(store: store)
@@ -250,14 +237,11 @@ struct InboxView: View {
 }
 
 #Preview("Error State") {
-    @Previewable @State var store = InboxStore(
-        taskRepository: .preview,
-        listingRepository: .preview,
-        noteRepository: .preview,
-        realtorRepository: .preview,
-        supabase: supabase
-    )
-    store.errorMessage = "Failed to connect to server"
+    let store = {
+        let s = InboxStore.makePreview(supabase: supabase)
+        s.errorMessage = "Failed to connect to server"
+        return s
+    }()
 
     return NavigationStack {
         InboxView(store: store)

@@ -54,23 +54,38 @@ public struct ListingNoteRepositoryClient {
 // MARK: - Live Implementation
 
 extension ListingNoteRepositoryClient {
-    public static var live: Self {
+    public static func live(localDatabase: LocalDatabase) -> Self {
         @Dependency(\.authClient) var authClient
 
         return Self(
             fetchNotes: { listingId in
-                Logger.database.info("📝 Fetching notes for listing: \(listingId)")
-                
-                let notes: [ListingNote] = try await supabase
-                    .from("listing_notes")
-                    .select()  // Select all columns for ListingNote model
-                    .eq("listing_id", value: listingId)
-                    .order("created_at", ascending: false)  // Most recent first
-                    .execute()
-                    .value
-                
-                Logger.database.info("✅ Fetched \(notes.count) notes for listing \(listingId)")
-                return notes
+                Logger.database.info("🔍 ListingNoteRepository.fetchNotes(\(listingId)) - Reading from local database...")
+
+                // Read from local database first
+                let cachedNotes = try await MainActor.run { try localDatabase.fetchNotes(for: listingId) }
+                Logger.database.info("📱 Local database returned \(cachedNotes.count) notes")
+
+                // Background refresh from Supabase
+                Task.detached {
+                    do {
+                        Logger.database.info("☁️ Refreshing notes for listing \(listingId) from Supabase...")
+                        let notes: [ListingNote] = try await supabase
+                            .from("listing_notes")
+                            .select()
+                            .eq("listing_id", value: listingId)
+                            .order("created_at", ascending: false)
+                            .execute()
+                            .value
+
+                        Logger.database.info("✅ Supabase returned \(notes.count) notes")
+                        try await MainActor.run { try localDatabase.upsertNotes(notes) }
+                        Logger.database.info("💾 Saved notes to local database")
+                    } catch {
+                        Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                    }
+                }
+
+                return cachedNotes
             },
             
             createNote: { listingId, content in
@@ -147,11 +162,15 @@ extension ListingNoteRepositoryClient {
                 
                 let step4Time = (CFAbsoluteTimeGetCurrent() - step4Start) * 1000
                 let totalTime = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-                
+
                 Logger.database.info("⚡️ [PERF] Step 4 - Note insert completed in \(String(format: "%.0f", step4Time))ms")
                 Logger.database.info("✅ [PERF] Created note \(noteId) - TOTAL TIME: \(String(format: "%.0f", totalTime))ms")
                 Logger.database.info("📊 [PERF] Breakdown: UserID=\(String(format: "%.0f", step1Time))ms, Email=\(String(format: "%.0f", step2Time))ms, StaffLookup=\(String(format: "%.0f", step3Time))ms, Insert=\(String(format: "%.0f", step4Time))ms")
-                
+
+                // Update local database
+                try await MainActor.run { try localDatabase.upsertNotes([createdNote]) }
+                Logger.database.info("💾 Saved new note to local database")
+
                 return createdNote
             },
             

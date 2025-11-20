@@ -22,8 +22,18 @@ struct AllTasksView: View {
 
     // MARK: - Initialization
 
-    init(repository: TaskRepositoryClient, supabase: SupabaseClient) {
-        _store = State(initialValue: AllTasksStore(repository: repository, supabase: supabase))
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
+    ) {
+        _store = State(initialValue: AllTasksStore(
+            repository: repository,
+            supabase: supabase,
+            taskCoalescer: taskCoalescer,
+            activityCoalescer: activityCoalescer
+        ))
     }
 
     // MARK: - Body
@@ -195,6 +205,11 @@ struct AllTasksView: View {
 
 #Preview {
     NavigationStack {
-        AllTasksView(repository: .preview, supabase: supabase)
+        AllTasksView(
+            repository: .preview,
+            supabase: supabase,
+            taskCoalescer: TaskFetchCoalescer(),
+            activityCoalescer: ActivityFetchCoalescer()
+        )
     }
 }

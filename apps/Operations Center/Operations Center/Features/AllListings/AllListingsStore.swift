@@ -56,9 +56,20 @@ final class AllListingsStore {
     private let listingRepository: ListingRepositoryClient
     private let taskRepository: TaskRepositoryClient
 
+    /// Coalescers for request deduplication
+    private let listingCoalescer: ListingFetchCoalescer
+    private let activityCoalescer: ActivityFetchCoalescer
+
     /// Supabase client for realtime subscriptions
     @ObservationIgnored
     private let supabase: SupabaseClient
+
+    /// Realtime channels (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var listingsChannel = supabase.realtimeV2.channel("all_listings")
+
+    @ObservationIgnored
+    private lazy var activitiesChannel = supabase.realtimeV2.channel("all_listings_activities")
 
     /// Realtime subscription tasks
     @ObservationIgnored
@@ -72,16 +83,40 @@ final class AllListingsStore {
     init(
         listingRepository: ListingRepositoryClient,
         taskRepository: TaskRepositoryClient,
-        supabase: SupabaseClient
+        supabase: SupabaseClient,
+        listingCoalescer: ListingFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
     ) {
         self.listingRepository = listingRepository
         self.taskRepository = taskRepository
         self.supabase = supabase
+        self.listingCoalescer = listingCoalescer
+        self.activityCoalescer = activityCoalescer
     }
 
     deinit {
+        // Unsubscribe channels before canceling tasks
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await listingsChannel.unsubscribe()
+            await activitiesChannel.unsubscribe()
+        }
         listingsRealtimeTask?.cancel()
         activitiesRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    @MainActor
+    static func makePreview(supabase: SupabaseClient) -> AllListingsStore {
+        AllListingsStore(
+            listingRepository: .preview,
+            taskRepository: .preview,
+            supabase: supabase,
+            listingCoalescer: ListingFetchCoalescer(),
+            activityCoalescer: ActivityFetchCoalescer()
+        )
     }
 
     // MARK: - Private Methods
@@ -106,9 +141,9 @@ final class AllListingsStore {
         errorMessage = nil
 
         do {
-            // Fetch both listings and activities in parallel
-            async let listingsResult = listingRepository.fetchListings()
-            async let activitiesResult = taskRepository.fetchActivities()
+            // Fetch both listings and activities in parallel using coalescers
+            async let listingsResult = listingCoalescer.fetch(using: listingRepository)
+            async let activitiesResult = activityCoalescer.fetch(using: taskRepository)
 
             let (allListings, allActivities) = try await (listingsResult, activitiesResult)
 
@@ -159,16 +194,15 @@ final class AllListingsStore {
     private func setupListingsRealtime() async {
         listingsRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("all_listings")
-
+        // Reuse the channel property (prevents "postgresChange after joining" error)
         listingsRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "listings")
+                let stream = listingsChannel.postgresChange(AnyAction.self, table: "listings")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await listingsChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
@@ -194,16 +228,15 @@ final class AllListingsStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("all_listings_activities")
-
+        // Reuse the channel property (prevents "postgresChange after joining" error)
         activitiesRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing
-                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+                let stream = activitiesChannel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await activitiesChannel.subscribeWithError()
 
                 // Listen for changes
                 for await change in stream {

@@ -42,6 +42,16 @@ final class AgentDetailStore {
     @ObservationIgnored
     private let supabase: SupabaseClient
 
+    /// Realtime channels (stored to prevent "postgresChange after joining" error)
+    @ObservationIgnored
+    private var staffChannel: RealtimeChannelV2?
+
+    @ObservationIgnored
+    private var agentTasksChannel: RealtimeChannelV2?
+
+    @ObservationIgnored
+    private var activitiesChannel: RealtimeChannelV2?
+
     /// Realtime subscription tasks
     @ObservationIgnored
     private var staffRealtimeTask: Task<Void, Never>?
@@ -67,6 +77,12 @@ final class AgentDetailStore {
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await staffChannel?.unsubscribe()
+            await agentTasksChannel?.unsubscribe()
+            await activitiesChannel?.unsubscribe()
+        }
         staffRealtimeTask?.cancel()
         agentTasksRealtimeTask?.cancel()
         activitiesRealtimeTask?.cancel()
@@ -239,7 +255,12 @@ final class AgentDetailStore {
     private func setupStaffRealtime() async {
         staffRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_staff")
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if staffChannel == nil {
+            staffChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_staff")
+        }
+
+        guard let channel = staffChannel else { return }
 
         staffRealtimeTask = Task { [weak self] in
             guard let self else { return }
@@ -247,7 +268,7 @@ final class AgentDetailStore {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
                 let stream = channel.postgresChange(AnyAction.self, table: "staff")
 
-                // Now subscribe to start receiving events
+                // Now subscribe to start receiving events (safe to call multiple times)
                 try await channel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
@@ -274,18 +295,23 @@ final class AgentDetailStore {
     private func setupAgentTasksRealtime() async {
         agentTasksRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_tasks")
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if agentTasksChannel == nil {
+            agentTasksChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_tasks")
+        }
+
+        guard let channel = agentTasksChannel else { return }
 
         agentTasksRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
                 let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
 
-                // Now subscribe to start receiving events
+                // Now subscribe to start receiving events (safe to call multiple times)
                 try await channel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleAgentTasksChange(change)
                 }
@@ -309,18 +335,23 @@ final class AgentDetailStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_activities")
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if activitiesChannel == nil {
+            activitiesChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_activities")
+        }
+
+        guard let channel = activitiesChannel else { return }
 
         activitiesRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
                 let stream = channel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
+                // Now subscribe to start receiving events (safe to call multiple times)
                 try await channel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleActivitiesChange(change)
                 }

@@ -25,6 +25,21 @@ final class AppState {
 
     private let supabase: SupabaseClient
     private let taskRepository: TaskRepositoryClient
+    private let localDatabase: LocalDatabase
+
+    /// Singleton coalescers for request deduplication
+    /// Shared across all stores to prevent duplicate network calls
+    @ObservationIgnored
+    let activityCoalescer = ActivityFetchCoalescer()
+
+    @ObservationIgnored
+    let listingCoalescer = ListingFetchCoalescer()
+
+    @ObservationIgnored
+    let noteCoalescer = NoteFetchCoalescer()
+
+    @ObservationIgnored
+    let taskCoalescer = TaskFetchCoalescer()
 
     @ObservationIgnored
     private var realtimeSubscription: Task<Void, Never>?
@@ -34,6 +49,10 @@ final class AppState {
 
     @ObservationIgnored
     private var taskRefreshTask: Task<Void, Error>?
+
+    // Create channel once as property (prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var tasksChannel = supabase.realtimeV2.channel("all_tasks")
 
     // MARK: - Computed Properties
 
@@ -51,14 +70,16 @@ final class AppState {
     // MARK: - Initialization
 
     /// Initialize AppState with dependency injection
-    /// For production: AppState(supabase: supabase, taskRepository: .live)
-    /// For previews: AppState(supabase: .preview, taskRepository: .preview)
+    /// For production: AppState(supabase: supabase, taskRepository: .live, localDatabase: SwiftDataLocalDatabase)
+    /// For previews: AppState(supabase: .preview, taskRepository: .preview, localDatabase: PreviewLocalDatabase())
     init(
         supabase: SupabaseClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        localDatabase: LocalDatabase
     ) {
         self.supabase = supabase
         self.taskRepository = taskRepository
+        self.localDatabase = localDatabase
         // NO synchronous work here - prevents MainActor blocking
     }
 
@@ -77,6 +98,11 @@ final class AppState {
     }
 
     deinit {
+        // Unsubscribe channel before canceling tasks
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await tasksChannel.unsubscribe()
+        }
         realtimeSubscription?.cancel()
         authStateTask?.cancel()
     }
@@ -137,21 +163,23 @@ final class AppState {
         // Cancel any existing subscription
         realtimeSubscription?.cancel()
 
-        let channel = supabase.realtimeV2.channel("all_tasks")
-
+        // Reuse the channel property (prevents "postgresChange after joining" error)
         realtimeSubscription = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+                let stream = tasksChannel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await tasksChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleRealtimeChange(change)
                 }
+            } catch is CancellationError {
+                // Normal cancellation, no error
+                return
             } catch {
                 self.errorMessage = "Realtime subscription error: \(error.localizedDescription)"
             }
@@ -223,16 +251,53 @@ final class AppState {
     // MARK: - Local Persistence
 
     private func loadCachedData() {
-        if let data = UserDefaults.standard.data(forKey: "cached_tasks"),
-           let tasks = try? JSONDecoder().decode([Activity].self, from: data) {
-            allTasks = tasks
+        // Migrate from old UserDefaults cache if needed
+        migrateFromUserDefaultsIfNeeded()
+
+        // Load from SwiftData local database
+        do {
+            allTasks = try localDatabase.fetchActivities()
+            Logger.database.info("Loaded \(self.allTasks.count) tasks from local database")
+        } catch {
+            Logger.database.error("Failed to load cached tasks from local database: \(error.localizedDescription)")
         }
     }
 
     private func saveCachedData() {
-        if let data = try? JSONEncoder().encode(allTasks) {
-            UserDefaults.standard.set(data, forKey: "cached_tasks")
+        // Save to SwiftData local database
+        do {
+            try localDatabase.upsertActivities(allTasks)
+            Logger.database.debug("Saved \(self.allTasks.count) tasks to local database")
+        } catch {
+            Logger.database.error("Failed to save tasks to local database: \(error.localizedDescription)")
         }
+    }
+
+    /// One-time migration from UserDefaults to SwiftData
+    /// Runs once on first launch with SwiftData enabled
+    private func migrateFromUserDefaultsIfNeeded() {
+        let migrationKey = "did_migrate_to_swiftdata"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        // Check if old UserDefaults cache exists
+        if let data = UserDefaults.standard.data(forKey: "cached_tasks"),
+           let tasks = try? JSONDecoder().decode([Activity].self, from: data) {
+            Logger.database.info("Migrating \(tasks.count) tasks from UserDefaults to SwiftData")
+
+            // Import into SwiftData
+            do {
+                try localDatabase.upsertActivities(tasks)
+                Logger.database.info("Migration successful")
+
+                // Clear old cache
+                UserDefaults.standard.removeObject(forKey: "cached_tasks")
+            } catch {
+                Logger.database.error("Migration failed: \(error.localizedDescription)")
+            }
+        }
+
+        // Mark migration as complete
+        UserDefaults.standard.set(true, forKey: migrationKey)
     }
 
     // MARK: - Public Refresh

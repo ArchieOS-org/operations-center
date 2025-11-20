@@ -29,6 +29,10 @@ final class AgentsStore {
     @ObservationIgnored
     private let supabase: SupabaseClient
 
+    /// Realtime channel (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var realtorsChannel = supabase.realtimeV2.channel("agents_staff")
+
     /// Realtime subscription task
     @ObservationIgnored
     private var realtorsRealtimeTask: Task<Void, Never>?
@@ -43,6 +47,10 @@ final class AgentsStore {
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await realtorsChannel.unsubscribe()
+        }
         realtorsRealtimeTask?.cancel()
     }
 
@@ -78,16 +86,14 @@ final class AgentsStore {
     private func setupRealtorsRealtime() async {
         realtorsRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("agents_staff")
-
         realtorsRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "staff")
+                let stream = realtorsChannel.postgresChange(AnyAction.self, table: "staff")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await realtorsChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {

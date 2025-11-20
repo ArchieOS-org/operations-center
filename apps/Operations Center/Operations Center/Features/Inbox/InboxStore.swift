@@ -37,9 +37,23 @@ final class InboxStore {
     private let realtorRepository: RealtorRepositoryClient
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
+    /// Coalescers for request deduplication
+    private let activityCoalescer: ActivityFetchCoalescer
+    private let noteCoalescer: NoteFetchCoalescer
+
     /// Supabase client for realtime subscriptions
     @ObservationIgnored
     private let supabase: SupabaseClient
+
+    /// Realtime channels (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var acknowledgementsChannel = supabase.realtimeV2.channel("inbox_acknowledgments")
+
+    @ObservationIgnored
+    private lazy var agentTasksChannel = supabase.realtimeV2.channel("inbox_agent_tasks")
+
+    @ObservationIgnored
+    private lazy var activitiesChannel = supabase.realtimeV2.channel("inbox_activities")
 
     /// Realtime subscription tasks
     @ObservationIgnored
@@ -60,6 +74,8 @@ final class InboxStore {
         noteRepository: ListingNoteRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
         supabase: SupabaseClient,
+        activityCoalescer: ActivityFetchCoalescer,
+        noteCoalescer: NoteFetchCoalescer,
         initialTasks: [TaskWithMessages] = [],
         initialListings: [ListingWithDetails] = []
     ) {
@@ -68,14 +84,45 @@ final class InboxStore {
         self.noteRepository = noteRepository
         self.realtorRepository = realtorRepository
         self.supabase = supabase
+        self.activityCoalescer = activityCoalescer
+        self.noteCoalescer = noteCoalescer
         self.tasks = initialTasks
         self.listings = initialListings
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await acknowledgementsChannel.unsubscribe()
+            await agentTasksChannel.unsubscribe()
+            await activitiesChannel.unsubscribe()
+        }
         acknowledgementsRealtimeTask?.cancel()
         agentTasksRealtimeTask?.cancel()
         activitiesRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    /// Resolves actor isolation issues in preview contexts
+    @MainActor
+    static func makePreview(
+        supabase: SupabaseClient,
+        initialTasks: [TaskWithMessages] = [],
+        initialListings: [ListingWithDetails] = []
+    ) -> InboxStore {
+        InboxStore(
+            taskRepository: .preview,
+            listingRepository: .preview,
+            noteRepository: .preview,
+            realtorRepository: .preview,
+            supabase: supabase,
+            activityCoalescer: ActivityFetchCoalescer(),
+            noteCoalescer: NoteFetchCoalescer(),
+            initialTasks: initialTasks,
+            initialListings: initialListings
+        )
     }
 
     // MARK: - Public Methods
@@ -88,8 +135,9 @@ final class InboxStore {
             let currentUserId = try await authClient.currentUserId()
 
             // Fetch agent tasks, activities, and unacknowledged listings concurrently
+            // Activities use coalescer to prevent duplicate fetches
             async let agentTasks = taskRepository.fetchTasks()
-            async let activityDetails = taskRepository.fetchActivities()
+            async let activityDetails = activityCoalescer.fetch(using: taskRepository)
             async let unacknowledgedListingIds = listingRepository.fetchUnacknowledgedListings(currentUserId)
 
             tasks = try await agentTasks
@@ -168,9 +216,10 @@ final class InboxStore {
     // MARK: - Private Helpers
 
     /// Fetch notes for a listing, logging any errors
+    /// Uses coalescer to prevent duplicate fetches for same listing
     private func fetchNotes(for listingId: String) async -> (notes: [ListingNote], hasError: Bool) {
         do {
-            let notes = try await noteRepository.fetchNotes(listingId)
+            let notes = try await noteCoalescer.fetch(listingId: listingId, using: noteRepository)
             return (notes, false)
         } catch {
             Logger.database.error(
@@ -361,16 +410,14 @@ final class InboxStore {
     private func setupAcknowledgementsRealtime() async {
         acknowledgementsRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("inbox_acknowledgments")
-
         acknowledgementsRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "listing_acknowledgments")
+                let stream = acknowledgementsChannel.postgresChange(AnyAction.self, table: "listing_acknowledgments")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await acknowledgementsChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
@@ -398,18 +445,16 @@ final class InboxStore {
     private func setupAgentTasksRealtime() async {
         agentTasksRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("inbox_agent_tasks")
-
         agentTasksRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
-                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = agentTasksChannel.postgresChange(AnyAction.self, table: "agent_tasks")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await agentTasksChannel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleAgentTaskChange(change)
                 }
@@ -434,18 +479,16 @@ final class InboxStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("inbox_activities")
-
         activitiesRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
-                // CRITICAL: Configure stream BEFORE subscribing
-                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = activitiesChannel.postgresChange(AnyAction.self, table: "activities")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await activitiesChannel.subscribeWithError()
 
-                // Listen for changes
+                // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
                     await self.handleActivityChange(change)
                 }

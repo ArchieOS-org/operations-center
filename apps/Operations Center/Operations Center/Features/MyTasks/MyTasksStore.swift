@@ -25,6 +25,9 @@ final class MyTasksStore {
 
     private let repository: TaskRepositoryClient
 
+    /// Coalescer for request deduplication
+    private let taskCoalescer: TaskFetchCoalescer
+
     // MARK: - State
 
     var tasks: [AgentTask] = []
@@ -39,6 +42,10 @@ final class MyTasksStore {
     @ObservationIgnored
     private let supabase: SupabaseClient
 
+    /// Realtime channel (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var agentTasksChannel = supabase.realtimeV2.channel("my_agent_tasks")
+
     /// Realtime subscription task
     @ObservationIgnored
     private var agentTasksRealtimeTask: Task<Void, Never>?
@@ -47,14 +54,40 @@ final class MyTasksStore {
 
     /// Initialize store with repository injection
     /// Following Context7 @Observable pattern
-    init(repository: TaskRepositoryClient, supabase: SupabaseClient, initialTasks: [AgentTask] = []) {
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer,
+        initialTasks: [AgentTask] = []
+    ) {
         self.repository = repository
         self.supabase = supabase
+        self.taskCoalescer = taskCoalescer
         self.tasks = initialTasks
     }
 
     deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await agentTasksChannel.unsubscribe()
+        }
         agentTasksRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    @MainActor
+    static func makePreview(
+        supabase: SupabaseClient,
+        initialTasks: [AgentTask] = []
+    ) -> MyTasksStore {
+        MyTasksStore(
+            repository: .preview,
+            supabase: supabase,
+            taskCoalescer: TaskFetchCoalescer(),
+            initialTasks: initialTasks
+        )
     }
 
     // MARK: - Actions
@@ -69,7 +102,7 @@ final class MyTasksStore {
         do {
             // Fetch user ID and tasks in parallel
             async let userId = authClient.currentUserId()
-            async let tasksResults = repository.fetchTasks()
+            async let tasksResults = taskCoalescer.fetch(using: repository)
 
             let currentUserId = try await userId
             let allTasksWithMessages = try await tasksResults
@@ -129,16 +162,14 @@ final class MyTasksStore {
     private func setupAgentTasksRealtime() async {
         agentTasksRealtimeTask?.cancel()
 
-        let channel = supabase.realtimeV2.channel("my_agent_tasks")
-
         agentTasksRealtimeTask = Task { [weak self] in
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
-                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+                let stream = agentTasksChannel.postgresChange(AnyAction.self, table: "agent_tasks")
 
-                // Now subscribe to start receiving events
-                try await channel.subscribeWithError()
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await agentTasksChannel.subscribeWithError()
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
