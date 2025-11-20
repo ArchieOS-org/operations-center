@@ -194,6 +194,7 @@ struct InboxView: View {
         listingRepository: .preview,
         noteRepository: .preview,
         realtorRepository: .preview,
+        supabase: supabase,
         initialTasks: [
             TaskWithMessages(task: AgentTask.mock1, messages: [SlackMessage.mock1]),
             TaskWithMessages(task: AgentTask.mock2, messages: [])
@@ -224,7 +225,8 @@ struct InboxView: View {
         taskRepository: .preview,
         listingRepository: .preview,
         noteRepository: .preview,
-        realtorRepository: .preview
+        realtorRepository: .preview,
+        supabase: supabase
     )
 
     NavigationStack {
@@ -237,7 +239,8 @@ struct InboxView: View {
         taskRepository: .preview,
         listingRepository: .preview,
         noteRepository: .preview,
-        realtorRepository: .preview
+        realtorRepository: .preview,
+        supabase: supabase
     )
     store.isLoading = true
 
@@ -251,7 +254,8 @@ struct InboxView: View {
         taskRepository: .preview,
         listingRepository: .preview,
         noteRepository: .preview,
-        realtorRepository: .preview
+        realtorRepository: .preview,
+        supabase: supabase
     )
     store.errorMessage = "Failed to connect to server"
 

@@ -10,6 +10,7 @@ import Foundation
 import Observation
 import OperationsCenterKit
 import OSLog
+import Supabase
 
 @Observable
 @MainActor
@@ -36,6 +37,20 @@ final class InboxStore {
     private let realtorRepository: RealtorRepositoryClient
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var acknowledgementsRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var agentTasksRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
     // MARK: - Initialization
 
     /// Full initializer with optional initial data for previews
@@ -44,6 +59,7 @@ final class InboxStore {
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
+        supabase: SupabaseClient,
         initialTasks: [TaskWithMessages] = [],
         initialListings: [ListingWithDetails] = []
     ) {
@@ -51,8 +67,15 @@ final class InboxStore {
         self.listingRepository = listingRepository
         self.noteRepository = noteRepository
         self.realtorRepository = realtorRepository
+        self.supabase = supabase
         self.tasks = initialTasks
         self.listings = initialListings
+    }
+
+    deinit {
+        acknowledgementsRealtimeTask?.cancel()
+        agentTasksRealtimeTask?.cancel()
+        activitiesRealtimeTask?.cancel()
     }
 
     // MARK: - Public Methods
@@ -127,6 +150,9 @@ final class InboxStore {
                 }
                 return results
             }
+
+            // Start realtime subscriptions AFTER initial load
+            await setupRealtimeSubscriptions()
 
         } catch {
             errorMessage = error.localizedDescription
@@ -319,5 +345,124 @@ final class InboxStore {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup all realtime subscriptions - inbox is a hub, needs multiple channels
+    private func setupRealtimeSubscriptions() async {
+        await setupAcknowledgementsRealtime()
+        await setupAgentTasksRealtime()
+        await setupActivitiesRealtime()
+    }
+
+    /// Setup realtime subscription for listing acknowledgments
+    /// When someone acks a listing, it should vanish from everyone's inbox
+    private func setupAcknowledgementsRealtime() async {
+        acknowledgementsRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("inbox_acknowledgments")
+
+        acknowledgementsRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "listing_acknowledgments")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAcknowledgementChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Acknowledgments realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime acknowledgment changes - simple refresh strategy
+    private func handleAcknowledgementChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Acknowledgment change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        // Someone acked a listing, so it should disappear from unacknowledged listings
+        await fetchTasks()
+    }
+
+    /// Setup realtime subscription for agent tasks
+    /// When someone claims or updates a task, everyone sees it instantly
+    private func setupAgentTasksRealtime() async {
+        agentTasksRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("inbox_agent_tasks")
+
+        agentTasksRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing
+                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes
+                for await change in stream {
+                    await self.handleAgentTaskChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Agent tasks realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime agent task changes - simple refresh strategy
+    private func handleAgentTaskChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Agent task change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        await fetchTasks()
+    }
+
+    /// Setup realtime subscription for activities
+    /// When new activities appear or existing ones update, everyone sees it
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("inbox_activities")
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing
+                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes
+                for await change in stream {
+                    await self.handleActivityChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activity changes - simple refresh strategy
+    private func handleActivityChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Activity change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        // Activities are filtered by unacknowledged listings anyway
+        await fetchTasks()
     }
 }

@@ -160,26 +160,26 @@ apps/backend/api/
 ```bash
 cd apps/operations-center
 
-# Build for iOS
+# Build for iOS Simulator (latest iOS, current flagship device)
 xcodebuild -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
+  -destination 'platform=iOS Simulator,OS=latest,name=iPhone 17 Pro' \
   build -quiet
 
-# Build for macOS
+# Build for macOS (Apple silicon)
 xcodebuild -scheme "Operations Center" \
-  -destination 'platform=macOS' \
+  -destination 'platform=macOS,arch=arm64' \
   build -quiet
 
-# Test iOS
+# Test iOS (latest iOS, current flagship device)
 xcodebuild test \
   -scheme "Operations Center" \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=18.5' \
+  -destination 'platform=iOS Simulator,OS=latest,name=iPhone 17 Pro' \
   -quiet
 
-# Test macOS
+# Test macOS (Apple silicon)
 xcodebuild test \
   -scheme "Operations Center" \
-  -destination 'platform=macOS' \
+  -destination 'platform=macOS,arch=arm64' \
   -quiet
 ```
 

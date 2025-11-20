@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Supabase
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
@@ -71,6 +72,8 @@ struct RootView: View {
         let listingRepo: ListingRepositoryClient = usePreviewData ? .preview : .live
         let realtorRepo: RealtorRepositoryClient = usePreviewData ? .preview : .live
         let noteRepo: ListingNoteRepositoryClient = usePreviewData ? .preview : .live
+        // Global supabase returns stub in preview mode (--use-preview-data flag)
+        let supabaseClient: SupabaseClient = supabase
 
         switch route {
         case .inbox:
@@ -78,14 +81,16 @@ struct RootView: View {
                 taskRepository: taskRepo,
                 listingRepository: listingRepo,
                 noteRepository: noteRepo,
-                realtorRepository: realtorRepo
+                realtorRepository: realtorRepo,
+                supabase: supabaseClient
             ))
         case .myTasks:
-            MyTasksView(repository: taskRepo)
+            MyTasksView(repository: taskRepo, supabase: supabaseClient)
         case .myListings:
             MyListingsView(
                 listingRepository: listingRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient
             )
         case .logbook:
             LogbookView(
@@ -93,26 +98,30 @@ struct RootView: View {
                 taskRepository: taskRepo
             )
         case .agents:
-            AgentsView(repository: realtorRepo)
+            AgentsView(repository: realtorRepo, supabase: supabaseClient)
         case .agent(let id):
             AgentDetailView(
                 realtorId: id,
                 realtorRepository: realtorRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient
             )
         case .listing(let id):
             ListingDetailView(
                 listingId: id,
                 listingRepository: listingRepo,
                 noteRepository: noteRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                realtorRepository: realtorRepo,
+                supabase: supabaseClient
             )
         case .allTasks:
-            AllTasksView(repository: taskRepo)
+            AllTasksView(repository: taskRepo, supabase: supabaseClient)
         case .allListings:
             AllListingsView(
                 listingRepository: listingRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient
             )
         case .settings:
             SettingsView()

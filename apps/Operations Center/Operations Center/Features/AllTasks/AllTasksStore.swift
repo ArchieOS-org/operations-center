@@ -10,6 +10,7 @@ import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
+import Supabase
 import SwiftUI
 
 /// Store for All Tasks screen - all claimed tasks across the entire system
@@ -52,13 +53,30 @@ final class AllTasksStore {
     /// Repository for data access
     private let repository: TaskRepositoryClient
 
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var agentTasksRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
     // MARK: - Initialization
 
-    init(repository: TaskRepositoryClient) {
+    init(repository: TaskRepositoryClient, supabase: SupabaseClient) {
         self.repository = repository
+        self.supabase = supabase
+    }
+
+    deinit {
+        agentTasksRealtimeTask?.cancel()
+        activitiesRealtimeTask?.cancel()
     }
 
     // MARK: - Actions
@@ -77,6 +95,9 @@ final class AllTasksStore {
             // Filter only claimed tasks
             tasks = stray.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
             activities = listing.filter { $0.task.status == .claimed || $0.task.status == .inProgress }
+
+            // Start realtime subscriptions AFTER initial load
+            await setupRealtimeSubscriptions()
         } catch {
             Logger.tasks.error("Failed to fetch all tasks: \(error.localizedDescription)")
             errorMessage = "Failed to load tasks: \(error.localizedDescription)"
@@ -174,5 +195,83 @@ final class AllTasksStore {
         case .admin:
             return activities.filter { $0.task.visibilityGroup == .agent || $0.task.visibilityGroup == .both }
         }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup all realtime subscriptions
+    private func setupRealtimeSubscriptions() async {
+        await setupAgentTasksRealtime()
+        await setupActivitiesRealtime()
+    }
+
+    /// Setup realtime subscription for agent tasks
+    private func setupAgentTasksRealtime() async {
+        agentTasksRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("all_agent_tasks")
+
+        agentTasksRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAgentTasksChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.tasks.error("Agent tasks realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime agent tasks changes - simple refresh strategy
+    private func handleAgentTasksChange(_ change: AnyAction) async {
+        Logger.tasks.info("Realtime: Agent tasks change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchAllTasks()
+    }
+
+    /// Setup realtime subscription for activities
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("all_activities")
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing
+                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes
+                for await change in stream {
+                    await self.handleActivitiesChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.tasks.error("Activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activities changes - simple refresh strategy
+    private func handleActivitiesChange(_ change: AnyAction) async {
+        Logger.tasks.info("Realtime: Activities change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchAllTasks()
     }
 }

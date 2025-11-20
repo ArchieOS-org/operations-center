@@ -9,7 +9,13 @@ import Testing
 import Foundation
 import Dependencies
 import OperationsCenterKit
+import Supabase
 @testable import Operations_Center
+
+// MARK: - Test Helpers
+
+/// Mock Supabase client for tests (realtime not needed in tests)
+private let mockSupabase = supabase
 
 // MARK: - Initial State Tests
 
@@ -20,7 +26,7 @@ struct MyTasksStoreInitialStateTests {
     @Test("Initial state has empty arrays and no errors")
     func initialState() {
         let repo = TaskRepositoryClient.mock()
-        let store = MyTasksStore(repository: repo)
+        let store = MyTasksStore(repository: repo, supabase: mockSupabase)
 
         #expect(store.tasks.isEmpty)
         #expect(store.expandedTaskId == nil)
@@ -32,7 +38,7 @@ struct MyTasksStoreInitialStateTests {
     func initializeWithPreviewData() {
         let repo = TaskRepositoryClient.mock()
         let mockTasks = [AgentTask.mock(id: "task-1")]
-        let store = MyTasksStore(repository: repo, initialTasks: mockTasks)
+        let store = MyTasksStore(repository: repo, supabase: mockSupabase, initialTasks: mockTasks)
 
         #expect(store.tasks.count == 1)
         #expect(store.tasks[0].id == "task-1")
@@ -59,7 +65,7 @@ struct MyTasksStoreFetchTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -88,7 +94,7 @@ struct MyTasksStoreFetchTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -118,7 +124,7 @@ struct MyTasksStoreFetchTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         // Start the fetch in a Task
@@ -154,7 +160,7 @@ struct MyTasksStoreFetchTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         store.errorMessage = "Previous error"
@@ -178,7 +184,7 @@ struct MyTasksStoreErrorTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -195,7 +201,7 @@ struct MyTasksStoreErrorTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { throw TestError.authFailed }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -211,7 +217,7 @@ struct MyTasksStoreErrorTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         let task = AgentTask.mock(id: "task-1")
@@ -228,7 +234,7 @@ struct MyTasksStoreErrorTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         let task = AgentTask.mock(id: "task-1")
@@ -260,7 +266,7 @@ struct MyTasksStoreActionTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         let task = AgentTask.mock(id: "task-1")
@@ -283,7 +289,7 @@ struct MyTasksStoreActionTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         let task = AgentTask.mock(id: "task-1")
@@ -303,7 +309,7 @@ struct MyTasksStoreExpansionTests {
     @Test("Toggle expansion sets task as expanded")
     func toggleExpansionSets() {
         let repo = TaskRepositoryClient.mock()
-        let store = MyTasksStore(repository: repo)
+        let store = MyTasksStore(repository: repo, supabase: mockSupabase)
 
         store.toggleExpansion(for: "task-1")
 
@@ -313,7 +319,7 @@ struct MyTasksStoreExpansionTests {
     @Test("Toggle expansion clears when called on same task")
     func toggleExpansionClears() {
         let repo = TaskRepositoryClient.mock()
-        let store = MyTasksStore(repository: repo)
+        let store = MyTasksStore(repository: repo, supabase: mockSupabase)
 
         store.toggleExpansion(for: "task-1")
         store.toggleExpansion(for: "task-1")
@@ -324,7 +330,7 @@ struct MyTasksStoreExpansionTests {
     @Test("Toggle expansion switches between tasks")
     func toggleExpansionSwitches() {
         let repo = TaskRepositoryClient.mock()
-        let store = MyTasksStore(repository: repo)
+        let store = MyTasksStore(repository: repo, supabase: mockSupabase)
 
         store.toggleExpansion(for: "task-1")
         #expect(store.expandedTaskId == "task-1")
@@ -347,7 +353,7 @@ struct MyTasksStoreFilteringTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -366,7 +372,7 @@ struct MyTasksStoreFilteringTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" } // Returns user-123
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()
@@ -389,7 +395,7 @@ struct MyTasksStoreFilteringTests {
         let store = withDependencies {
             $0.authClient.currentUserId = { "user-123" }
         } operation: {
-            MyTasksStore(repository: repo)
+            MyTasksStore(repository: repo, supabase: mockSupabase)
         }
 
         await store.fetchMyTasks()

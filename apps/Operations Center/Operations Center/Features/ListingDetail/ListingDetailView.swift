@@ -9,6 +9,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// Listing Detail screen - see and claim activities within a listing
 /// Per spec: "Purpose: See and claim Activities within a Listing"
@@ -51,14 +52,16 @@ struct ListingDetailView: View {
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
         taskRepository: TaskRepositoryClient,
-        realtorRepository: RealtorRepositoryClient
+        realtorRepository: RealtorRepositoryClient,
+        supabase: SupabaseClient
     ) {
         _store = State(initialValue: ListingDetailStore(
             listingId: listingId,
             listingRepository: listingRepository,
             noteRepository: noteRepository,
             taskRepository: taskRepository,
-            realtorRepository: realtorRepository
+            realtorRepository: realtorRepository,
+            supabase: supabase
         ))
     }
 
@@ -182,9 +185,60 @@ struct ListingDetailView: View {
     @ViewBuilder
     private var headerView: some View {
         let transition = headerTransitionProgress(for: headerScroll.relativeOffset)
-        let title = store.listing?.title ?? "Listing"
+        let addressString = store.listing?.addressString ?? "Listing"
+        
+        // Format address: "Street Address," on first line, "City" on second line
+        let title: String = {
+            guard !addressString.isEmpty, addressString != "Listing" else {
+                return addressString
+            }
+            
+            // Split by commas to parse address components
+            let components = addressString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            
+            guard components.count >= 2 else {
+                // If no commas, return as-is
+                return addressString
+            }
+            
+            // First component is street address
+            let streetAddress = components[0]
+            
+            // Second component contains city (may also have state and zip)
+            let cityAndState = components[1]
+            
+            // Extract just the city by removing state abbreviation and zip code
+            // Split by spaces and stop when we hit a state code or zip code
+            let words = cityAndState.split(separator: " ")
+            var cityWords: [String] = []
+            
+            for word in words {
+                let trimmed = String(word).trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // Stop if we hit a 2-letter uppercase state/province code (like "CA", "NY", "ON", "BC")
+                if trimmed.count == 2 && trimmed.allSatisfy({ $0.isLetter }) && trimmed == trimmed.uppercased() {
+                    break
+                }
+                
+                // Stop if we hit a zip/postal code (5 digits or 5-4 format)
+                if trimmed.range(of: #"^\d{5}(-\d{4})?$"#, options: .regularExpression) != nil {
+                    break
+                }
+                
+                cityWords.append(trimmed)
+            }
+            
+            let city = cityWords.joined(separator: " ")
+            
+            // Format: "Street Address,\nCity"
+            return "\(streetAddress),\n\(city)"
+        }()
+        
         // Safe optional chaining: use realtor name, fallback to realtor ID, then nil
         let realtorName = store.realtor?.name ?? (store.listing?.realtorId)
+        
+        // Get listing type for display
+        let listingType = store.listing?.listingType
 
         ZStack(alignment: .topLeading) {
             // Primary header (initial state) - larger, with background, overlaps notes
@@ -192,6 +246,7 @@ struct ListingDetailView: View {
                 mode: .primary,
                 title: title,
                 realtorName: realtorName,
+                listingType: listingType,
                 onBack: { dismiss() }
             )
             .opacity(1 - transition)
@@ -201,6 +256,7 @@ struct ListingDetailView: View {
                 mode: .compact,
                 title: title,
                 realtorName: realtorName,
+                listingType: listingType,
                 onBack: { dismiss() }
             )
             .opacity(transition)
@@ -345,6 +401,7 @@ private struct ListingHeader: View {
     let mode: Mode
     let title: String
     let realtorName: String?
+    let listingType: ListingType?
     let onBack: () -> Void
 
     var body: some View {
@@ -358,7 +415,7 @@ private struct ListingHeader: View {
         }
     }
 
-    /// Large, on-load header: back arrow, big address, realtor line
+    /// Large, on-load header: back arrow, big address, realtor line, listing type
     private var primaryContent: some View {
         HStack(alignment: .center, spacing: Spacing.sm) {
             Button(action: onBack) {
@@ -375,6 +432,11 @@ private struct ListingHeader: View {
                 Text(realtorName ?? "Realtor Name")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                
+                // Listing type chip
+                if let listingType = listingType {
+                    DSChip(text: listingType.rawValue, color: listingType.color)
+                }
             }
 
             Spacer()
@@ -521,7 +583,8 @@ private struct NoteInputBar: View {
             listingRepository: .preview,
             noteRepository: .preview,
             taskRepository: .preview,
-            realtorRepository: .preview
+            realtorRepository: .preview,
+            supabase: supabase  // Use global stub in preview mode
         )
     }
 }

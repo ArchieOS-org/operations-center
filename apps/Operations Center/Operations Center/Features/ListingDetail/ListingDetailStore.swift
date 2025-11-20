@@ -11,6 +11,7 @@ import Foundation
 import OperationsCenterKit
 import OSLog
 import SwiftUI
+import Supabase
 
 /// Store for Listing Detail screen - see and claim activities within a listing
 /// Per spec: "Purpose: See and claim Activities within a Listing"
@@ -53,6 +54,20 @@ final class ListingDetailStore {
     private let taskRepository: TaskRepositoryClient
     private let realtorRepository: RealtorRepositoryClient
 
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var notesRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
+    /// Track note IDs for deduplication (optimistic updates + realtime)
+    private var noteIds: Set<String> = []
+
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
@@ -63,13 +78,20 @@ final class ListingDetailStore {
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
         taskRepository: TaskRepositoryClient,
-        realtorRepository: RealtorRepositoryClient
+        realtorRepository: RealtorRepositoryClient,
+        supabase: SupabaseClient
     ) {
         self.listingId = listingId
         self.listingRepository = listingRepository
         self.noteRepository = noteRepository
         self.taskRepository = taskRepository
         self.realtorRepository = realtorRepository
+        self.supabase = supabase
+    }
+
+    deinit {
+        notesRealtimeTask?.cancel()
+        activitiesRealtimeTask?.cancel()
     }
 
     // MARK: - Computed Properties
@@ -121,7 +143,7 @@ final class ListingDetailStore {
 
             // Fetch realtor if the listing has a realtorId
             realtor = nil
-            if let realtorId = fetchedListing.realtorId {
+            if let realtorId = fetchedListing?.realtorId {
                 do {
                     realtor = try await realtorRepository.fetchRealtor(realtorId)
                 } catch {
@@ -140,6 +162,10 @@ final class ListingDetailStore {
                 and \(self.notes.count) notes
                 """
             )
+
+            // Start realtime subscriptions AFTER initial load
+            await setupNotesRealtime()
+            await setupActivitiesRealtime()
         } catch {
             Logger.database.error("Failed to fetch listing data: \(error.localizedDescription)")
             errorMessage = "Failed to load listing: \(error.localizedDescription)"
@@ -174,6 +200,7 @@ final class ListingDetailStore {
         // Instant UI update
         notes.append(optimisticNote)
         pendingNoteIds.insert(tempId)
+        noteIds.insert(tempId)  // Track temp ID for deduplication
         noteInputText = ""
 
         // Fire async network call
@@ -190,6 +217,10 @@ final class ListingDetailStore {
             // Replace temp note with server response
             if let index = notes.firstIndex(where: { $0.id == tempId }) {
                 notes[index] = createdNote
+
+                // Update ID tracking for deduplication
+                noteIds.remove(tempId)
+                noteIds.insert(createdNote.id)
             }
             pendingNoteIds.remove(tempId)
 
@@ -197,6 +228,7 @@ final class ListingDetailStore {
         } catch {
             // Revert optimistic update
             notes.removeAll { $0.id == tempId }
+            noteIds.remove(tempId)  // Clean up temp ID
             pendingNoteIds.remove(tempId)
 
             Logger.database.error("Failed to create note: \(error.localizedDescription)")
@@ -249,6 +281,96 @@ final class ListingDetailStore {
             await fetchListingData() // Refresh
         } catch {
             errorMessage = "Failed to delete activity: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup realtime subscription for notes on this listing
+    private func setupNotesRealtime() async {
+        notesRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("listing_\(listingId)_notes")
+
+        notesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "listing_notes")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleNotesChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Notes realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime note changes - simple refresh strategy
+    private func handleNotesChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Note change detected, refreshing...")
+
+        // Simple approach: re-fetch all notes for this listing
+        // AppState pattern - avoids complex decode logic
+        do {
+            let fetchedNotes = try await noteRepository.fetchNotes(listingId)
+            notes = fetchedNotes
+
+            // Rebuild ID set for deduplication
+            noteIds = Set(notes.map(\.id))
+
+            Logger.database.info("Realtime: Refreshed \(self.notes.count) notes")
+        } catch {
+            Logger.database.error("Failed to refresh notes: \(error.localizedDescription)")
+        }
+    }
+
+    /// Setup realtime subscription for activities on this listing
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        let channel = supabase.realtimeV2.channel("listing_\(listingId)_activities")
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing
+                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events
+                try await channel.subscribeWithError()
+
+                // Listen for changes
+                for await change in stream {
+                    await self.handleActivitiesChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activity changes - simple refresh strategy
+    private func handleActivitiesChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Activity change detected, refreshing...")
+
+        // Simple approach: re-fetch all activities for this listing
+        do {
+            let allActivities = try await taskRepository.fetchActivities()
+            activities = allActivities.map(\.task).filter { $0.listingId == listingId }
+
+            Logger.database.info("Realtime: Refreshed \(self.activities.count) activities")
+        } catch {
+            Logger.database.error("Failed to refresh activities: \(error.localizedDescription)")
         }
     }
 }

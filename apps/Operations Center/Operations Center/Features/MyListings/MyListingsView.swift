@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// My Listings screen - see all listings where I've claimed activities
 /// Per spec: "Listings where user has claimed at least one Activity"
@@ -21,10 +22,15 @@ struct MyListingsView: View {
 
     // MARK: - Initialization
 
-    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+    init(
+        listingRepository: ListingRepositoryClient,
+        taskRepository: TaskRepositoryClient,
+        supabase: SupabaseClient
+    ) {
         _store = State(initialValue: MyListingsStore(
             listingRepository: listingRepository,
-            taskRepository: taskRepository
+            taskRepository: taskRepository,
+            supabase: supabase
         ))
     }
 
@@ -90,6 +96,7 @@ struct MyListingsView: View {
 #Preview {
     MyListingsView(
         listingRepository: .preview,
-        taskRepository: .preview
+        taskRepository: .preview,
+        supabase: supabase
     )
 }
