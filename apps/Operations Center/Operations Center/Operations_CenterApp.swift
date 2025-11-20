@@ -5,6 +5,7 @@
 //  Created by Noah Deskin on 2025-11-11.
 //
 
+import BackgroundTasks
 import OperationsCenterKit
 import SwiftUI
 import SwiftData
@@ -48,13 +49,21 @@ struct OperationsCenterApp: App {
             ? TaskRepositoryClient.preview
             : TaskRepositoryClient.live(localDatabase: localDatabase)
 
-        _ = usePreviewData
+        let listingRepository = usePreviewData
             ? ListingRepositoryClient.preview
             : ListingRepositoryClient.live(localDatabase: localDatabase)
 
-        _ = usePreviewData
+        let noteRepository = usePreviewData
             ? ListingNoteRepositoryClient.preview
             : ListingNoteRepositoryClient.live(localDatabase: localDatabase)
+
+        let realtorRepository = usePreviewData
+            ? RealtorRepositoryClient.preview
+            : RealtorRepositoryClient.live
+
+        let staffRepository = usePreviewData
+            ? StaffRepositoryClient.testValue
+            : StaffRepositoryClient.liveValue
 
         // Initialize AppState with local database
         let appState = AppState(
@@ -69,6 +78,19 @@ struct OperationsCenterApp: App {
         }
 
         _appState = State(initialValue: appState)
+
+        // Register and wire background sync (production only)
+        if !usePreviewData {
+            registerBackgroundTasks()
+            wireBackgroundSyncDependencies(
+                localDatabase: localDatabase,
+                listingRepository: listingRepository,
+                taskRepository: taskRepository,
+                noteRepository: noteRepository,
+                realtorRepository: realtorRepository,
+                staffRepository: staffRepository
+            )
+        }
     }
 
     var body: some Scene {
@@ -77,5 +99,60 @@ struct OperationsCenterApp: App {
                 .environment(appState)
         }
         .modelContainer(modelContainer)
+    }
+
+    // MARK: - Background Tasks
+
+    /// Register BGAppRefreshTask handler
+    ///
+    /// Must complete before applicationDidFinishLaunching(_:) returns.
+    /// Returns false if identifier not in Info.plist BGTaskSchedulerPermittedIdentifiers.
+    private nonisolated func registerBackgroundTasks() {
+        let taskIdentifier = BackgroundSyncManager.refreshTaskIdentifier
+        let registered = BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: taskIdentifier,
+            using: nil // Uses default background queue
+        ) { task in
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            Task { @MainActor in
+                BackgroundSyncManager.shared.handleAppRefresh(task: refreshTask)
+            }
+        }
+
+        if registered {
+            print("✅ [BackgroundTasks] Registered: \(taskIdentifier)")
+        } else {
+            print("❌ [BackgroundTasks] Failed to register - check Info.plist BGTaskSchedulerPermittedIdentifiers")
+        }
+    }
+
+    /// Wire dependencies into BackgroundSyncManager
+    private func wireBackgroundSyncDependencies(
+        localDatabase: LocalDatabase,
+        listingRepository: ListingRepositoryClient,
+        taskRepository: TaskRepositoryClient,
+        noteRepository: ListingNoteRepositoryClient,
+        realtorRepository: RealtorRepositoryClient,
+        staffRepository: StaffRepositoryClient
+    ) {
+        BackgroundSyncManager.shared.localDatabase = localDatabase
+        BackgroundSyncManager.shared.listingRepository = listingRepository
+        BackgroundSyncManager.shared.taskRepository = taskRepository
+        BackgroundSyncManager.shared.noteRepository = noteRepository
+        BackgroundSyncManager.shared.realtorRepository = realtorRepository
+        BackgroundSyncManager.shared.staffRepository = staffRepository
+
+        print("✅ [BackgroundSync] Dependencies wired (including realtors and staff)")
+    }
+
+    /// Schedule background app refresh
+    ///
+    /// Called once at app launch after setup completes.
+    /// BackgroundSyncManager reschedules itself after each execution.
+    func scheduleInitialBackgroundRefresh() {
+        BackgroundSyncManager.shared.scheduleAppRefresh()
     }
 }

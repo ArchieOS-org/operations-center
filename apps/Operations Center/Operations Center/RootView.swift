@@ -61,9 +61,23 @@ struct RootView: View {
             .task {
                 // Skip startup in preview mode - zero network calls
                 guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+
+                // Phase 1: Fast startup - load cached data and connect Realtime
                 await appState.startup()
-                // Connect Realtime after startup completes
                 await appState.connectRealtimeIfNeeded()
+
+                // Phase 2: Background full sync - doesn't block UI
+                // Runs in parallel with user interaction
+                Task.detached { @MainActor in
+                    do {
+                        try await BackgroundSyncManager.shared.performFullSync()
+                    } catch {
+                        print("⚠️ [RootView] Background full sync failed: \(error)")
+                    }
+                }
+
+                // Schedule background refresh (iOS will decide when to run)
+                BackgroundSyncManager.shared.scheduleAppRefresh()
             }
             .onChange(of: scenePhase) { _, newPhase in
                 // Skip lifecycle management in preview mode
@@ -74,6 +88,16 @@ struct RootView: View {
                     case .active:
                         // App came to foreground - reconnect Realtime
                         await appState.connectRealtimeIfNeeded()
+
+                        // Run full sync in background (doesn't block UI)
+                        Task.detached { @MainActor in
+                            do {
+                                try await BackgroundSyncManager.shared.performFullSync()
+                            } catch {
+                                print("⚠️ [RootView] Foreground full sync failed: \(error)")
+                            }
+                        }
+
                     case .inactive, .background:
                         // App going to background - disconnect Realtime to save battery
                         appState.disconnectRealtime()
