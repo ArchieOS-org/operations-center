@@ -9,4 +9,7 @@ public enum CornerRadius {
 
     /// Standard card corner radius
     public static let card: CGFloat = md
+
+    /// Avatar circle radius (half of AvatarSizes.list for perfect circle)
+    public static let avatarList: CGFloat = 18
 }

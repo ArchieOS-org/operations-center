@@ -207,7 +207,7 @@ private struct NoteRow: View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Circle()
                 .fill(avatarColor)
-                .frame(width: 32, height: 32)
+                .frame(width: AvatarSizes.list, height: AvatarSizes.list)
                 .overlay {
                     Text(initials)
                         .font(.system(size: 14, weight: .medium))
