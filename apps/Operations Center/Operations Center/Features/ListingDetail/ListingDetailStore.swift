@@ -28,6 +28,9 @@ final class ListingDetailStore {
     /// Activities for this listing
     private(set) var activities: [Activity] = []
 
+    /// Realtor for this listing (if available)
+    private(set) var realtor: Realtor?
+
     /// Expanded activity ID for UI state
     var expandedActivityId: String?
 
@@ -48,6 +51,7 @@ final class ListingDetailStore {
     private let listingRepository: ListingRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
     private let taskRepository: TaskRepositoryClient
+    private let realtorRepository: RealtorRepositoryClient
 
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
@@ -58,12 +62,14 @@ final class ListingDetailStore {
         listingId: String,
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        realtorRepository: RealtorRepositoryClient
     ) {
         self.listingId = listingId
         self.listingRepository = listingRepository
         self.noteRepository = noteRepository
         self.taskRepository = taskRepository
+        self.realtorRepository = realtorRepository
     }
 
     // MARK: - Computed Properties
@@ -112,6 +118,18 @@ final class ListingDetailStore {
             let (fetchedListing, allActivities, fetchedNotes) = try await (listingFetch, activitiesFetch, notesFetch)
 
             listing = fetchedListing
+
+            // Fetch realtor if the listing has a realtorId
+            realtor = nil
+            if let realtorId = fetchedListing.realtorId {
+                do {
+                    realtor = try await realtorRepository.fetchRealtor(realtorId)
+                } catch {
+                    Logger.database.error(
+                        "Failed to fetch realtor for listing \(self.listingId): \(error.localizedDescription)"
+                    )
+                }
+            }
             // Filter activities to only those for this listing
             activities = allActivities.map { $0.task }.filter { $0.listingId == listingId }
             notes = fetchedNotes
@@ -234,3 +252,4 @@ final class ListingDetailStore {
         }
     }
 }
+

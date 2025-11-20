@@ -16,24 +16,33 @@ import OperationsCenterKit
 struct ListingDetailView: View {
     // MARK: - Properties
 
+    @Environment(\.dismiss) private var dismiss
+
     /// Store is @Observable AND @State for projected value binding
     /// @State wrapper enables $store for Binding properties
     @State private var store: ListingDetailStore
 
     // MARK: - Scroll State
 
-    /// Tracks which note is at scroll position (for initial load positioning)
-    @State private var scrolledNoteID: String?
-
-    /// Tracks scroll offset for Pulley Header physics
-    @State private var scrollOffset: CGFloat = 0
+    /// Tracks which element is used for initial scroll positioning
+    @State private var scrollTargetID: String?
 
     /// Prevents re-scrolling on data changes after initial load
     @State private var hasScrolledToInitialPosition = false
 
+    /// Header scroll state: baseline and offset relative to that baseline
+    @State private var headerScroll = HeaderScrollState()
+
     // MARK: - Layout Constants
 
-    private let headerHeight: CGFloat = 80
+    private enum HeaderMetrics {
+        /// Total height of the header container
+        static let height: CGFloat = 96
+        /// Fraction of the header height used as top spacer so content slightly overlaps
+        static let overlapFraction: CGFloat = 0.5
+        /// Scroll distance (points) from baseline at which the header is fully compact
+        static let collapseDistance: CGFloat = 80
+    }
 
     // MARK: - Initialization
 
@@ -41,13 +50,15 @@ struct ListingDetailView: View {
         listingId: String,
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        realtorRepository: RealtorRepositoryClient
     ) {
         _store = State(initialValue: ListingDetailStore(
             listingId: listingId,
             listingRepository: listingRepository,
             noteRepository: noteRepository,
-            taskRepository: taskRepository
+            taskRepository: taskRepository,
+            realtorRepository: realtorRepository
         ))
     }
 
@@ -55,8 +66,7 @@ struct ListingDetailView: View {
 
     var body: some View {
         // Capture state for visualEffect (avoid MainActor isolation warnings)
-        let offset = scrollOffset
-        let opacity = headerOpacity(for: offset)
+        let offset = headerScroll.relativeOffset
 
         ZStack(alignment: .top) {
             // The Pulley Header (fixed position, visual transform only)
@@ -66,15 +76,13 @@ struct ListingDetailView: View {
                     content
                         // Inverse: scroll down = header up
                         .offset(y: min(0, -offset))
-                        // Fade as it pulls up
-                        .opacity(opacity)
                 }
 
             // Main Scroll Content
             ScrollView {
                 LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    // Top spacer for header clearance
-                    Color.clear.frame(height: headerHeight)
+                    // Top spacer for partial header clearance (allow overlap)
+                    Color.clear.frame(height: HeaderMetrics.height * HeaderMetrics.overlapFraction)
 
                     // Notes Section (rendered as list items, not a compound component)
                     notesListSection
@@ -87,6 +95,7 @@ struct ListingDetailView: View {
                             }
                         } header: {
                             sectionHeader(title: "Marketing Activities", count: store.marketingActivities.count)
+                                .id("marketingActivitiesHeader")
                         }
                     }
 
@@ -128,11 +137,18 @@ struct ListingDetailView: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollPosition(id: $scrolledNoteID, anchor: .top)
+            .scrollPosition(id: $scrollTargetID, anchor: .top)
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 geometry.contentOffset.y
             } action: { _, newOffset in
-                scrollOffset = newOffset
+                // Capture the baseline offset once we've scrolled to the initial position
+                if hasScrolledToInitialPosition, headerScroll.baseline == nil {
+                    headerScroll.baseline = newOffset
+                }
+
+                let baseline = headerScroll.baseline ?? 0
+                // Scroll offset is now relative to the initial load position
+                headerScroll.relativeOffset = newOffset - baseline
             }
             .scrollDismissesKeyboard(.interactively)
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -162,25 +178,43 @@ struct ListingDetailView: View {
 
     // MARK: - Subviews
 
-    /// The Pulley Header - reacts to scroll offset
+    /// The Pulley Header - two states, crossfading based on scroll distance from initial position
     @ViewBuilder
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            if let listing = store.listing {
-                Text(listing.title)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-            } else {
-                Text("Loading...")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
+        let transition = headerTransitionProgress(for: headerScroll.relativeOffset)
+        let title = store.listing?.title ?? "Listing"
+        // Safe optional chaining: use realtor name, fallback to realtor ID, then nil
+        let realtorName = store.realtor?.name ?? (store.listing?.realtorId)
+
+        ZStack(alignment: .topLeading) {
+            // Primary header (initial state) - larger, with background, overlaps notes
+            ListingHeader(
+                mode: .primary,
+                title: title,
+                realtorName: realtorName,
+                onBack: { dismiss() }
+            )
+            .opacity(1 - transition)
+
+            // Compact header (scrolled state) - smaller, no background
+            ListingHeader(
+                mode: .compact,
+                title: title,
+                realtorName: realtorName,
+                onBack: { dismiss() }
+            )
+            .opacity(transition)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: headerHeight)
+        .padding(.top, Spacing.sm)
         .padding(.horizontal, Spacing.md)
-        .background(Colors.surfacePrimary)
+        .padding(.bottom, Spacing.sm)
+        .background(
+            Colors.surfacePrimary
+                // Background only for primary state
+                .opacity(1 - transition)
+        )
+        .frame(height: HeaderMetrics.height, alignment: .bottom)
     }
 
     /// Notes rendered as individual rows in the main scroll view
@@ -254,25 +288,25 @@ struct ListingDetailView: View {
         store.notes.sorted { $0.createdAt < $1.createdAt }
     }
 
-    /// Header opacity based on scroll offset (fades as it pulls up)
-    /// Clamped to prevent negative values when bouncing
-    private func headerOpacity(for offset: CGFloat) -> Double {
-        let fadeDistance: CGFloat = 100
-        let progress = min(max(offset / fadeDistance, 0), 1)
-        return 1 - progress
+    /// Crossfade progress between primary and compact headers based on distance
+    /// from the initial scroll position. 0 = fully primary, 1 = fully compact.
+    private func headerTransitionProgress(for offset: CGFloat) -> Double {
+        let distance = abs(offset)
+        let raw = distance / HeaderMetrics.collapseDistance
+        return Double(min(max(raw, 0), 1))
     }
 
-    /// Scroll to the 3rd-from-last note on initial load (shows last 3 notes)
+    /// Scroll to the Marketing Activities header on initial load
+    /// This positions the "Marketing Activities" section as the primary focal point
     private func scrollToInitialPosition() async {
         guard !hasScrolledToInitialPosition else { return }
-        guard sortedNotes.count > 3 else { return }
+        guard !store.marketingActivities.isEmpty else { return }
 
         // Small delay ensures layout is complete
         try? await Task.sleep(for: .milliseconds(100))
 
-        // Scroll to 3rd-from-last note (reveals last 3 notes, hides older ones above)
-        let targetIndex = sortedNotes.count - 3
-        scrolledNoteID = sortedNotes[targetIndex].id
+        // Scroll so that the Marketing Activities header becomes the reference point
+        scrollTargetID = "marketingActivitiesHeader"
 
         hasScrolledToInitialPosition = true
     }
@@ -293,7 +327,77 @@ struct ListingDetailView: View {
     }
 }
 
+/// Local header scroll state: baseline offset and offset relative to that baseline
+private struct HeaderScrollState {
+    var baseline: CGFloat?
+    var relativeOffset: CGFloat = 0
+}
+
 // MARK: - Supporting Views
+
+/// Pure header view used by ListingDetailView; all state is supplied via arguments.
+private struct ListingHeader: View {
+    enum Mode {
+        case primary
+        case compact
+    }
+
+    let mode: Mode
+    let title: String
+    let realtorName: String?
+    let onBack: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            switch mode {
+            case .primary:
+                primaryContent
+            case .compact:
+                compactContent
+            }
+        }
+    }
+
+    /// Large, on-load header: back arrow, big address, realtor line
+    private var primaryContent: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.title3.weight(.semibold))
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Text(realtorName ?? "Realtor Name")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+    }
+
+    /// Compact header used when scrolled away from the initial position
+    private var compactContent: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+            }
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer()
+        }
+    }
+}
 
 /// Simple note row renderer
 private struct NoteRowView: View {
@@ -416,7 +520,9 @@ private struct NoteInputBar: View {
             listingId: "listing_001",
             listingRepository: .preview,
             noteRepository: .preview,
-            taskRepository: .preview
+            taskRepository: .preview,
+            realtorRepository: .preview
         )
     }
 }
+

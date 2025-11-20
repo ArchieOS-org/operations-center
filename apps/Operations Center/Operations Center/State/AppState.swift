@@ -142,12 +142,14 @@ final class AppState {
         realtimeSubscription = Task { [weak self] in
             guard let self else { return }
             do {
-                // Subscribe to start receiving events
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events
                 try await channel.subscribeWithError()
 
-                // Listen for changes directly - NO NESTED TASK
-                // Structured concurrency: task owns the loop, cancellation propagates automatically
-                for await change in channel.postgresChange(AnyAction.self, table: "activities") {
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
                     await self.handleRealtimeChange(change)
                 }
             } catch {
