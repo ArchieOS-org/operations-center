@@ -59,16 +59,18 @@ extension ListingNoteRepositoryClient {
 
         return Self(
             fetchNotes: { listingId in
-                Logger.database.info("🔍 ListingNoteRepository.fetchNotes(\(listingId)) - Reading from local database...")
+                let requestId = UUID().uuidString.prefix(8)
+                Logger.database.info("🧾 [ListingNoteRepository] fetchNotes(\(listingId)) [req: \(requestId)] starting (local first)")
 
                 // Read from local database first
+                Logger.database.info("📱 [ListingNoteRepository] [req: \(requestId)] reading from local database...")
                 let cachedNotes = try await MainActor.run { try localDatabase.fetchNotes(for: listingId) }
-                Logger.database.info("📱 Local database returned \(cachedNotes.count) notes")
+                Logger.database.info("📱 [ListingNoteRepository] [req: \(requestId)] local returned \(cachedNotes.count) notes")
 
                 // Background refresh from Supabase
                 Task.detached {
                     do {
-                        Logger.database.info("☁️ Refreshing notes for listing \(listingId) from Supabase...")
+                        Logger.database.info("☁️ [ListingNoteRepository] [req: \(requestId)] refreshing from Supabase...")
                         let notes: [ListingNote] = try await supabase
                             .from("listing_notes")
                             .select()
@@ -77,11 +79,11 @@ extension ListingNoteRepositoryClient {
                             .execute()
                             .value
 
-                        Logger.database.info("✅ Supabase returned \(notes.count) notes")
+                        Logger.database.info("✅ [ListingNoteRepository] [req: \(requestId)] completed with result: \(notes.count) notes")
                         try await MainActor.run { try localDatabase.upsertNotes(notes) }
-                        Logger.database.info("💾 Saved notes to local database")
+                        Logger.database.info("💾 [ListingNoteRepository] [req: \(requestId)] saved to local database")
                     } catch {
-                        Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                        Logger.database.error("❌ [ListingNoteRepository] [req: \(requestId)] background refresh failed: \(error.localizedDescription)")
                     }
                 }
 

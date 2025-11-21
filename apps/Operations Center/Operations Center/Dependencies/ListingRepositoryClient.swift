@@ -89,16 +89,18 @@ extension ListingRepositoryClient {
             return cachedListings
         },
         fetchListing: { listingId in
-            Logger.database.info("🔍 ListingRepository.fetchListing(\(listingId)) - Reading from local database...")
+            let requestId = UUID().uuidString.prefix(8)
+            Logger.database.info("🧾 [ListingRepository] fetchListing(\(listingId)) [req: \(requestId)] starting (local first)")
 
             // Read from local database first
+            Logger.database.info("📱 [ListingRepository] [req: \(requestId)] reading from local database...")
             let cachedListing = try await MainActor.run { try localDatabase.fetchListing(id: listingId) }
-            Logger.database.info("📱 Local database returned: \(cachedListing != nil ? "found" : "not found")")
+            Logger.database.info("📱 [ListingRepository] [req: \(requestId)] local returned: \(cachedListing != nil ? "found" : "not found")")
 
             // Background refresh from Supabase
             Task.detached {
                 do {
-                    Logger.database.info("☁️ Refreshing listing \(listingId) from Supabase...")
+                    Logger.database.info("☁️ [ListingRepository] [req: \(requestId)] refreshing from Supabase...")
                     let listings: [Listing] = try await supabase
                         .from("listings")
                         .select()
@@ -108,12 +110,14 @@ extension ListingRepositoryClient {
                         .value
 
                     if let fresh = listings.first {
-                        Logger.database.info("✅ Supabase returned listing \(listingId)")
+                        Logger.database.info("✅ [ListingRepository] [req: \(requestId)] completed with result: found")
                         try await MainActor.run { try localDatabase.upsertListings([fresh]) }
-                        Logger.database.info("💾 Saved listing to local database")
+                        Logger.database.info("💾 [ListingRepository] [req: \(requestId)] saved to local database")
+                    } else {
+                        Logger.database.info("✅ [ListingRepository] [req: \(requestId)] completed with result: not found")
                     }
                 } catch {
-                    Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                    Logger.database.error("❌ [ListingRepository] [req: \(requestId)] background refresh failed: \(error.localizedDescription)")
                 }
             }
 

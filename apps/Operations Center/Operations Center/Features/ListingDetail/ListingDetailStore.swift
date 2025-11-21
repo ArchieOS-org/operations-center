@@ -56,7 +56,7 @@ final class ListingDetailStore {
     private var pendingNoteIds = Set<String>()
 
     /// Repositories for data access
-    private let listingId: String
+    let listingId: String  // Exposed for view logging
     private let listingRepository: ListingRepositoryClient
     private let noteRepository: ListingNoteRepositoryClient
     private let taskRepository: TaskRepositoryClient
@@ -110,9 +110,11 @@ final class ListingDetailStore {
         self.supabase = supabase
         self.activityCoalescer = activityCoalescer
         self.noteCoalescer = noteCoalescer
+        Logger.database.info("🧠 [ListingDetailStore] init for listing \(listingId)")
     }
 
     deinit {
+        Logger.database.info("🧠 [ListingDetailStore] deinit for listing \(self.listingId)")
         Task.detached { [weak self] in
             guard let self else { return }
             await notesChannel?.unsubscribe()
@@ -176,16 +178,25 @@ final class ListingDetailStore {
 
     /// Fetch listing data, activities, and notes
     func fetchListingData() async {
+        Logger.database.info("🔁 [ListingDetailStore] fetchListingData() starting for listing \(self.listingId)")
         isLoading = true
         errorMessage = nil
 
         do {
             // Fetch listing, activities, and notes in parallel
+            Logger.database.info("🔁 [ListingDetailStore] Fetching listing \(self.listingId) from repository...")
+            Logger.database.info("🔁 [ListingDetailStore] Fetching notes for listing \(self.listingId)...")
+            Logger.database.info("🔁 [ListingDetailStore] Fetching activities for listing \(self.listingId)...")
+
             async let listingFetch = listingRepository.fetchListing(listingId)
             async let activitiesFetch = activityCoalescer.fetch(using: taskRepository)
             async let notesFetch = noteCoalescer.fetch(listingId: listingId, using: noteRepository)
 
             let (fetchedListing, allActivities, fetchedNotes) = try await (listingFetch, activitiesFetch, notesFetch)
+
+            Logger.database.info("✅ [ListingDetailStore] Listing fetch complete (found: \(fetchedListing != nil))")
+            Logger.database.info("✅ [ListingDetailStore] Notes fetch complete for listing \(self.listingId) (count: \(fetchedNotes.count))")
+            Logger.database.info("✅ [ListingDetailStore] Activities fetch complete (total: \(allActivities.count))")
 
             listing = fetchedListing
 
@@ -205,15 +216,14 @@ final class ListingDetailStore {
             notes = fetchedNotes
 
             Logger.database.info(
-                """
-                Fetched listing \(self.listingId) with \(self.activities.count) activities \
-                and \(self.notes.count) notes
-                """
+                "✅ [ListingDetailStore] Filtered \(self.activities.count) activities for this listing \(self.listingId)"
             )
 
             // Start realtime subscriptions AFTER initial load
+            Logger.database.info("📡 [ListingDetailStore] Setting up Realtime subscriptions for listing \(self.listingId)")
             await setupNotesRealtime()
             await setupActivitiesRealtime()
+            Logger.database.info("✅ [ListingDetailStore] Realtime subscriptions complete for listing \(self.listingId)")
         } catch {
             Logger.database.error("Failed to fetch listing data: \(error.localizedDescription)")
             errorMessage = "Failed to load listing: \(error.localizedDescription)"
@@ -346,9 +356,14 @@ final class ListingDetailStore {
     private func setupNotesRealtime() async {
         notesRealtimeTask?.cancel()
 
+        let channelName = "listing_\(listingId)_notes"
+
         // Create channel once and store reference (prevents "postgresChange after joining" error)
         if notesChannel == nil {
-            notesChannel = supabase.realtimeV2.channel("listing_\(listingId)_notes")
+            Logger.database.info("⚙️ [ListingDetailStore] Creating Realtime channel: \(channelName)")
+            notesChannel = supabase.realtimeV2.channel(channelName)
+        } else {
+            Logger.database.info("⚙️ [ListingDetailStore] Reusing existing Realtime channel: \(channelName)")
         }
 
         guard let channel = notesChannel else { return }
@@ -357,10 +372,13 @@ final class ListingDetailStore {
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                Logger.database.info("⚙️ [ListingDetailStore] Calling postgresChange for table listing_notes on channel \(channelName)")
                 let stream = channel.postgresChange(AnyAction.self, table: "listing_notes")
 
                 // Now subscribe to start receiving events (safe to call multiple times)
+                Logger.database.info("⚙️ [ListingDetailStore] Calling subscribeWithError on channel \(channelName)")
                 try await channel.subscribeWithError()
+                Logger.database.info("📡 [ListingDetailStore] Subscribed to Realtime channel \(channelName)")
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
@@ -376,20 +394,21 @@ final class ListingDetailStore {
 
     /// Handle realtime note changes - simple refresh strategy
     private func handleNotesChange(_ change: AnyAction) async {
-        Logger.database.info("Realtime: Note change detected, refreshing...")
+        Logger.database.info("🔔 [ListingDetailStore] Realtime change for table listing_notes, listing \(self.listingId). Triggering refetch.")
 
         // Simple approach: re-fetch all notes for this listing
         // AppState pattern - avoids complex decode logic
         do {
+            Logger.database.info("🔁 [ListingDetailStore] Refetching notes via coalescer for listing \(self.listingId)...")
             let fetchedNotes = try await noteCoalescer.fetch(listingId: listingId, using: noteRepository)
             notes = fetchedNotes
 
             // Rebuild ID set for deduplication
             noteIds = Set(notes.map(\.id))
 
-            Logger.database.info("Realtime: Refreshed \(self.notes.count) notes")
+            Logger.database.info("✅ [ListingDetailStore] Realtime refetch complete: \(self.notes.count) notes for listing \(self.listingId)")
         } catch {
-            Logger.database.error("Failed to refresh notes: \(error.localizedDescription)")
+            Logger.database.error("❌ [ListingDetailStore] Failed to refresh notes after Realtime change: \(error.localizedDescription)")
         }
     }
 
@@ -397,9 +416,14 @@ final class ListingDetailStore {
     private func setupActivitiesRealtime() async {
         activitiesRealtimeTask?.cancel()
 
+        let channelName = "listing_\(listingId)_activities"
+
         // Create channel once and store reference (prevents "postgresChange after joining" error)
         if activitiesChannel == nil {
-            activitiesChannel = supabase.realtimeV2.channel("listing_\(listingId)_activities")
+            Logger.database.info("⚙️ [ListingDetailStore] Creating Realtime channel: \(channelName)")
+            activitiesChannel = supabase.realtimeV2.channel(channelName)
+        } else {
+            Logger.database.info("⚙️ [ListingDetailStore] Reusing existing Realtime channel: \(channelName)")
         }
 
         guard let channel = activitiesChannel else { return }
@@ -408,10 +432,13 @@ final class ListingDetailStore {
             guard let self else { return }
             do {
                 // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                Logger.database.info("⚙️ [ListingDetailStore] Calling postgresChange for table activities on channel \(channelName)")
                 let stream = channel.postgresChange(AnyAction.self, table: "activities")
 
                 // Now subscribe to start receiving events (safe to call multiple times)
+                Logger.database.info("⚙️ [ListingDetailStore] Calling subscribeWithError on channel \(channelName)")
                 try await channel.subscribeWithError()
+                Logger.database.info("📡 [ListingDetailStore] Subscribed to Realtime channel \(channelName)")
 
                 // Listen for changes - structured concurrency handles cancellation
                 for await change in stream {
@@ -427,16 +454,17 @@ final class ListingDetailStore {
 
     /// Handle realtime activity changes - simple refresh strategy
     private func handleActivitiesChange(_ change: AnyAction) async {
-        Logger.database.info("Realtime: Activity change detected, refreshing...")
+        Logger.database.info("🔔 [ListingDetailStore] Realtime change for table activities, listing \(self.listingId). Triggering refetch.")
 
         // Simple approach: re-fetch all activities for this listing
         do {
+            Logger.database.info("🔁 [ListingDetailStore] Refetching activities via coalescer for listing \(self.listingId)...")
             let allActivities = try await activityCoalescer.fetch(using: taskRepository)
             activities = allActivities.map(\.task).filter { $0.listingId == listingId }
 
-            Logger.database.info("Realtime: Refreshed \(self.activities.count) activities")
+            Logger.database.info("✅ [ListingDetailStore] Realtime refetch complete: \(self.activities.count) activities for listing \(self.listingId)")
         } catch {
-            Logger.database.error("Failed to refresh activities: \(error.localizedDescription)")
+            Logger.database.error("❌ [ListingDetailStore] Failed to refresh activities after Realtime change: \(error.localizedDescription)")
         }
     }
 }

@@ -7,6 +7,7 @@
 
 @preconcurrency import BackgroundTasks
 import Foundation
+import OSLog
 
 /// Manages background app refresh tasks to keep local cache fresh when app is backgrounded.
 ///
@@ -135,23 +136,42 @@ final class BackgroundSyncManager {
     /// - ListingAcknowledgments: User-specific, fetched on-demand
     /// - AgentTasks: Deprecated in favor of Activities
     @MainActor func performFullSync() async throws {
-        print("🔄 [BackgroundSync] Starting full sync...")
+        let startTime = CFAbsoluteTimeGetCurrent()
+        Logger.database.info("🔄 [BackgroundSync] Full sync starting...")
 
         // Phase 1: Parallel fetches (10-15 seconds)
         // Use async let for true concurrency - all queries run simultaneously
+        Logger.database.info("☁️ [BackgroundSync] Fetching listings...")
+        Logger.database.info("☁️ [BackgroundSync] Fetching activities...")
+        Logger.database.info("☁️ [BackgroundSync] Fetching realtors...")
+        Logger.database.info("☁️ [BackgroundSync] Fetching staff...")
+
+        let listingsStart = CFAbsoluteTimeGetCurrent()
         async let listings = listingRepository.fetchListings()
-        async let activities = taskRepository.fetchActivities()  // Includes listings via join
+
+        let activitiesStart = CFAbsoluteTimeGetCurrent()
+        async let activities = taskRepository.fetchActivities()
+
+        let realtorsStart = CFAbsoluteTimeGetCurrent()
         async let realtors = realtorRepository.fetchRealtors()
+
+        let staffStart = CFAbsoluteTimeGetCurrent()
         async let staff = staffRepository.listActive()
 
         // Await all fetches - each repository handles Supabase → local persistence
-        _ = try await (listings, activities, realtors, staff)
+        let (fetchedListings, fetchedActivities, fetchedRealtors, fetchedStaff) = try await (listings, activities, realtors, staff)
 
-        print("  ↳ Listings synced")
-        print("  ↳ Activities synced (with associated listings)")
-        print("  ↳ Realtors synced")
-        print("  ↳ Staff synced")
-        print("✨ [BackgroundSync] Full sync complete")
+        let listingsTime = (CFAbsoluteTimeGetCurrent() - listingsStart) * 1000
+        let activitiesTime = (CFAbsoluteTimeGetCurrent() - activitiesStart) * 1000
+        let realtorsTime = (CFAbsoluteTimeGetCurrent() - realtorsStart) * 1000
+        let staffTime = (CFAbsoluteTimeGetCurrent() - staffStart) * 1000
+        let totalTime = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+
+        Logger.database.info("✅ [BackgroundSync] Listings fetch complete (count: \(fetchedListings.count)) - \(String(format: "%.0f", listingsTime))ms")
+        Logger.database.info("✅ [BackgroundSync] Activities fetch complete (count: \(fetchedActivities.count)) - \(String(format: "%.0f", activitiesTime))ms")
+        Logger.database.info("✅ [BackgroundSync] Realtors fetch complete (count: \(fetchedRealtors.count)) - \(String(format: "%.0f", realtorsTime))ms")
+        Logger.database.info("✅ [BackgroundSync] Staff fetch complete (count: \(fetchedStaff.count)) - \(String(format: "%.0f", staffTime))ms")
+        Logger.database.info("✨ [BackgroundSync] Full sync completed in \(String(format: "%.0f", totalTime))ms")
     }
 
     /// Performs lightweight pull-only sync from Supabase (legacy - now calls performFullSync)

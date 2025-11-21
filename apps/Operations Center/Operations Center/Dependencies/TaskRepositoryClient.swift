@@ -156,11 +156,13 @@ extension TaskRepositoryClient {
                 return response.map { TaskWithMessages(task: $0, messages: []) }
             },
             fetchActivities: {
-                Logger.database.info("🔍 TaskRepository.fetchActivities() - Reading from local database...")
+                let requestId = UUID().uuidString.prefix(8)
+                Logger.database.info("🧾 [TaskRepository] fetchActivities() [req: \(requestId)] starting (local first)")
 
                 // Read from local database first for instant UI
+                Logger.database.info("📱 [TaskRepository] [req: \(requestId)] reading from local database...")
                 let cachedActivities = try await MainActor.run { try localDatabase.fetchActivities() }
-                Logger.database.info("📱 Local database returned \(cachedActivities.count) activities")
+                Logger.database.info("📱 [TaskRepository] [req: \(requestId)] local returned \(cachedActivities.count) activities")
 
                 // We need listings to create ActivityWithDetails
                 let cachedListings = try await MainActor.run { try localDatabase.fetchListings() }
@@ -177,7 +179,7 @@ extension TaskRepositoryClient {
                 // Background refresh from Supabase
                 Task.detached {
                     do {
-                        Logger.database.info("☁️ Refreshing activities from Supabase...")
+                        Logger.database.info("☁️ [TaskRepository] [req: \(requestId)] refreshing from Supabase...")
                         let response: [ActivityResponse] = try await supabase
                             .from("activities")
                             .select("*, listings(*)")
@@ -187,7 +189,7 @@ extension TaskRepositoryClient {
                             .execute()
                             .value
 
-                        Logger.database.info("✅ Supabase returned \(response.count) activity records")
+                        Logger.database.info("✅ [TaskRepository] [req: \(requestId)] Supabase returned \(response.count) activity records")
 
                         // Extract activities and listings from response
                         let activities = response.compactMap { row -> Activity? in
@@ -219,9 +221,10 @@ extension TaskRepositoryClient {
                         // Persist to local database
                         try await MainActor.run { try localDatabase.upsertActivities(activities) }
                         try await MainActor.run { try localDatabase.upsertListings(listings) }
-                        Logger.database.info("💾 Saved \(activities.count) activities and \(listings.count) listings to local database")
+                        Logger.database.info("💾 [TaskRepository] [req: \(requestId)] saved \(activities.count) activities and \(listings.count) listings to local database")
+                        Logger.database.info("✅ [TaskRepository] [req: \(requestId)] completed with result: \(activities.count) activities")
                     } catch {
-                        Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                        Logger.database.error("❌ [TaskRepository] [req: \(requestId)] background refresh failed: \(error.localizedDescription)")
                     }
                 }
 

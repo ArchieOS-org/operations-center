@@ -10,6 +10,7 @@
 import SwiftUI
 import OperationsCenterKit
 import Supabase
+import OSLog
 
 /// Listing Detail screen - see and claim activities within a listing
 /// Per spec: "Purpose: See and claim Activities within a Listing"
@@ -63,6 +64,7 @@ struct ListingDetailView: View {
         activityCoalescer: ActivityFetchCoalescer,
         noteCoalescer: NoteFetchCoalescer
     ) {
+        Logger.database.info("👁️ [ListingDetailView] init for listing \(listingId)")
         _store = State(initialValue: ListingDetailStore(
             listingId: listingId,
             listingRepository: listingRepository,
@@ -228,7 +230,9 @@ struct ListingDetailView: View {
         .navigationTitle(store.listing?.title ?? "Listing")
         .toolbar(.hidden, for: .navigationBar)
         .task {
+            Logger.database.info("📥 [ListingDetailView] View appeared, triggering initial load for listing \(store.listingId)")
             await store.fetchListingData()
+            Logger.database.info("✅ [ListingDetailView] Initial data fetch complete for listing \(store.listingId)")
             await scrollToInitialPosition()
         }
         .loadingOverlay(store.isLoading && store.listing == nil)
