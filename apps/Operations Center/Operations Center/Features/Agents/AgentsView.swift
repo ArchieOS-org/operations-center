@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// Agents screen - list of all agents to browse work by agent
 /// Per spec: "Purpose: Browse work by agent"
@@ -22,8 +23,8 @@ struct AgentsView: View {
 
     // MARK: - Initialization
 
-    init(repository: RealtorRepositoryClient) {
-        _store = State(initialValue: AgentsStore(repository: repository))
+    init(repository: RealtorRepositoryClient, supabase: SupabaseClient) {
+        _store = State(initialValue: AgentsStore(repository: repository, supabase: supabase))
     }
 
     // MARK: - Body
@@ -99,6 +100,6 @@ private struct RealtorRow: View {
 
 #Preview {
     NavigationStack {
-        AgentsView(repository: .preview)
+        AgentsView(repository: .preview, supabase: supabase)
     }
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import OperationsCenterKit
 import Supabase
 import Auth
@@ -188,7 +189,12 @@ struct SettingsView: View {
 #Preview {
     NavigationStack {
         SettingsView()
-            .environment(AppState(supabase: supabase, taskRepository: .preview))
+            .environment(AppState(
+                supabase: supabase,
+                taskRepository: .preview,
+                localDatabase: PreviewLocalDatabase()
+            ))
             .environment(AuthenticationStore(supabaseClient: supabase))
+            .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
     }
 }

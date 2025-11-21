@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Auth
 import Supabase
 
@@ -70,6 +71,8 @@ struct AppView: View {
     AppView()
         .environment(AppState(
             supabase: supabase,
-            taskRepository: .preview
+            taskRepository: .preview,
+            localDatabase: PreviewLocalDatabase()
         ))
+        .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
 }

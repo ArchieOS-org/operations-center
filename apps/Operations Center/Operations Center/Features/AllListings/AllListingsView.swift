@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// All Listings screen - browse all listings to claim Activities
 /// Per spec: "All Listings across system (acknowledged and unacknowledged)"
@@ -21,10 +22,19 @@ struct AllListingsView: View {
 
     // MARK: - Initialization
 
-    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+    init(
+        listingRepository: ListingRepositoryClient,
+        taskRepository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        listingCoalescer: ListingFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
+    ) {
         _store = State(initialValue: AllListingsStore(
             listingRepository: listingRepository,
-            taskRepository: taskRepository
+            taskRepository: taskRepository,
+            supabase: supabase,
+            listingCoalescer: listingCoalescer,
+            activityCoalescer: activityCoalescer
         ))
     }
 
@@ -105,6 +115,9 @@ struct AllListingsView: View {
 #Preview {
     AllListingsView(
         listingRepository: .preview,
-        taskRepository: .preview
+        taskRepository: .preview,
+        supabase: supabase,
+        listingCoalescer: ListingFetchCoalescer(),
+        activityCoalescer: ActivityFetchCoalescer()
     )
 }

@@ -30,13 +30,13 @@ public enum IconSizes {
     public static let statusIndicator: CGFloat = 8
 
     /// Standard inline icons (in text/buttons)
-    /// Also used for toolbar and navigation icons
     public static let inline: CGFloat = 16
 
-    /// Toolbar and navigation icons
-    /// Note: Currently shares value with `inline` (16pt) but maintained
-    /// for semantic distinction in navigation/toolbar contexts
-    public static let toolbar: CGFloat = 16
+    /// Toolbar icons (bottom or card-level actions)
+    public static let toolbar: CGFloat = 20
+
+    /// Navigation bar icons (top navigation)
+    public static let navBar: CGFloat = 28
 
     /// Divider icons (between content sections)
     public static let divider: CGFloat = 20

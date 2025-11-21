@@ -2,22 +2,55 @@
 //  ListingDetailView.swift
 //  Operations Center
 //
-//  Listing Detail screen - see and claim activities within a listing
+//  Listing Detail screen - THE INVERSE PULLEY
+//  Physics: Swipe DOWN → Content moves down, Header pulls UP
 //  Per TASK_MANAGEMENT_SPEC.md lines 338-375
 //
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
+import OSLog
 
 /// Listing Detail screen - see and claim activities within a listing
 /// Per spec: "Purpose: See and claim Activities within a Listing"
-/// Features: Header with address, notes section, activities/tasks sections
+/// Features: Pulley header, notes with scroll-to-recent, activities/tasks sections
 struct ListingDetailView: View {
     // MARK: - Properties
+
+    @Environment(\.dismiss) private var dismiss
 
     /// Store is @Observable AND @State for projected value binding
     /// @State wrapper enables $store for Binding properties
     @State private var store: ListingDetailStore
+
+    // MARK: - Scroll State
+
+    /// Tracks which element is used for initial scroll positioning
+    @State private var scrollTargetID: String?
+
+    /// Prevents re-scrolling on data changes after initial load
+    @State private var hasScrolledToInitialPosition = false
+
+    /// Header scroll state: baseline and offset relative to that baseline
+    @State private var headerScroll = HeaderScrollState()
+
+    // MARK: - UI State
+
+    /// Show metadata detail sheet
+    @State private var showMetaDetailSheet = false
+
+    // MARK: - Layout Constants
+
+    private enum HeaderMetrics {
+        /// Total height of the header container, from the design system
+        /// Matches large-title nav bars and gives room below the status bar
+        static let height: CGFloat = Spacing.navHeaderHeight
+        /// Fraction of the header height used as top spacer so content slightly overlaps
+        static let overlapFraction: CGFloat = Spacing.navHeaderOverlapFraction
+        /// Scroll distance (points) from baseline at which the header is fully compact
+        static let collapseDistance: CGFloat = Spacing.navHeaderCollapseDistance
+    }
 
     // MARK: - Initialization
 
@@ -25,75 +58,188 @@ struct ListingDetailView: View {
         listingId: String,
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        realtorRepository: RealtorRepositoryClient,
+        supabase: SupabaseClient,
+        activityCoalescer: ActivityFetchCoalescer,
+        noteCoalescer: NoteFetchCoalescer
     ) {
+        Logger.database.info("👁️ [ListingDetailView] init for listing \(listingId)")
         _store = State(initialValue: ListingDetailStore(
             listingId: listingId,
             listingRepository: listingRepository,
             noteRepository: noteRepository,
-            taskRepository: taskRepository
+            taskRepository: taskRepository,
+            realtorRepository: realtorRepository,
+            supabase: supabase,
+            activityCoalescer: activityCoalescer,
+            noteCoalescer: noteCoalescer
         ))
+    }
+
+    // MARK: - Computed Properties
+
+    private var isHeaderCollapsed: Bool {
+        abs(headerScroll.relativeOffset) > Spacing.navHeaderCollapseDistance
+    }
+
+    private var headerTitle: String {
+        let addressString = store.listing?.addressString ?? "Listing"
+
+        // Format address: "Street Address," on first line, "City" on second line
+        // Keep existing address formatting logic unchanged
+        guard !addressString.isEmpty, addressString != "Listing" else {
+            return addressString
+        }
+
+        // Split by commas to parse address components
+        let components = addressString.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        guard components.count >= 2 else {
+            // If no commas, return as-is
+            return addressString
+        }
+
+        // First component is street address
+        let streetAddress = components[0]
+
+        // Second component contains city (may also have state and zip)
+        let cityAndState = components[1]
+
+        // Extract just the city by removing state abbreviation and zip code
+        // Split by spaces and stop when we hit a state code or zip code
+        let words = cityAndState.split(separator: " ")
+        var cityWords: [String] = []
+
+        for word in words {
+            let trimmed = String(word).trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Stop if we hit a 2-letter uppercase state/province code (like "CA", "NY", "ON", "BC")
+            if trimmed.count == 2 && trimmed.allSatisfy({ $0.isLetter }) && trimmed == trimmed.uppercased() {
+                break
+            }
+
+            // Stop if we hit a zip/postal code (5 digits or 5-4 format)
+            if trimmed.range(of: #"^\d{5}(-\d{4})?$"#, options: .regularExpression) != nil {
+                break
+            }
+
+            cityWords.append(trimmed)
+        }
+
+        let city = cityWords.joined(separator: " ")
+
+        // Format: "Street Address,\nCity"
+        return "\(streetAddress),\n\(city)"
     }
 
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: Spacing.md, pinnedViews: [.sectionHeaders]) {
-                notesSection
+        ZStack(alignment: .top) {
+            // Main Scroll Content
+            ScrollView {
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    // Top spacer for partial header clearance (allow overlap)
+                    Color.clear.frame(height: Spacing.navHeaderHeight * Spacing.navHeaderOverlapFraction)
 
-                // Marketing Activities Section
-                if !store.marketingActivities.isEmpty {
-                    Section {
-                        ForEach(store.marketingActivities) { activity in
-                            activityCard(activity)
-                        }
-                    } header: {
-                        sectionHeader(title: "Marketing Activities", count: store.marketingActivities.count)
-                    }
-                }
+                    // Notes Section (rendered as list items, not a compound component)
+                    notesListSection
 
-                // Admin Activities Section
-                if !store.adminActivities.isEmpty {
-                    Section {
-                        ForEach(store.adminActivities) { activity in
-                            activityCard(activity)
+                    // Marketing Activities Section
+                    if !store.marketingActivities.isEmpty {
+                        Section {
+                            ForEach(store.marketingActivities) { activity in
+                                activityCard(activity)
+                            }
+                        } header: {
+                            sectionHeader(title: "Marketing Activities", count: store.marketingActivities.count)
+                                .id("marketingActivitiesHeader")
                         }
-                    } header: {
-                        sectionHeader(title: "Admin Activities", count: store.adminActivities.count)
                     }
-                }
 
-                // Other Activities Section
-                if !store.otherActivities.isEmpty {
-                    Section {
-                        ForEach(store.otherActivities) { activity in
-                            activityCard(activity)
+                    // Admin Activities Section
+                    if !store.adminActivities.isEmpty {
+                        Section {
+                            ForEach(store.adminActivities) { activity in
+                                activityCard(activity)
+                            }
+                        } header: {
+                            sectionHeader(title: "Admin Activities", count: store.adminActivities.count)
                         }
-                    } header: {
-                        sectionHeader(title: "Other Activities", count: store.otherActivities.count)
                     }
-                }
 
-                // Uncategorized Activities Section
-                if !store.uncategorizedActivities.isEmpty {
-                    Section {
-                        ForEach(store.uncategorizedActivities) { activity in
-                            activityCard(activity)
+                    // Other Activities Section
+                    if !store.otherActivities.isEmpty {
+                        Section {
+                            ForEach(store.otherActivities) { activity in
+                                activityCard(activity)
+                            }
+                        } header: {
+                            sectionHeader(title: "Other Activities", count: store.otherActivities.count)
                         }
-                    } header: {
-                        sectionHeader(title: "Uncategorized", count: store.uncategorizedActivities.count)
                     }
+
+                    // Uncategorized Activities Section
+                    if !store.uncategorizedActivities.isEmpty {
+                        Section {
+                            ForEach(store.uncategorizedActivities) { activity in
+                                activityCard(activity)
+                            }
+                        } header: {
+                            sectionHeader(title: "Uncategorized", count: store.uncategorizedActivities.count)
+                        }
+                    }
+
+                    // Bottom spacer to prevent last activity from being obscured by input bar
+                    Color.clear.frame(height: Spacing.bottomInputBarSpacer)
                 }
+                .scrollTargetLayout()
             }
-            .padding()
+            .scrollPosition(id: $scrollTargetID, anchor: .top)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y
+            } action: { _, newOffset in
+                // Capture the baseline offset once we've scrolled to the initial position
+                if hasScrolledToInitialPosition, headerScroll.baseline == nil {
+                    headerScroll.baseline = newOffset
+                }
+
+                let baseline = headerScroll.baseline ?? 0
+                // Scroll offset is now relative to the initial load position
+                headerScroll.relativeOffset = newOffset - baseline
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                noteInputBar
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            DSListingHeader(
+                mode: isHeaderCollapsed ? .compact : .primary,
+                title: headerTitle,
+                realtorName: store.realtor?.name,
+                listingType: store.listing?.type.flatMap(ListingType.init(rawValue:)),
+                onBack: { dismiss() }
+            )
+            .padding(.top, Spacing.navHeaderTop)
+            .padding(.horizontal, Spacing.screenEdge)
+            .background(Colors.surfacePrimary)
+            .animation(.easeInOut(duration: 0.2), value: isHeaderCollapsed)
         }
         .navigationTitle(store.listing?.title ?? "Listing")
-        .refreshable {
-            await store.refresh()
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
+            Logger.database.info("📥 [ListingDetailView] View appeared, triggering initial load for listing \(store.listingId)")
             await store.fetchListingData()
+            Logger.database.info("✅ [ListingDetailView] Initial data fetch complete for listing \(store.listingId)")
+            await scrollToInitialPosition()
+        }
+        .onDisappear {
+            Logger.database.info("👋 [ListingDetailView] View disappearing for listing \(store.listingId)")
+            Task {
+                await store.teardownRealtime()
+            }
         }
         .loadingOverlay(store.isLoading && store.listing == nil)
         .errorAlert($store.errorMessage)
@@ -108,15 +254,48 @@ struct ListingDetailView: View {
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: store.expandedActivityId)
+        .sheet(isPresented: $showMetaDetailSheet) {
+            if let agentMeta = store.realtor.map({ ListingAgentMeta(id: $0.id, name: $0.name, email: $0.email, phone: $0.phone, slackUserId: $0.slackUserId) }),
+               let createdDate = store.listing?.createdAt {
+                DSListingMetaDetailSheet(
+                    detail: ListingMetaDetail(
+                        agent: agentMeta,
+                        slackMessage: nil, // TODO: Fetch Slack message when available
+                        createdDate: createdDate,
+                        channelId: nil // TODO: Get channel ID from Slack message
+                    ),
+                    onOpenSlackChannel: {
+                        // TODO: Implement Slack channel opening
+                        // For now, just dismiss the sheet
+                        showMetaDetailSheet = false
+                    }
+                )
+                .presentationDetents([.fraction(0.6)])
+                .presentationDragIndicator(.visible)
+            }
+        }
     }
 
     // MARK: - Subviews
 
+    /// Notes rendered as individual rows in the main scroll view
     @ViewBuilder
-    private var notesSection: some View {
-        NotesSection(
-            notes: store.notes,
-            inputText: $store.noteInputText,
+    private var notesListSection: some View {
+        LazyVStack(alignment: .leading, spacing: Spacing.sm) {
+            ForEach(store.sortedNotes) { note in
+                NoteRowView(note: note)
+                    .id(note.id)
+                    .padding(.horizontal, Spacing.md)
+            }
+        }
+        .padding(.top, Spacing.contentTop)
+    }
+
+    /// Input bar for adding new notes
+    @ViewBuilder
+    private var noteInputBar: some View {
+        NoteInputBar(
+            text: $store.noteInputText,
             onSubmit: store.submitNote
         )
     }
@@ -137,6 +316,7 @@ struct ListingDetailView: View {
             .strikethrough(activity.completedAt != nil)
             .opacity(activity.completedAt != nil ? 0.6 : 1.0)
             .id(activity.id)
+            .padding(.horizontal, Spacing.md)
         }
     }
 
@@ -158,10 +338,26 @@ struct ListingDetailView: View {
                 .clipShape(Capsule())
         }
         .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.md)
         .background(Colors.surfacePrimary)
     }
 
     // MARK: - Helper Methods
+
+    /// Scroll to the Marketing Activities header on initial load
+    /// This positions the "Marketing Activities" section as the primary focal point
+    private func scrollToInitialPosition() async {
+        guard !hasScrolledToInitialPosition else { return }
+        guard !store.marketingActivities.isEmpty else { return }
+
+        // Small delay ensures layout is complete
+        try? await Task.sleep(for: .milliseconds(100))
+
+        // Scroll so that the Marketing Activities header becomes the reference point
+        scrollTargetID = "marketingActivitiesHeader"
+
+        hasScrolledToInitialPosition = true
+    }
 
     private func findExpandedActivity(id: String) -> Activity? {
         store.activities.first(where: { $0.id == id })
@@ -179,6 +375,127 @@ struct ListingDetailView: View {
     }
 }
 
+/// Local header scroll state: baseline offset and offset relative to that baseline
+private struct HeaderScrollState {
+    var baseline: CGFloat?
+    var relativeOffset: CGFloat = 0
+}
+
+// MARK: - Supporting Views
+
+/// Simple note row renderer
+private struct NoteRowView: View {
+    let note: ListingNote
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Circle()
+                .fill(avatarColor)
+                .frame(width: 32, height: 32)
+                .overlay {
+                    Text(initials)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(note.createdByName ?? "Unknown")
+                        .font(Typography.cardSubtitle.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+
+                    Text(formatTime(note.createdAt))
+                        .font(Typography.chipLabel)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Text(note.content)
+                    .font(Typography.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var initials: String {
+        guard let name = note.createdByName else { return "?" }
+        let components = name.split(separator: " ")
+        if components.count >= 2 {
+            return String(components[0].prefix(1)) + String(components[1].prefix(1))
+        }
+        return String(name.prefix(2))
+    }
+
+    private var avatarColor: Color {
+        let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .indigo]
+        let hash = (note.createdByName ?? "").hashValue
+        return colors[abs(hash) % colors.count]
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let seconds = Date().timeIntervalSince(date)
+        if seconds < 60 { return "just now" }
+        if seconds < 3600 { return "\(Int(seconds/60))m ago" }
+        if seconds < 86400 { return "\(Int(seconds/3600))h ago" }
+        return "\(Int(seconds/86400))d ago"
+    }
+}
+
+/// Input bar for adding notes - docked to bottom with safeAreaInset
+private struct NoteInputBar: View {
+    @Binding var text: String
+    let onSubmit: () -> Void
+
+    @FocusState private var isFocused: Bool
+
+    private var isSubmitEnabled: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: Spacing.sm) {
+            TextField("Add a note...", text: $text, axis: .vertical)
+                .font(Typography.body)
+                .lineLimit(1...4)
+                .focused($isFocused)
+                .padding(Spacing.sm)
+                .background(Colors.surfaceTertiary)
+                .cornerRadius(CornerRadius.md)
+                .onKeyPress(.return, phases: .down) { keyPress in
+                    if keyPress.modifiers.contains(.command) {
+                        handleSubmit()
+                        return .handled
+                    }
+                    return .ignored
+                }
+
+            if isSubmitEnabled {
+                Button(action: handleSubmit) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .transition(.scale.combined(with: .opacity))
+                .accessibilityLabel("Send note")
+            }
+        }
+        .padding(Spacing.md)
+        .animation(.snappy, value: isSubmitEnabled)
+    }
+
+    private func handleSubmit() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onSubmit()
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
@@ -187,7 +504,12 @@ struct ListingDetailView: View {
             listingId: "listing_001",
             listingRepository: .preview,
             noteRepository: .preview,
-            taskRepository: .preview
+            taskRepository: .preview,
+            realtorRepository: .preview,
+            supabase: supabase,  // Use global stub in preview mode
+            activityCoalescer: ActivityFetchCoalescer(),
+            noteCoalescer: NoteFetchCoalescer()
         )
     }
 }
+

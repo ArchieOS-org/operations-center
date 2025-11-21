@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// All Tasks screen - all claimed tasks across entire system
 /// Per spec: "All claimed Tasks system-wide (standalone + assigned to listings)"
@@ -21,8 +22,18 @@ struct AllTasksView: View {
 
     // MARK: - Initialization
 
-    init(repository: TaskRepositoryClient) {
-        _store = State(initialValue: AllTasksStore(repository: repository))
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer,
+        activityCoalescer: ActivityFetchCoalescer
+    ) {
+        _store = State(initialValue: AllTasksStore(
+            repository: repository,
+            supabase: supabase,
+            taskCoalescer: taskCoalescer,
+            activityCoalescer: activityCoalescer
+        ))
     }
 
     // MARK: - Body
@@ -194,6 +205,11 @@ struct AllTasksView: View {
 
 #Preview {
     NavigationStack {
-        AllTasksView(repository: .preview)
+        AllTasksView(
+            repository: .preview,
+            supabase: supabase,
+            taskCoalescer: TaskFetchCoalescer(),
+            activityCoalescer: ActivityFetchCoalescer()
+        )
     }
 }

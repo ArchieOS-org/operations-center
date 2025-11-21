@@ -7,6 +7,7 @@
 
 import OperationsCenterKit
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
@@ -170,38 +171,49 @@ struct EmptyStateView: View {
 }
 
 #Preview("With Mock Data") {
-    let appState = AppState(
-        supabase: supabase,
-        taskRepository: .preview
-    )
+    @Previewable @State var appState = {
+        let state = AppState(
+            supabase: supabase,
+            taskRepository: .preview,
+            localDatabase: PreviewLocalDatabase()
+        )
+        state.allTasks = [Activity.mock1, Activity.mock2, Activity.mock3]
+        return state
+    }()
 
-    // Preload with mock data
-    appState.allTasks = [Activity.mock1, Activity.mock2, Activity.mock3]
-
-    return ContentView()
+    ContentView()
         .environment(appState)
+        .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
 }
 
 #Preview("Empty State") {
-    let appState = AppState(
-        supabase: supabase,
-        taskRepository: .preview
-    )
+    @Previewable @State var appState = {
+        let state = AppState(
+            supabase: supabase,
+            taskRepository: .preview,
+            localDatabase: PreviewLocalDatabase()
+        )
+        state.allTasks = []
+        return state
+    }()
 
-    appState.allTasks = []
-
-    return ContentView()
+    ContentView()
         .environment(appState)
+        .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
 }
 
 #Preview("Loading State") {
-    let appState = AppState(
-        supabase: supabase,
-        taskRepository: .preview
-    )
+    @Previewable @State var appState = {
+        let state = AppState(
+            supabase: supabase,
+            taskRepository: .preview,
+            localDatabase: PreviewLocalDatabase()
+        )
+        state.isLoading = true
+        return state
+    }()
 
-    appState.isLoading = true
-
-    return ContentView()
+    ContentView()
         .environment(appState)
+        .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
 }

@@ -139,8 +139,9 @@ nonisolated private func mapActivityResponse(_ row: ActivityResponse) -> Activit
 // MARK: - Live Implementation
 
 extension TaskRepositoryClient {
-    /// Production implementation using global Supabase client
-    public static let live = Self(
+    /// Production implementation with local-first architecture for activities
+    public static func live(localDatabase: LocalDatabase) -> Self {
+        return Self(
             fetchTasks: {
                 let response: [AgentTask] = try await supabase
                     .from("agent_tasks")
@@ -155,40 +156,79 @@ extension TaskRepositoryClient {
                 return response.map { TaskWithMessages(task: $0, messages: []) }
             },
             fetchActivities: {
-                Logger.database.info("🔍 TaskRepository.fetchActivities() - Starting Supabase query...")
+                let requestId = UUID().uuidString.prefix(8)
+                Logger.database.info("🧾 [TaskRepository] fetchActivities() [req: \(requestId)] starting (local first)")
 
-                do {
-                    // Query activities with nested listings join
-                    let response: [ActivityResponse] = try await supabase
-                        .from("activities")
-                        .select("*, listings(*)")
-                        .is("deleted_at", value: nil)
-                        .order("priority", ascending: false)
-                        .order("created_at", ascending: false)
-                        .execute()
-                        .value
+                // Read from local database first for instant UI
+                Logger.database.info("📱 [TaskRepository] [req: \(requestId)] reading from local database...")
+                let cachedActivities = try await MainActor.run { try localDatabase.fetchActivities() }
+                Logger.database.info("📱 [TaskRepository] [req: \(requestId)] local returned \(cachedActivities.count) activities")
 
-                    Logger.database.info("✅ Supabase returned \(response.count) activity records")
+                // We need listings to create ActivityWithDetails
+                let cachedListings = try await MainActor.run { try localDatabase.fetchListings() }
+                let listingsById = Dictionary(uniqueKeysWithValues: cachedListings.map { ($0.id, $0) })
 
-                    let mapped = response.compactMap(mapActivityResponse)
-                    Logger.database.info(
-                        """
-                        📊 After mapping: \(mapped.count) activities \
-                        (dropped \(response.count - mapped.count) due to missing listings)
-                        """
-                    )
-
-                    return mapped
-                } catch let error as URLError {
-                    Logger.database.error("❌ Network error connecting to Supabase")
-                    Logger.database.error("Error code: \(error.errorCode), Description: \(error.localizedDescription)")
-                    Logger.database.error("Failing URL: \(error.failingURL?.absoluteString ?? "unknown")")
-                    throw error
-                } catch {
-                    Logger.database.error("❌ Supabase query failed: \(String(describing: error))")
-                    Logger.database.error("Error type: \(type(of: error))")
-                    throw error
+                // Map cached activities to ActivityWithDetails
+                let cachedWithDetails = cachedActivities.compactMap { activity -> ActivityWithDetails? in
+                    guard let listing = listingsById[activity.listingId] else {
+                        return nil
+                    }
+                    return ActivityWithDetails(task: activity, listing: listing)
                 }
+
+                // Background refresh from Supabase
+                Task.detached {
+                    do {
+                        Logger.database.info("☁️ [TaskRepository] [req: \(requestId)] refreshing from Supabase...")
+                        let response: [ActivityResponse] = try await supabase
+                            .from("activities")
+                            .select("*, listings(*)")
+                            .is("deleted_at", value: nil)
+                            .order("priority", ascending: false)
+                            .order("created_at", ascending: false)
+                            .execute()
+                            .value
+
+                        Logger.database.info("✅ [TaskRepository] [req: \(requestId)] Supabase returned \(response.count) activity records")
+
+                        // Extract activities and listings from response
+                        let activities = response.compactMap { row -> Activity? in
+                            Activity(
+                                id: row.taskId,
+                                listingId: row.listingId,
+                                realtorId: row.realtorId,
+                                name: row.name,
+                                description: row.description,
+                                taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),
+                                status: TaskStatus(rawValue: row.status) ?? .open,
+                                priority: row.priority,
+                                visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
+                                assignedStaffId: row.assignedStaffId,
+                                dueDate: row.dueDate,
+                                claimedAt: row.claimedAt,
+                                completedAt: row.completedAt,
+                                createdAt: row.createdAt,
+                                updatedAt: row.updatedAt,
+                                deletedAt: row.deletedAt,
+                                deletedBy: row.deletedBy,
+                                inputs: row.inputs,
+                                outputs: row.outputs
+                            )
+                        }
+
+                        let listings = response.compactMap { $0.listing }
+
+                        // Persist to local database
+                        try await MainActor.run { try localDatabase.upsertActivities(activities) }
+                        try await MainActor.run { try localDatabase.upsertListings(listings) }
+                        Logger.database.info("💾 [TaskRepository] [req: \(requestId)] saved \(activities.count) activities and \(listings.count) listings to local database")
+                        Logger.database.info("✅ [TaskRepository] [req: \(requestId)] completed with result: \(activities.count) activities")
+                    } catch {
+                        Logger.database.error("❌ [TaskRepository] [req: \(requestId)] background refresh failed: \(error.localizedDescription)")
+                    }
+                }
+
+                return cachedWithDetails
             },
             fetchDeletedTasks: {
                 Logger.database.info("Fetching deleted tasks")
@@ -237,8 +277,10 @@ extension TaskRepositoryClient {
                 return response
             },
             claimActivity: { taskId, staffId in
+                Logger.database.info("✋ TaskRepository.claimActivity(\(taskId))")
                 let now = Date()
 
+                // Update Supabase first
                 let response: Activity = try await supabase
                     .from("activities")
                     .update([
@@ -251,6 +293,12 @@ extension TaskRepositoryClient {
                     .single()
                     .execute()
                     .value
+
+                Logger.database.info("✅ Supabase updated activity")
+
+                // Update local database
+                try await MainActor.run { try localDatabase.upsertActivities([response]) }
+                Logger.database.info("💾 Updated local database with claimed activity")
 
                 return response
             },
@@ -267,8 +315,10 @@ extension TaskRepositoryClient {
                     .execute()
             },
             deleteActivity: { taskId, deletedBy in
+                Logger.database.info("🗑️ TaskRepository.deleteActivity(\(taskId))")
                 let now = Date()
 
+                // Update Supabase first
                 try await supabase
                     .from("activities")
                     .update([
@@ -277,6 +327,36 @@ extension TaskRepositoryClient {
                     ])
                     .eq("task_id", value: taskId)
                     .execute()
+
+                Logger.database.info("✅ Supabase marked activity as deleted")
+
+                // Update local database - fetch and mark as deleted
+                let cachedActivities = try await MainActor.run { try localDatabase.fetchActivities() }
+                if let activity = cachedActivities.first(where: { $0.id == taskId }) {
+                    let deletedActivity = Activity(
+                        id: activity.id,
+                        listingId: activity.listingId,
+                        realtorId: activity.realtorId,
+                        name: activity.name,
+                        description: activity.description,
+                        taskCategory: activity.taskCategory,
+                        status: activity.status,
+                        priority: activity.priority,
+                        visibilityGroup: activity.visibilityGroup,
+                        assignedStaffId: activity.assignedStaffId,
+                        dueDate: activity.dueDate,
+                        claimedAt: activity.claimedAt,
+                        completedAt: activity.completedAt,
+                        createdAt: activity.createdAt,
+                        updatedAt: activity.updatedAt,
+                        deletedAt: now,
+                        deletedBy: deletedBy,
+                        inputs: activity.inputs,
+                        outputs: activity.outputs
+                    )
+                    try await MainActor.run { try localDatabase.upsertActivities([deletedActivity]) }
+                    Logger.database.info("💾 Updated local database with deletion")
+                }
             },
             fetchTasksByRealtor: { realtorId in
                 let response: [AgentTask] = try await supabase
@@ -293,18 +373,76 @@ extension TaskRepositoryClient {
                 return response.map { TaskWithMessages(task: $0, messages: []) }
             },
             fetchActivitiesByRealtor: { realtorId in
-                // Query activities with nested listings join
-                let response: [ActivityResponse] = try await supabase
-                    .from("activities")
-                    .select("*, listings(*)")
-                    .eq("realtor_id", value: realtorId)
-                    .is("deleted_at", value: nil)
-                    .order("priority", ascending: false)
-                    .order("created_at", ascending: false)
-                    .execute()
-                    .value
+                Logger.database.info("🔍 TaskRepository.fetchActivitiesByRealtor(\(realtorId)) - Reading from local database...")
 
-                return response.compactMap(mapActivityResponse)
+                // Read from local database first - filter by realtor_id
+                let allCached = try await MainActor.run { try localDatabase.fetchActivities() }
+                let cachedForRealtor = allCached.filter { $0.realtorId == realtorId }
+                Logger.database.info("📱 Local database returned \(cachedForRealtor.count) activities for realtor")
+
+                // Get listings for ActivityWithDetails
+                let cachedListings = try await MainActor.run { try localDatabase.fetchListings() }
+                let listingsById = Dictionary(uniqueKeysWithValues: cachedListings.map { ($0.id, $0) })
+
+                let cachedWithDetails = cachedForRealtor.compactMap { activity -> ActivityWithDetails? in
+                    guard let listing = listingsById[activity.listingId] else {
+                        return nil
+                    }
+                    return ActivityWithDetails(task: activity, listing: listing)
+                }
+
+                // Background refresh from Supabase
+                Task.detached {
+                    do {
+                        Logger.database.info("☁️ Refreshing realtor \(realtorId) activities from Supabase...")
+                        let response: [ActivityResponse] = try await supabase
+                            .from("activities")
+                            .select("*, listings(*)")
+                            .eq("realtor_id", value: realtorId)
+                            .is("deleted_at", value: nil)
+                            .order("priority", ascending: false)
+                            .order("created_at", ascending: false)
+                            .execute()
+                            .value
+
+                        Logger.database.info("✅ Supabase returned \(response.count) activities for realtor")
+
+                        // Extract and persist
+                        let activities = response.compactMap { row -> Activity? in
+                            Activity(
+                                id: row.taskId,
+                                listingId: row.listingId,
+                                realtorId: row.realtorId,
+                                name: row.name,
+                                description: row.description,
+                                taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),
+                                status: TaskStatus(rawValue: row.status) ?? .open,
+                                priority: row.priority,
+                                visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
+                                assignedStaffId: row.assignedStaffId,
+                                dueDate: row.dueDate,
+                                claimedAt: row.claimedAt,
+                                completedAt: row.completedAt,
+                                createdAt: row.createdAt,
+                                updatedAt: row.updatedAt,
+                                deletedAt: row.deletedAt,
+                                deletedBy: row.deletedBy,
+                                inputs: row.inputs,
+                                outputs: row.outputs
+                            )
+                        }
+
+                        let listings = response.compactMap { $0.listing }
+
+                        try await MainActor.run { try localDatabase.upsertActivities(activities) }
+                        try await MainActor.run { try localDatabase.upsertListings(listings) }
+                        Logger.database.info("💾 Saved activities and listings to local database")
+                    } catch {
+                        Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                    }
+                }
+
+                return cachedWithDetails
             },
             fetchCompletedTasks: {
                 Logger.database.info("Fetching completed tasks")
@@ -321,21 +459,80 @@ extension TaskRepositoryClient {
                 return tasks
             },
             fetchActivitiesByStaff: { staffId in
-                // Query activities with nested listings join by assigned_staff_id
-                let response: [ActivityResponse] = try await supabase
-                    .from("activities")
-                    .select("*, listings(*)")
-                    .eq("assigned_staff_id", value: staffId)
-                    .is("deleted_at", value: nil)
-                    .order("priority", ascending: false)
-                    .order("created_at", ascending: false)
-                    .execute()
-                    .value
+                Logger.database.info("🔍 TaskRepository.fetchActivitiesByStaff(\(staffId)) - Reading from local database...")
 
-                return response.compactMap(mapActivityResponse)
+                // Read from local database first - filter by assigned_staff_id
+                let allCached = try await MainActor.run { try localDatabase.fetchActivities() }
+                let cachedForStaff = allCached.filter { $0.assignedStaffId == staffId }
+                Logger.database.info("📱 Local database returned \(cachedForStaff.count) activities for staff")
+
+                // Get listings for ActivityWithDetails
+                let cachedListings = try await MainActor.run { try localDatabase.fetchListings() }
+                let listingsById = Dictionary(uniqueKeysWithValues: cachedListings.map { ($0.id, $0) })
+
+                let cachedWithDetails = cachedForStaff.compactMap { activity -> ActivityWithDetails? in
+                    guard let listing = listingsById[activity.listingId] else {
+                        return nil
+                    }
+                    return ActivityWithDetails(task: activity, listing: listing)
+                }
+
+                // Background refresh from Supabase
+                Task.detached {
+                    do {
+                        Logger.database.info("☁️ Refreshing staff \(staffId) activities from Supabase...")
+                        let response: [ActivityResponse] = try await supabase
+                            .from("activities")
+                            .select("*, listings(*)")
+                            .eq("assigned_staff_id", value: staffId)
+                            .is("deleted_at", value: nil)
+                            .order("priority", ascending: false)
+                            .order("created_at", ascending: false)
+                            .execute()
+                            .value
+
+                        Logger.database.info("✅ Supabase returned \(response.count) activities for staff")
+
+                        // Extract and persist
+                        let activities = response.compactMap { row -> Activity? in
+                            Activity(
+                                id: row.taskId,
+                                listingId: row.listingId,
+                                realtorId: row.realtorId,
+                                name: row.name,
+                                description: row.description,
+                                taskCategory: row.taskCategory.flatMap(TaskCategory.init(rawValue:)),
+                                status: TaskStatus(rawValue: row.status) ?? .open,
+                                priority: row.priority,
+                                visibilityGroup: Activity.VisibilityGroup(rawValue: row.visibilityGroup) ?? .both,
+                                assignedStaffId: row.assignedStaffId,
+                                dueDate: row.dueDate,
+                                claimedAt: row.claimedAt,
+                                completedAt: row.completedAt,
+                                createdAt: row.createdAt,
+                                updatedAt: row.updatedAt,
+                                deletedAt: row.deletedAt,
+                                deletedBy: row.deletedBy,
+                                inputs: row.inputs,
+                                outputs: row.outputs
+                            )
+                        }
+
+                        let listings = response.compactMap { $0.listing }
+
+                        try await MainActor.run { try localDatabase.upsertActivities(activities) }
+                        try await MainActor.run { try localDatabase.upsertListings(listings) }
+                        Logger.database.info("💾 Saved activities and listings to local database")
+                    } catch {
+                        Logger.database.error("❌ Background refresh failed: \(error.localizedDescription)")
+                    }
+                }
+
+                return cachedWithDetails
             }
         )
     }
+}
 
 // MARK: - Preview Implementation
 

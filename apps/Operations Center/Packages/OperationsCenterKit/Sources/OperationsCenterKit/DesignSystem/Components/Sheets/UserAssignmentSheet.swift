@@ -169,10 +169,12 @@ extension Staff.StaffRole {
         switch self {
         case .admin:
             return "Admin"
-        case .manager:
-            return "Manager"
-        case .staff:
-            return "Staff"
+        case .operations:
+            return "Operations"
+        case .marketing:
+            return "Marketing"
+        case .support:
+            return "Support"
         }
     }
 }
@@ -191,29 +193,38 @@ extension Staff.StaffRole {
                 email: "john@example.com",
                 phone: nil,
                 role: .admin,
-                isActive: true,
+                status: "active",
+                slackUserId: nil,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                deletedAt: nil,
+                metadata: nil
             ),
             Staff(
                 id: "2",
                 name: "Jane Doe",
                 email: "jane@example.com",
                 phone: nil,
-                role: .manager,
-                isActive: true,
+                role: .operations,
+                status: "active",
+                slackUserId: nil,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                deletedAt: nil,
+                metadata: nil
             ),
             Staff(
                 id: "3",
                 name: "Bob Johnson",
                 email: "bob@example.com",
                 phone: nil,
-                role: .staff,
-                isActive: true,
+                role: .marketing,
+                status: "active",
+                slackUserId: nil,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                deletedAt: nil,
+                metadata: nil
             )
         ]
 

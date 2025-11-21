@@ -10,6 +10,7 @@ import Foundation
 import Observation
 import OperationsCenterKit
 import OSLog
+import Supabase
 
 @Observable
 @MainActor
@@ -36,6 +37,34 @@ final class InboxStore {
     private let realtorRepository: RealtorRepositoryClient
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
+    /// Coalescers for request deduplication
+    private let activityCoalescer: ActivityFetchCoalescer
+    private let noteCoalescer: NoteFetchCoalescer
+
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime channels (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var acknowledgementsChannel = supabase.realtimeV2.channel("inbox_acknowledgments")
+
+    @ObservationIgnored
+    private lazy var agentTasksChannel = supabase.realtimeV2.channel("inbox_agent_tasks")
+
+    @ObservationIgnored
+    private lazy var activitiesChannel = supabase.realtimeV2.channel("inbox_activities")
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var acknowledgementsRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var agentTasksRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
     // MARK: - Initialization
 
     /// Full initializer with optional initial data for previews
@@ -44,6 +73,9 @@ final class InboxStore {
         listingRepository: ListingRepositoryClient,
         noteRepository: ListingNoteRepositoryClient,
         realtorRepository: RealtorRepositoryClient,
+        supabase: SupabaseClient,
+        activityCoalescer: ActivityFetchCoalescer,
+        noteCoalescer: NoteFetchCoalescer,
         initialTasks: [TaskWithMessages] = [],
         initialListings: [ListingWithDetails] = []
     ) {
@@ -51,8 +83,46 @@ final class InboxStore {
         self.listingRepository = listingRepository
         self.noteRepository = noteRepository
         self.realtorRepository = realtorRepository
+        self.supabase = supabase
+        self.activityCoalescer = activityCoalescer
+        self.noteCoalescer = noteCoalescer
         self.tasks = initialTasks
         self.listings = initialListings
+    }
+
+    deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await acknowledgementsChannel.unsubscribe()
+            await agentTasksChannel.unsubscribe()
+            await activitiesChannel.unsubscribe()
+        }
+        acknowledgementsRealtimeTask?.cancel()
+        agentTasksRealtimeTask?.cancel()
+        activitiesRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    /// Resolves actor isolation issues in preview contexts
+    @MainActor
+    static func makePreview(
+        supabase: SupabaseClient,
+        initialTasks: [TaskWithMessages] = [],
+        initialListings: [ListingWithDetails] = []
+    ) -> InboxStore {
+        InboxStore(
+            taskRepository: .preview,
+            listingRepository: .preview,
+            noteRepository: .preview,
+            realtorRepository: .preview,
+            supabase: supabase,
+            activityCoalescer: ActivityFetchCoalescer(),
+            noteCoalescer: NoteFetchCoalescer(),
+            initialTasks: initialTasks,
+            initialListings: initialListings
+        )
     }
 
     // MARK: - Public Methods
@@ -65,8 +135,9 @@ final class InboxStore {
             let currentUserId = try await authClient.currentUserId()
 
             // Fetch agent tasks, activities, and unacknowledged listings concurrently
+            // Activities use coalescer to prevent duplicate fetches
             async let agentTasks = taskRepository.fetchTasks()
-            async let activityDetails = taskRepository.fetchActivities()
+            async let activityDetails = activityCoalescer.fetch(using: taskRepository)
             async let unacknowledgedListingIds = listingRepository.fetchUnacknowledgedListings(currentUserId)
 
             tasks = try await agentTasks
@@ -128,6 +199,9 @@ final class InboxStore {
                 return results
             }
 
+            // Start realtime subscriptions AFTER initial load
+            await setupRealtimeSubscriptions()
+
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -142,9 +216,10 @@ final class InboxStore {
     // MARK: - Private Helpers
 
     /// Fetch notes for a listing, logging any errors
+    /// Uses coalescer to prevent duplicate fetches for same listing
     private func fetchNotes(for listingId: String) async -> (notes: [ListingNote], hasError: Bool) {
         do {
-            let notes = try await noteRepository.fetchNotes(listingId)
+            let notes = try await noteCoalescer.fetch(listingId: listingId, using: noteRepository)
             return (notes, false)
         } catch {
             Logger.database.error(
@@ -263,7 +338,7 @@ final class InboxStore {
             id: tempId,
             listingId: listingId,
             content: trimmed,
-            type: "general",
+            type: .general,
             createdBy: "Creating...",
             createdByName: "You",
             createdAt: Date(),
@@ -319,5 +394,118 @@ final class InboxStore {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup all realtime subscriptions - inbox is a hub, needs multiple channels
+    private func setupRealtimeSubscriptions() async {
+        await setupAcknowledgementsRealtime()
+        await setupAgentTasksRealtime()
+        await setupActivitiesRealtime()
+    }
+
+    /// Setup realtime subscription for listing acknowledgments
+    /// When someone acks a listing, it should vanish from everyone's inbox
+    private func setupAcknowledgementsRealtime() async {
+        acknowledgementsRealtimeTask?.cancel()
+
+        acknowledgementsRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = acknowledgementsChannel.postgresChange(AnyAction.self, table: "listing_acknowledgments")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await acknowledgementsChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAcknowledgementChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Acknowledgments realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime acknowledgment changes - simple refresh strategy
+    private func handleAcknowledgementChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Acknowledgment change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        // Someone acked a listing, so it should disappear from unacknowledged listings
+        await fetchTasks()
+    }
+
+    /// Setup realtime subscription for agent tasks
+    /// When someone claims or updates a task, everyone sees it instantly
+    private func setupAgentTasksRealtime() async {
+        agentTasksRealtimeTask?.cancel()
+
+        agentTasksRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = agentTasksChannel.postgresChange(AnyAction.self, table: "agent_tasks")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await agentTasksChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAgentTaskChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Agent tasks realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime agent task changes - simple refresh strategy
+    private func handleAgentTaskChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Agent task change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        await fetchTasks()
+    }
+
+    /// Setup realtime subscription for activities
+    /// When new activities appear or existing ones update, everyone sees it
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = activitiesChannel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await activitiesChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleActivityChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activity changes - simple refresh strategy
+    private func handleActivityChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Activity change detected, refreshing inbox...")
+
+        // Simple approach: re-fetch everything
+        // Activities are filtered by unacknowledged listings anyway
+        await fetchTasks()
     }
 }

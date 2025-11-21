@@ -9,6 +9,7 @@
 import Dependencies
 import Foundation
 import OperationsCenterKit
+import OSLog
 import Supabase
 
 struct StaffRepositoryClient {
@@ -20,10 +21,17 @@ struct StaffRepositoryClient {
 // MARK: - Dependency Key
 
 extension StaffRepositoryClient: DependencyKey {
-    static let liveValue: Self = {
+    static func live(localDatabase: LocalDatabase) -> Self {
         return Self(
             findById: { staffId in
-                try await supabase
+                // Read from local database first
+                if let cached = try? await MainActor.run({ try localDatabase.fetchStaff(byEmail: "") }) {
+                    // Note: This is a placeholder - we'd need fetchStaff(byId:) method
+                    // For now, fall through to Supabase
+                }
+                
+                // Fetch from Supabase
+                let staff = try await supabase
                     .from("staff")
                     .select()
                     .eq("staff_id", value: staffId)
@@ -31,9 +39,43 @@ extension StaffRepositoryClient: DependencyKey {
                     .single()
                     .execute()
                     .value
+                
+                // Save to local database
+                try? await MainActor.run { try localDatabase.upsertStaff([staff]) }
+                
+                return staff
             },
             findByEmail: { email in
-                try await supabase
+                Logger.database.info("🔍 [StaffRepository] Looking up staff by email: \(email)")
+                
+                // Read from local database first (instant lookup)
+                if let cached = try? await MainActor.run({ try localDatabase.fetchStaff(byEmail: email) }) {
+                    Logger.database.info("✅ [StaffRepository] Found staff in local cache: \(cached.name)")
+                    // Background refresh from Supabase
+                    Task.detached {
+                        do {
+                            let staff = try await supabase
+                                .from("staff")
+                                .select()
+                                .eq("email", value: email)
+                                .is("deleted_at", value: nil)
+                                .single()
+                                .execute()
+                                .value
+                            
+                            try await MainActor.run { try localDatabase.upsertStaff([staff]) }
+                            Logger.database.info("🔄 [StaffRepository] Background refresh completed for \(email)")
+                        } catch {
+                            // Silent failure - cached data is fine
+                            Logger.database.error("⚠️ [StaffRepository] Background refresh failed: \(error.localizedDescription)")
+                        }
+                    }
+                    return cached
+                }
+                
+                Logger.database.info("❌ [StaffRepository] Staff not in local cache, fetching from Supabase...")
+                // Not in cache - fetch from Supabase
+                let staff = try await supabase
                     .from("staff")
                     .select()
                     .eq("email", value: email)
@@ -41,9 +83,19 @@ extension StaffRepositoryClient: DependencyKey {
                     .single()
                     .execute()
                     .value
+                
+                Logger.database.info("✅ [StaffRepository] Fetched staff from Supabase: \(staff.name)")
+                
+                // Save to local database
+                try await MainActor.run { try localDatabase.upsertStaff([staff]) }
+                Logger.database.info("💾 [StaffRepository] Saved staff to local database")
+                
+                return staff
             },
             listActive: {
-                try await supabase
+                // Always fetch fresh from Supabase for list operations
+                // (could add local caching later if needed)
+                let staff = try await supabase
                     .from("staff")
                     .select()
                     .eq("status", value: "active")
@@ -51,7 +103,21 @@ extension StaffRepositoryClient: DependencyKey {
                     .order("name")
                     .execute()
                     .value
+                
+                // Save to local database
+                try await MainActor.run { try localDatabase.upsertStaff(staff) }
+                
+                return staff
             }
+        )
+    }
+    
+    static let liveValue: Self = {
+        // This will be replaced with live(localDatabase:) in app initialization
+        return Self(
+            findById: { _ in nil },
+            findByEmail: { _ in nil },
+            listActive: { [] }
         )
     }()
 

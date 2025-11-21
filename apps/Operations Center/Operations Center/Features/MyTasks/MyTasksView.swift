@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// My Tasks screen
 ///
@@ -29,8 +30,16 @@ struct MyTasksView: View {
 
     /// Initialize view with repository injection
     /// Store created once and tracked via @Observable macro + @State
-    init(repository: TaskRepositoryClient) {
-        _store = State(initialValue: MyTasksStore(repository: repository))
+    init(
+        repository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        taskCoalescer: TaskFetchCoalescer
+    ) {
+        _store = State(initialValue: MyTasksStore(
+            repository: repository,
+            supabase: supabase,
+            taskCoalescer: taskCoalescer
+        ))
     }
 
     // MARK: - Body
@@ -172,5 +181,9 @@ struct MyTasksView: View {
 // MARK: - Preview
 
 #Preview {
-    MyTasksView(repository: .preview)
+    MyTasksView(
+        repository: .preview,
+        supabase: supabase,
+        taskCoalescer: TaskFetchCoalescer()
+    )
 }

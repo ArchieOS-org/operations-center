@@ -10,6 +10,7 @@ import Dependencies
 import Foundation
 import OperationsCenterKit
 import OSLog
+import Supabase
 import SwiftUI
 
 /// Store for My Listings screen - listings where current user has claimed at least one activity
@@ -57,8 +58,35 @@ final class MyListingsStore {
     private let listingRepository: ListingRepositoryClient
     private let taskRepository: TaskRepositoryClient
 
+    /// Coalescer for request deduplication
+    private let listingCoalescer: ListingFetchCoalescer
+
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
+
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime channels (created once, prevents "postgresChange after joining" error)
+    @ObservationIgnored
+    private lazy var activitiesChannel = supabase.realtimeV2.channel("my_listings_activities")
+
+    @ObservationIgnored
+    private lazy var listingsChannel = supabase.realtimeV2.channel("my_listings_listings")
+
+    @ObservationIgnored
+    private lazy var acknowledgementsChannel = supabase.realtimeV2.channel("my_listings_acknowledgments")
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var listingsRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var acknowledgementsRealtimeTask: Task<Void, Never>?
 
     // MARK: - Private Methods
 
@@ -77,9 +105,41 @@ final class MyListingsStore {
 
     // MARK: - Initialization
 
-    init(listingRepository: ListingRepositoryClient, taskRepository: TaskRepositoryClient) {
+    init(
+        listingRepository: ListingRepositoryClient,
+        taskRepository: TaskRepositoryClient,
+        supabase: SupabaseClient,
+        listingCoalescer: ListingFetchCoalescer
+    ) {
         self.listingRepository = listingRepository
         self.taskRepository = taskRepository
+        self.supabase = supabase
+        self.listingCoalescer = listingCoalescer
+    }
+
+    deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await activitiesChannel.unsubscribe()
+            await listingsChannel.unsubscribe()
+            await acknowledgementsChannel.unsubscribe()
+        }
+        activitiesRealtimeTask?.cancel()
+        listingsRealtimeTask?.cancel()
+        acknowledgementsRealtimeTask?.cancel()
+    }
+
+    // MARK: - Preview Support
+
+    /// Preview factory for SwiftUI previews
+    @MainActor
+    static func makePreview(supabase: SupabaseClient) -> MyListingsStore {
+        MyListingsStore(
+            listingRepository: .preview,
+            taskRepository: .preview,
+            supabase: supabase,
+            listingCoalescer: ListingFetchCoalescer()
+        )
     }
 
     // MARK: - Actions
@@ -97,7 +157,7 @@ final class MyListingsStore {
 
             // Then: Fetch activities and listings in PARALLEL
             async let userListingTasks = taskRepository.fetchActivitiesByStaff(currentUserId)
-            async let allListings = listingRepository.fetchListings()
+            async let allListings = listingCoalescer.fetch(using: listingRepository)
 
             let activities = try await userListingTasks
             let listings = try await allListings
@@ -141,6 +201,9 @@ final class MyListingsStore {
             listingCategories = categoryMapping.filter { acknowledgedListingIds.contains($0.key) }
 
             Logger.database.info("Fetched \(self.listings.count) acknowledged listings with user activities")
+
+            // Start realtime subscriptions AFTER initial load
+            await setupRealtimeSubscriptions()
         } catch {
             Logger.database.error("Failed to fetch my listings: \(error.localizedDescription)")
             errorMessage = "Failed to load your listings: \(error.localizedDescription)"
@@ -170,5 +233,113 @@ final class MyListingsStore {
             Logger.database.error("Failed to delete listing: \(error.localizedDescription)")
             errorMessage = "Failed to delete listing: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup all realtime subscriptions
+    private func setupRealtimeSubscriptions() async {
+        await setupActivitiesRealtime()
+        await setupListingsRealtime()
+        await setupAcknowledgementsRealtime()
+    }
+
+    /// Setup realtime subscription for activities
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = activitiesChannel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await activitiesChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleActivitiesChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("My listings activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activities changes - simple refresh strategy
+    private func handleActivitiesChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Activities change detected, refreshing...")
+
+        // Simple approach: re-fetch everything to rebuild category mapping
+        await fetchMyListings()
+    }
+
+    /// Setup realtime subscription for listings
+    private func setupListingsRealtime() async {
+        listingsRealtimeTask?.cancel()
+
+        listingsRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = listingsChannel.postgresChange(AnyAction.self, table: "listings")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await listingsChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleListingsChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("My listings listings realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime listings changes - simple refresh strategy
+    private func handleListingsChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Listings change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchMyListings()
+    }
+
+    /// Setup realtime subscription for listing acknowledgments
+    private func setupAcknowledgementsRealtime() async {
+        acknowledgementsRealtimeTask?.cancel()
+
+        acknowledgementsRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = acknowledgementsChannel.postgresChange(AnyAction.self, table: "listing_acknowledgments")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await acknowledgementsChannel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAcknowledgementsChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("My listings acknowledgments realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime acknowledgments changes - simple refresh strategy
+    private func handleAcknowledgementsChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Acknowledgments change detected, refreshing...")
+
+        // Simple approach: re-fetch everything (acknowledgment state affects visibility)
+        await fetchMyListings()
     }
 }

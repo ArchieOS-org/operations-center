@@ -8,6 +8,7 @@
 
 import SwiftUI
 import OperationsCenterKit
+import Supabase
 
 /// Agent Detail screen - displays all listings and tasks for a specific agent
 /// Shows both claimed and unclaimed work
@@ -23,12 +24,14 @@ struct AgentDetailView: View {
     init(
         realtorId: String,
         realtorRepository: RealtorRepositoryClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        supabase: SupabaseClient
     ) {
         _store = State(initialValue: AgentDetailStore(
             realtorId: realtorId,
             realtorRepository: realtorRepository,
-            taskRepository: taskRepository
+            taskRepository: taskRepository,
+            supabase: supabase
         ))
     }
 
@@ -234,7 +237,8 @@ struct AgentDetailView: View {
         AgentDetailView(
             realtorId: "realtor_001",
             realtorRepository: .preview,
-            taskRepository: .preview
+            taskRepository: .preview,
+            supabase: supabase
         )
     }
 }

@@ -11,6 +11,7 @@ import Foundation
 import SwiftUI
 import OSLog
 import OperationsCenterKit
+import Supabase
 
 /// Store managing Agent Detail screen state
 /// Shows all listings and tasks for a specific agent (both claimed and unclaimed)
@@ -37,16 +38,54 @@ final class AgentDetailStore {
     /// Authentication client for current user ID
     @ObservationIgnored @Dependency(\.authClient) private var authClient
 
+    /// Supabase client for realtime subscriptions
+    @ObservationIgnored
+    private let supabase: SupabaseClient
+
+    /// Realtime channels (stored to prevent "postgresChange after joining" error)
+    @ObservationIgnored
+    private var staffChannel: RealtimeChannelV2?
+
+    @ObservationIgnored
+    private var agentTasksChannel: RealtimeChannelV2?
+
+    @ObservationIgnored
+    private var activitiesChannel: RealtimeChannelV2?
+
+    /// Realtime subscription tasks
+    @ObservationIgnored
+    private var staffRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var agentTasksRealtimeTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var activitiesRealtimeTask: Task<Void, Never>?
+
     // MARK: - Initialization
 
     init(
         realtorId: String,
         realtorRepository: RealtorRepositoryClient,
-        taskRepository: TaskRepositoryClient
+        taskRepository: TaskRepositoryClient,
+        supabase: SupabaseClient
     ) {
         self.realtorId = realtorId
         self.realtorRepository = realtorRepository
         self.taskRepository = taskRepository
+        self.supabase = supabase
+    }
+
+    deinit {
+        Task.detached { [weak self] in
+            guard let self else { return }
+            await staffChannel?.unsubscribe()
+            await agentTasksChannel?.unsubscribe()
+            await activitiesChannel?.unsubscribe()
+        }
+        staffRealtimeTask?.cancel()
+        agentTasksRealtimeTask?.cancel()
+        activitiesRealtimeTask?.cancel()
     }
 
     // MARK: - Data Fetching
@@ -81,6 +120,9 @@ final class AgentDetailStore {
                 \(fetchedActivities.count) activities, \(fetchedTasks.count) agent tasks
                 """
             )
+
+            // Start realtime subscriptions AFTER initial load
+            await setupRealtimeSubscriptions()
         } catch {
             Logger.database.error("Failed to fetch agent data: \(error.localizedDescription)")
             errorMessage = "Failed to load agent data: \(error.localizedDescription)"
@@ -198,5 +240,134 @@ final class AgentDetailStore {
             Logger.tasks.error("Failed to delete activity: \(error.localizedDescription)")
             errorMessage = "Failed to delete activity: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Realtime Subscriptions
+
+    /// Setup all realtime subscriptions
+    private func setupRealtimeSubscriptions() async {
+        await setupStaffRealtime()
+        await setupAgentTasksRealtime()
+        await setupActivitiesRealtime()
+    }
+
+    /// Setup realtime subscription for staff (realtor profile)
+    private func setupStaffRealtime() async {
+        staffRealtimeTask?.cancel()
+
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if staffChannel == nil {
+            staffChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_staff")
+        }
+
+        guard let channel = staffChannel else { return }
+
+        staffRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "staff")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleStaffChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.database.error("Agent detail staff realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime staff changes - simple refresh strategy
+    private func handleStaffChange(_ change: AnyAction) async {
+        Logger.database.info("Realtime: Staff change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchAgentData()
+    }
+
+    /// Setup realtime subscription for agent tasks
+    private func setupAgentTasksRealtime() async {
+        agentTasksRealtimeTask?.cancel()
+
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if agentTasksChannel == nil {
+            agentTasksChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_tasks")
+        }
+
+        guard let channel = agentTasksChannel else { return }
+
+        agentTasksRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "agent_tasks")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleAgentTasksChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.tasks.error("Agent detail tasks realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime agent tasks changes - simple refresh strategy
+    private func handleAgentTasksChange(_ change: AnyAction) async {
+        Logger.tasks.info("Realtime: Agent tasks change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchAgentData()
+    }
+
+    /// Setup realtime subscription for activities
+    private func setupActivitiesRealtime() async {
+        activitiesRealtimeTask?.cancel()
+
+        // Create channel once and store reference (prevents "postgresChange after joining" error)
+        if activitiesChannel == nil {
+            activitiesChannel = supabase.realtimeV2.channel("agent_detail_\(realtorId)_activities")
+        }
+
+        guard let channel = activitiesChannel else { return }
+
+        activitiesRealtimeTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                // CRITICAL: Configure stream BEFORE subscribing (per Supabase Realtime V2 docs)
+                let stream = channel.postgresChange(AnyAction.self, table: "activities")
+
+                // Now subscribe to start receiving events (safe to call multiple times)
+                try await channel.subscribeWithError()
+
+                // Listen for changes - structured concurrency handles cancellation
+                for await change in stream {
+                    await self.handleActivitiesChange(change)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.tasks.error("Agent detail activities realtime error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Handle realtime activities changes - simple refresh strategy
+    private func handleActivitiesChange(_ change: AnyAction) async {
+        Logger.tasks.info("Realtime: Activities change detected, refreshing...")
+
+        // Simple approach: re-fetch everything
+        await fetchAgentData()
     }
 }

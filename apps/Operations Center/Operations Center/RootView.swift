@@ -6,9 +6,13 @@
 //
 
 import SwiftUI
+import SwiftData
+import Supabase
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var path: [Route] = []
 
     var body: some View {
@@ -57,7 +61,50 @@ struct RootView: View {
             .task {
                 // Skip startup in preview mode - zero network calls
                 guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+
+                // Phase 1: Fast startup - load cached data and connect Realtime
                 await appState.startup()
+                await appState.connectRealtimeIfNeeded()
+
+                // Phase 2: Background full sync - doesn't block UI
+                // Runs in parallel with user interaction
+                Task.detached { @MainActor in
+                    do {
+                        try await BackgroundSyncManager.shared.performFullSync()
+                    } catch {
+                        print("⚠️ [RootView] Background full sync failed: \(error)")
+                    }
+                }
+
+                // Schedule background refresh (iOS will decide when to run)
+                BackgroundSyncManager.shared.scheduleAppRefresh()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                // Skip lifecycle management in preview mode
+                guard !CommandLine.arguments.contains("--use-preview-data") else { return }
+
+                Task {
+                    switch newPhase {
+                    case .active:
+                        // App came to foreground - reconnect Realtime
+                        await appState.connectRealtimeIfNeeded()
+
+                        // Run full sync in background (doesn't block UI)
+                        Task.detached { @MainActor in
+                            do {
+                                try await BackgroundSyncManager.shared.performFullSync()
+                            } catch {
+                                print("⚠️ [RootView] Foreground full sync failed: \(error)")
+                            }
+                        }
+
+                    case .inactive, .background:
+                        // App going to background - disconnect Realtime to save battery
+                        appState.disconnectRealtime()
+                    @unknown default:
+                        break
+                    }
+                }
             }
         }
     }
@@ -67,10 +114,13 @@ struct RootView: View {
         let usePreviewData = CommandLine.arguments.contains("--use-preview-data")
 
         // DRY up repository selection - extract constants to avoid repetition
-        let taskRepo: TaskRepositoryClient = usePreviewData ? .preview : .live
-        let listingRepo: ListingRepositoryClient = usePreviewData ? .preview : .live
+        let localDB: LocalDatabase = usePreviewData ? PreviewLocalDatabase() : SwiftDataLocalDatabase(context: modelContext)
+        let taskRepo: TaskRepositoryClient = usePreviewData ? .preview : .live(localDatabase: localDB)
+        let listingRepo: ListingRepositoryClient = usePreviewData ? .preview : .live(localDatabase: localDB)
         let realtorRepo: RealtorRepositoryClient = usePreviewData ? .preview : .live
-        let noteRepo: ListingNoteRepositoryClient = usePreviewData ? .preview : .live
+        let noteRepo: ListingNoteRepositoryClient = usePreviewData ? .preview : .live(localDatabase: localDB)
+        // Global supabase returns stub in preview mode (--use-preview-data flag)
+        let supabaseClient: SupabaseClient = supabase
 
         switch route {
         case .inbox:
@@ -78,14 +128,23 @@ struct RootView: View {
                 taskRepository: taskRepo,
                 listingRepository: listingRepo,
                 noteRepository: noteRepo,
-                realtorRepository: realtorRepo
+                realtorRepository: realtorRepo,
+                supabase: supabaseClient,
+                activityCoalescer: appState.activityCoalescer,
+                noteCoalescer: appState.noteCoalescer
             ))
         case .myTasks:
-            MyTasksView(repository: taskRepo)
+            MyTasksView(
+                repository: taskRepo,
+                supabase: supabaseClient,
+                taskCoalescer: appState.taskCoalescer
+            )
         case .myListings:
             MyListingsView(
                 listingRepository: listingRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient,
+                listingCoalescer: appState.listingCoalescer
             )
         case .logbook:
             LogbookView(
@@ -93,26 +152,39 @@ struct RootView: View {
                 taskRepository: taskRepo
             )
         case .agents:
-            AgentsView(repository: realtorRepo)
+            AgentsView(repository: realtorRepo, supabase: supabaseClient)
         case .agent(let id):
             AgentDetailView(
                 realtorId: id,
                 realtorRepository: realtorRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient
             )
         case .listing(let id):
             ListingDetailView(
                 listingId: id,
                 listingRepository: listingRepo,
                 noteRepository: noteRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                realtorRepository: realtorRepo,
+                supabase: supabaseClient,
+                activityCoalescer: appState.activityCoalescer,
+                noteCoalescer: appState.noteCoalescer
             )
         case .allTasks:
-            AllTasksView(repository: taskRepo)
+            AllTasksView(
+                repository: taskRepo,
+                supabase: supabaseClient,
+                taskCoalescer: appState.taskCoalescer,
+                activityCoalescer: appState.activityCoalescer
+            )
         case .allListings:
             AllListingsView(
                 listingRepository: listingRepo,
-                taskRepository: taskRepo
+                taskRepository: taskRepo,
+                supabase: supabaseClient,
+                listingCoalescer: appState.listingCoalescer,
+                activityCoalescer: appState.activityCoalescer
             )
         case .settings:
             SettingsView()
@@ -146,6 +218,8 @@ struct PlaceholderView: View {
     RootView()
         .environment(AppState(
             supabase: supabase,
-            taskRepository: .preview
+            taskRepository: .preview,
+            localDatabase: PreviewLocalDatabase()
         ))
+        .modelContainer(for: [ListingEntity.self, ActivityEntity.self, ListingNoteEntity.self])
 }

@@ -211,7 +211,7 @@ public struct ListingCard: View {
                 id: UUID().uuidString,
                 listingId: listing.id,
                 content: trimmed,
-                type: "general",
+                type: .general,
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
@@ -229,8 +229,9 @@ public struct ListingCard: View {
             id: "note-1",
             listingId: "listing-001",
             content: "Follow up with agent about staging timeline",
-            type: "general",
-            createdBy: "Sarah Chen",
+            type: .general,
+            createdBy: "staff_001",
+            createdByName: "Sarah Chen",
             createdAt: Date().addingTimeInterval(-7200),
             updatedAt: Date().addingTimeInterval(-7200)
         ),
@@ -238,8 +239,8 @@ public struct ListingCard: View {
             id: "note-2",
             listingId: "listing-001",
             content: "Property needs deep cleaning before photos",
-            type: "general",
-            createdBy: "Mike Torres",
+            type: .general,
+            createdBy: "staff_002",
             createdAt: Date().addingTimeInterval(-3600),
             updatedAt: Date().addingTimeInterval(-3600)
         )
@@ -344,7 +345,7 @@ public struct ListingCard: View {
                 id: UUID().uuidString,
                 listingId: listing.id,
                 content: trimmed,
-                type: "general",
+                type: .general,
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
@@ -362,8 +363,8 @@ public struct ListingCard: View {
             id: "note-1",
             listingId: "listing-002",
             content: "New listing - needs initial assessment",
-            type: "general",
-            createdBy: "Emma Rodriguez",
+            type: .general,
+            createdBy: "staff_003",
             createdAt: Date().addingTimeInterval(-3600),
             updatedAt: Date().addingTimeInterval(-3600)
         )
@@ -402,7 +403,7 @@ public struct ListingCard: View {
                 id: UUID().uuidString,
                 listingId: listing.id,
                 content: trimmed,
-                type: "general",
+                type: .general,
                 createdBy: "Current User",
                 createdAt: Date(),
                 updatedAt: Date()
