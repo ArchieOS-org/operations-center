@@ -235,6 +235,12 @@ struct ListingDetailView: View {
             Logger.database.info("✅ [ListingDetailView] Initial data fetch complete for listing \(store.listingId)")
             await scrollToInitialPosition()
         }
+        .onDisappear {
+            Logger.database.info("👋 [ListingDetailView] View disappearing for listing \(store.listingId)")
+            Task {
+                await store.teardownRealtime()
+            }
+        }
         .loadingOverlay(store.isLoading && store.listing == nil)
         .errorAlert($store.errorMessage)
         .overlay(alignment: .bottom) {

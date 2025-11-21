@@ -55,7 +55,8 @@ extension ModelContainer {
         let schema = Schema([
             ListingEntity.self,
             ActivityEntity.self,
-            ListingNoteEntity.self
+            ListingNoteEntity.self,
+            StaffEntity.self
         ])
 
         // 5. Configure with explicit URL

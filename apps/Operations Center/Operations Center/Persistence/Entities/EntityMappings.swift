@@ -76,3 +76,24 @@ extension ListingNote {
         )
     }
 }
+
+// MARK: - Staff Mapping
+
+extension Staff {
+    /// Create Staff DTO from SwiftData entity
+    init(entity: StaffEntity) {
+        self.init(
+            id: entity.id,
+            name: entity.name,
+            email: entity.email,
+            phone: entity.phone,
+            role: StaffRole(rawValue: entity.roleRaw) ?? .operations,
+            status: entity.status,
+            slackUserId: entity.slackUserId,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
+            deletedAt: entity.deletedAt,
+            metadata: nil  // Metadata not persisted locally
+        )
+    }
+}

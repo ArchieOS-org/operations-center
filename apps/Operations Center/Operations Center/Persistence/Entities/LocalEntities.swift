@@ -177,3 +177,49 @@ final class ListingNoteEntity {
         // Don't clear isDirty - preserve local changes flag
     }
 }
+
+// MARK: - StaffEntity
+
+@Model
+final class StaffEntity {
+    @Attribute(.unique) var id: String
+    var name: String
+    var email: String
+    var phone: String?
+    var roleRaw: String
+    var status: String
+    var slackUserId: String?
+    var createdAt: Date
+    var updatedAt: Date
+    var deletedAt: Date?
+
+    // Sync metadata
+    var syncedAt: Date?
+
+    init(from staff: Staff) {
+        self.id = staff.id
+        self.name = staff.name
+        self.email = staff.email
+        self.phone = staff.phone
+        self.roleRaw = staff.role.rawValue
+        self.status = staff.status
+        self.slackUserId = staff.slackUserId
+        self.createdAt = staff.createdAt
+        self.updatedAt = staff.updatedAt
+        self.deletedAt = staff.deletedAt
+        self.syncedAt = nil
+    }
+
+    /// Update entity from DTO (for upsert operations)
+    func update(from staff: Staff) {
+        self.name = staff.name
+        self.email = staff.email
+        self.phone = staff.phone
+        self.roleRaw = staff.role.rawValue
+        self.status = staff.status
+        self.slackUserId = staff.slackUserId
+        self.updatedAt = staff.updatedAt
+        self.deletedAt = staff.deletedAt
+        self.syncedAt = Date()
+    }
+}

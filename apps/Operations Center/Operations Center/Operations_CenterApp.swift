@@ -6,6 +6,7 @@
 //
 
 import BackgroundTasks
+import Dependencies
 import OperationsCenterKit
 import SwiftUI
 import SwiftData
@@ -53,17 +54,17 @@ struct OperationsCenterApp: App {
             ? ListingRepositoryClient.preview
             : ListingRepositoryClient.live(localDatabase: localDatabase)
 
-        let noteRepository = usePreviewData
-            ? ListingNoteRepositoryClient.preview
-            : ListingNoteRepositoryClient.live(localDatabase: localDatabase)
-
         let realtorRepository = usePreviewData
             ? RealtorRepositoryClient.preview
             : RealtorRepositoryClient.live
 
         let staffRepository = usePreviewData
             ? StaffRepositoryClient.testValue
-            : StaffRepositoryClient.liveValue
+            : StaffRepositoryClient.live(localDatabase: localDatabase)
+
+        let noteRepository = usePreviewData
+            ? ListingNoteRepositoryClient.preview
+            : ListingNoteRepositoryClient.live(localDatabase: localDatabase, staffRepository: staffRepository)
 
         // Initialize AppState with local database
         let appState = AppState(

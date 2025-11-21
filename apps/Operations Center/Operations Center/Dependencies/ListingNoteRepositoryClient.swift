@@ -30,16 +30,6 @@ public enum NoteError: LocalizedError {
     }
 }
 
-/// Minimal DTO for staff lookup - matches our SELECT query
-private struct StaffLookupResult: Codable {
-    let staffId: String
-    let name: String
-    
-    enum CodingKeys: String, CodingKey {
-        case staffId = "staff_id"
-        case name
-    }
-}
 
 /// Repository client for listing notes operations
 public struct ListingNoteRepositoryClient {
@@ -54,7 +44,7 @@ public struct ListingNoteRepositoryClient {
 // MARK: - Live Implementation
 
 extension ListingNoteRepositoryClient {
-    public static func live(localDatabase: LocalDatabase) -> Self {
+    public static func live(localDatabase: LocalDatabase, staffRepository: StaffRepositoryClient) -> Self {
         @Dependency(\.authClient) var authClient
 
         return Self(
@@ -110,24 +100,11 @@ extension ListingNoteRepositoryClient {
                 let step2Time = (CFAbsoluteTimeGetCurrent() - step2Start) * 1000
                 Logger.database.info("⚡️ [PERF] Step 2 - Got email: \(userEmail) in \(String(format: "%.0f", step2Time))ms")
 
-                // STEP 3: Staff lookup
+                // STEP 3: Staff lookup (now uses cached local-first repository)
                 let step3Start = CFAbsoluteTimeGetCurrent()
                 Logger.database.info("🔍 Looking up staff by email: \(userEmail)")
-                Logger.database.info("🔍 [DEBUG] Query: SELECT staff_id, name FROM staff WHERE email = '\(userEmail)' LIMIT 1")
 
-                let staffResults: [StaffLookupResult] = try await supabase
-                    .from("staff")
-                    .select("staff_id, name")
-                    .eq("email", value: userEmail)
-                    .limit(1)
-                    .execute()
-                    .value
-                
-                let step3Time = (CFAbsoluteTimeGetCurrent() - step3Start) * 1000
-                Logger.database.info("⚡️ [PERF] Step 3 - Staff query completed in \(String(format: "%.0f", step3Time))ms")
-                Logger.database.info("🔍 [DEBUG] Query returned \(staffResults.count) results")
-
-                guard let staff = staffResults.first else {
+                guard let staff = try await staffRepository.findByEmail(userEmail) else {
                     Logger.database.error("❌ Staff not found for email: \(userEmail)")
                     Logger.database.error("❌ [DEBUG] Possible causes:")
                     Logger.database.error("  1. Email doesn't exist in staff table")
@@ -135,8 +112,10 @@ extension ListingNoteRepositoryClient {
                     Logger.database.error("  3. Table/column name mismatch")
                     throw NoteError.staffNotFound(email: userEmail)
                 }
-
-                Logger.database.info("✅ Found staff: \(staff.name) (ID: \(staff.staffId))")
+                
+                let step3Time = (CFAbsoluteTimeGetCurrent() - step3Start) * 1000
+                Logger.database.info("⚡️ [PERF] Step 3 - Staff lookup completed in \(String(format: "%.0f", step3Time))ms")
+                Logger.database.info("✅ Found staff: \(staff.name) (ID: \(staff.id))")
                 
                 // STEP 4: Create note
                 let step4Start = CFAbsoluteTimeGetCurrent()
@@ -179,13 +158,18 @@ extension ListingNoteRepositoryClient {
             deleteNote: { noteId in
                 Logger.database.info("🗑️ Deleting note: \(noteId)")
                 
+                // Delete from Supabase first
                 try await supabase
                     .from("listing_notes")
                     .delete()
                     .eq("note_id", value: noteId)
                     .execute()
                 
-                Logger.database.info("✅ Deleted note \(noteId)")
+                Logger.database.info("✅ Deleted note \(noteId) from Supabase")
+                
+                // Remove from local database
+                try await MainActor.run { try localDatabase.deleteNote(noteId) }
+                Logger.database.info("💾 Removed note \(noteId) from local database")
             }
         )
     }

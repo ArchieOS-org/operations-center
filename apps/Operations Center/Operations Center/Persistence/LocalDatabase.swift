@@ -27,6 +27,11 @@ public protocol LocalDatabase: Sendable {
     // Notes
     func fetchNotes(for listingId: String) throws -> [ListingNote]
     func upsertNotes(_ notes: [ListingNote]) throws
+    func deleteNote(_ noteId: String) throws
+
+    // Staff
+    func fetchStaff(byEmail email: String) throws -> Staff?
+    func upsertStaff(_ staff: [Staff]) throws
 }
 
 // MARK: - SwiftDataLocalDatabase
@@ -125,6 +130,41 @@ struct SwiftDataLocalDatabase: LocalDatabase {
         }
         try context.save()
     }
+
+    func deleteNote(_ noteId: String) throws {
+        let descriptor = FetchDescriptor<ListingNoteEntity>(
+            predicate: #Predicate { $0.id == noteId }
+        )
+        if let entity = try context.fetch(descriptor).first {
+            context.delete(entity)
+            try context.save()
+        }
+    }
+
+    // MARK: - Staff
+
+    func fetchStaff(byEmail email: String) throws -> Staff? {
+        let descriptor = FetchDescriptor<StaffEntity>(
+            predicate: #Predicate { $0.email == email && $0.deletedAt == nil }
+        )
+        return try context.fetch(descriptor).first.map(Staff.init(entity:))
+    }
+
+    func upsertStaff(_ staff: [Staff]) throws {
+        for staffMember in staff {
+            let descriptor = FetchDescriptor<StaffEntity>(
+                predicate: #Predicate { $0.id == staffMember.id }
+            )
+            if let existing = try context.fetch(descriptor).first {
+                // Update existing entity
+                existing.update(from: staffMember)
+            } else {
+                // Insert new entity
+                context.insert(StaffEntity(from: staffMember))
+            }
+        }
+        try context.save()
+    }
 }
 
 // MARK: - PreviewLocalDatabase
@@ -156,6 +196,31 @@ struct PreviewLocalDatabase: LocalDatabase {
     }
 
     func upsertNotes(_ notes: [ListingNote]) throws {
+        // No-op for previews
+    }
+
+    func deleteNote(_ noteId: String) throws {
+        // No-op for previews
+    }
+
+    func fetchStaff(byEmail email: String) throws -> Staff? {
+        // Return mock staff for previews
+        return Staff(
+            id: "preview-staff-id",
+            name: "Preview User",
+            email: email,
+            phone: nil,
+            role: .operations,
+            status: "active",
+            slackUserId: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            deletedAt: nil,
+            metadata: nil
+        )
+    }
+
+    func upsertStaff(_ staff: [Staff]) throws {
         // No-op for previews
     }
 }
